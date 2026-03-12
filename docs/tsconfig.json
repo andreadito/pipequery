@@ -13,5 +13,6 @@
     "jsx": "react-jsx",
     "strict": true
   },
-  "include": ["src", "../src"]
+  "include": ["src", "../src/engine"],
+  "exclude": ["../src/react", "../src/highlighting"]
 }
