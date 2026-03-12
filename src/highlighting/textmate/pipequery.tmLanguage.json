@@ -1,0 +1,75 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PipeQuery",
+  "scopeName": "source.pipequery",
+  "fileTypes": ["pq", "pipequery"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#keywords" },
+    { "include": "#functions" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.double-slash.pipequery",
+      "match": "//.*$"
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.pipequery",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.pipequery",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.pipequery",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.pipequery",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.pipequery",
+      "match": "\\b\\d+(\\.\\d+)?\\b"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.pipe.pipequery",
+          "match": "\\|"
+        },
+        {
+          "name": "keyword.operator.pipequery",
+          "match": ">=|<=|==|!=|&&|\\|\\||[><!+\\-*/%]"
+        }
+      ]
+    },
+    "keywords": {
+      "name": "keyword.control.pipequery",
+      "match": "\\b(where|select|sort|groupBy|join|first|last|distinct|map|reduce|rollup|pivot|flatten|transpose|as|asc|desc|true|false|null)\\b"
+    },
+    "functions": {
+      "name": "entity.name.function.pipequery",
+      "match": "\\b(sum|avg|min|max|count|median|stddev|var|percentile|skew|kurt|vwap|wavg|drawdown|pct|sharpe|calmar|sortino|info_ratio|distinct_count|sum_abs|abs_sum|first_value|last_value|if|coalesce|lower|upper|len|abs|round|concat|running_sum|running_avg|running_count|running_min|running_max|row_number|lag|lead)\\b"
+    },
+    "identifiers": {
+      "name": "variable.other.pipequery",
+      "match": "\\b[a-zA-Z_]\\w*\\b"
+    }
+  }
+}

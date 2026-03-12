@@ -1,0 +1,114 @@
+{
+  "name": "pipequery-lang",
+  "version": "1.0.0",
+  "description": "Pipe-based query language for filtering, transforming, and aggregating data",
+  "type": "module",
+  "main": "./dist/engine/index.cjs",
+  "module": "./dist/engine/index.js",
+  "types": "./dist/engine/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/engine/index.d.ts",
+        "default": "./dist/engine/index.js"
+      },
+      "require": {
+        "types": "./dist/engine/index.d.cts",
+        "default": "./dist/engine/index.cjs"
+      }
+    },
+    "./highlighting": {
+      "import": {
+        "types": "./dist/highlighting/index.d.ts",
+        "default": "./dist/highlighting/index.js"
+      },
+      "require": {
+        "types": "./dist/highlighting/index.d.cts",
+        "default": "./dist/highlighting/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "require": {
+        "types": "./dist/react/index.d.cts",
+        "default": "./dist/react/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "query",
+    "dsl",
+    "pipe",
+    "data",
+    "filter",
+    "transform",
+    "aggregate",
+    "sql",
+    "dataframe"
+  ],
+  "author": "andreadito",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreadito/pipequery.git"
+  },
+  "homepage": "https://andreadito.github.io/pipequery",
+  "bugs": {
+    "url": "https://github.com/andreadito/pipequery/issues"
+  },
+  "peerDependencies": {
+    "@codemirror/language": ">=6",
+    "@codemirror/state": ">=6",
+    "@codemirror/view": ">=6",
+    "@emotion/react": ">=11",
+    "@emotion/styled": ">=11",
+    "@lezer/highlight": ">=1",
+    "@mui/icons-material": ">=5",
+    "@mui/material": ">=5",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@codemirror/language": { "optional": true },
+    "@codemirror/state": { "optional": true },
+    "@codemirror/view": { "optional": true },
+    "@emotion/react": { "optional": true },
+    "@emotion/styled": { "optional": true },
+    "@lezer/highlight": { "optional": true },
+    "@mui/icons-material": { "optional": true },
+    "@mui/material": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  },
+  "devDependencies": {
+    "@codemirror/language": "^6.12.2",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.40.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@lezer/highlight": "^1.2.3",
+    "@mui/icons-material": "^7.3.8",
+    "@mui/material": "^7.3.8",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsup": "^8.4.0",
+    "typescript": "~5.7.0",
+    "vitest": "^3.2.4"
+  }
+}
