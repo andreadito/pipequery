@@ -1,5 +1,8 @@
 {
-  "name": "pipequery-lang",
+  "name": "@andreadito/pipequery-lang",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "version": "1.0.0",
   "description": "Pipe-based query language for filtering, transforming, and aggregating data",
   "type": "module",
