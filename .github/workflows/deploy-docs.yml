@@ -27,6 +27,11 @@ jobs:
         working-directory: docs
       - run: npm run build
         working-directory: docs
+      - run: npm ci
+        working-directory: demo-app
+      - run: npm run build
+        working-directory: demo-app
+      - run: mv demo-app/dist docs/dist/demo
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/dist

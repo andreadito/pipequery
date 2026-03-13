@@ -11,6 +11,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CodeIcon from "@mui/icons-material/Code";
 import SpeedIcon from "@mui/icons-material/Speed";
@@ -1945,6 +1946,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             {[
               { label: "Docs", action: () => onNavigate("docs") },
               { label: "Playground", action: () => onNavigate("playground") },
+              { label: "Live Demo", action: () => window.open("https://andreadito.github.io/pipequery/demo/", '_blank') },
             ].map((item) => (
               <Typography
                 key={item.label}
@@ -2150,6 +2152,38 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 }}
               >
                 Read Docs
+              </Box>
+
+              <Box
+                component="a"
+                href={"https://andreadito.github.io/pipequery/demo/"}
+                target="_blank"
+                rel="noopener"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 2.5,
+                  py: 1.2,
+                  borderRadius: 1.5,
+                  bgcolor: "transparent",
+                  color: C.orange,
+                  border: "1px solid",
+                  borderColor: alpha(C.orange, 0.3),
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: '"DM Sans", sans-serif',
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  "&:hover": {
+                    borderColor: alpha(C.orange, 0.5),
+                    bgcolor: alpha(C.orange, 0.06),
+                  },
+                }}
+              >
+                <DashboardIcon sx={{ fontSize: 18 }} />
+                Live Demo
               </Box>
             </Box>
           </Box>
@@ -3963,6 +3997,37 @@ console.log(expensive);`}
               <GitHubIcon sx={{ fontSize: 18 }} />
               GitHub
             </Box>
+            <Box
+              component="a"
+              href={"https://andreadito.github.io/pipequery/demo/"}
+              target="_blank"
+              rel="noopener"
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 1,
+                px: 3,
+                py: 1.3,
+                borderRadius: 1.5,
+                bgcolor: "transparent",
+                color: C.orange,
+                border: "1px solid",
+                borderColor: alpha(C.orange, 0.3),
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: '"DM Sans", sans-serif',
+                textDecoration: "none",
+                transition: "all 0.2s",
+                "&:hover": {
+                  borderColor: alpha(C.orange, 0.5),
+                  bgcolor: alpha(C.orange, 0.06),
+                },
+              }}
+            >
+              <DashboardIcon sx={{ fontSize: 18 }} />
+              Live Demo
+            </Box>
           </Box>
         </Box>
       </Section>
@@ -4137,6 +4202,10 @@ console.log(expensive);`}
               {
                 label: "Packages",
                 href: "https://github.com/andreadito/pipequery/packages",
+              },
+              {
+                label: "Live Demo",
+                href: "https://andreadito.github.io/pipequery/demo/",
               },
             ].map((link) => (
               <Box

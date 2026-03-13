@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Paper, Box, Typography, IconButton, Collapse, Tooltip, Chip, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import RestoreIcon from '@mui/icons-material/Restore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -22,9 +23,10 @@ interface QueryPanelProps {
   savedQuery?: string;
   onQuerySave: (panelId: string, query: string) => void;
   tick: number;
+  onDelete?: () => void;
 }
 
-export default function QueryPanel({ config, context, savedQuery, onQuerySave, tick }: QueryPanelProps) {
+export default function QueryPanel({ config, context, savedQuery, onQuerySave, tick, onDelete }: QueryPanelProps) {
   const currentQuery = savedQuery ?? config.defaultQuery;
   const [editing, setEditing] = useState(false);
   const [editorMode, setEditorMode] = useState<'code' | 'builder'>('code');
@@ -209,6 +211,13 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
               {editing ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
             </IconButton>
           </Tooltip>
+          {onDelete && (
+            <Tooltip title="Delete panel">
+              <IconButton size="small" onClick={onDelete} sx={{ ml: 0.25 }}>
+                <DeleteOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', '&:hover': { color: '#ef5350' } }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
