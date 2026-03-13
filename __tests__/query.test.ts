@@ -511,6 +511,60 @@ describe('query() - Built-in Functions', () => {
     const result = q(data, 'select(concat(name, " age:", age) as label)') as any[];
     expect(result[0].label).toBe('Alice age:30');
   });
+
+  it('contains()', () => {
+    const d = [{ name: 'Bitcoin' }, { name: 'Ethereum' }, { name: 'Bitcash' }];
+    const result = q(d, 'where(contains(name, "Bit"))') as any[];
+    expect(result).toHaveLength(2);
+    expect(result.map(r => r.name)).toEqual(['Bitcoin', 'Bitcash']);
+  });
+
+  it('startsWith()', () => {
+    const d = [{ name: 'Bitcoin' }, { name: 'Ethereum' }, { name: 'Bitcash' }];
+    const result = q(d, 'where(startsWith(name, "Bit"))') as any[];
+    expect(result).toHaveLength(2);
+  });
+
+  it('endsWith()', () => {
+    const d = [{ email: 'a@test.com' }, { email: 'b@test.org' }, { email: 'c@test.com' }];
+    const result = q(d, 'where(endsWith(email, ".com"))') as any[];
+    expect(result).toHaveLength(2);
+  });
+
+  it('trim()', () => {
+    const d = [{ name: '  hello  ' }];
+    const result = q(d, 'select(trim(name) as t)') as any[];
+    expect(result[0].t).toBe('hello');
+  });
+
+  it('substring() with start and length', () => {
+    const d = [{ name: 'Bitcoin' }];
+    const result = q(d, 'select(substring(name, 0, 3) as s)') as any[];
+    expect(result[0].s).toBe('Bit');
+  });
+
+  it('substring() with start only', () => {
+    const d = [{ name: 'Bitcoin' }];
+    const result = q(d, 'select(substring(name, 3) as s)') as any[];
+    expect(result[0].s).toBe('coin');
+  });
+
+  it('replace()', () => {
+    const d = [{ text: 'hello world hello' }];
+    const result = q(d, 'select(replace(text, "hello", "hi") as r)') as any[];
+    expect(result[0].r).toBe('hi world hi');
+  });
+
+  it('contains() in where with logical operators', () => {
+    const d = [
+      { name: 'Bitcoin', price: 50000 },
+      { name: 'Bitcash', price: 200 },
+      { name: 'Ethereum', price: 3000 },
+    ];
+    const result = q(d, 'where(contains(name, "Bit") && price > 1000)') as any[];
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Bitcoin');
+  });
 });
 
 describe('query() - Chained Pipelines', () => {

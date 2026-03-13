@@ -90,6 +90,23 @@ source | operation1(...) | operation2(...) | ...
 | **Financial** | `vwap`, `wavg`, `drawdown`, `sharpe`, `calmar`, `sortino`, `info_ratio` |
 | **Utility** | `distinct_count`, `sum_abs`, `first_value`, `last_value`, `pct` |
 
+### Built-in Functions
+
+| Category | Functions |
+|----------|-----------|
+| **String** | `lower`, `upper`, `len`, `concat`, `trim`, `contains`, `startsWith`, `endsWith`, `substring`, `replace` |
+| **Logic** | `if`, `coalesce` |
+| **Math** | `abs`, `round` |
+
+```
+where(contains(name, "Bitcoin"))          // substring search
+where(startsWith(symbol, "BT"))           // prefix match
+where(endsWith(email, ".com"))            // suffix match
+select(trim(name) as name)               // strip whitespace
+select(substring(name, 0, 5) as short)   // extract first 5 chars
+select(replace(name, "old", "new") as r) // replace all occurrences
+```
+
 ### Window Functions
 
 `running_sum`, `running_avg`, `running_count`, `running_min`, `running_max`, `row_number`, `lag`, `lead`

@@ -250,6 +250,58 @@ function compileFunctionCall(expr: FunctionCall, grouped: boolean): ExprFn {
       return (row) => fns.map((fn) => String(fn(row))).join('');
     }
 
+    // ── String functions ────────────────────────────────────
+
+    case 'contains': {
+      if (args.length !== 2) throw new RuntimeError(`contains() expects 2 arguments, got ${args.length}`);
+      const strFn = compileExpression(args[0], grouped);
+      const searchFn = compileExpression(args[1], grouped);
+      return (row) => String(strFn(row)).includes(String(searchFn(row)));
+    }
+
+    case 'startsWith': {
+      if (args.length !== 2) throw new RuntimeError(`startsWith() expects 2 arguments, got ${args.length}`);
+      const strFn = compileExpression(args[0], grouped);
+      const prefixFn = compileExpression(args[1], grouped);
+      return (row) => String(strFn(row)).startsWith(String(prefixFn(row)));
+    }
+
+    case 'endsWith': {
+      if (args.length !== 2) throw new RuntimeError(`endsWith() expects 2 arguments, got ${args.length}`);
+      const strFn = compileExpression(args[0], grouped);
+      const suffixFn = compileExpression(args[1], grouped);
+      return (row) => String(strFn(row)).endsWith(String(suffixFn(row)));
+    }
+
+    case 'trim': {
+      if (args.length !== 1) throw new RuntimeError(`trim() expects 1 argument, got ${args.length}`);
+      const fn = compileExpression(args[0], grouped);
+      return (row) => String(fn(row)).trim();
+    }
+
+    case 'substring': {
+      if (args.length < 2 || args.length > 3) throw new RuntimeError(`substring() expects 2 or 3 arguments, got ${args.length}`);
+      const strFn = compileExpression(args[0], grouped);
+      const startFn = compileExpression(args[1], grouped);
+      const lenFn = args.length === 3 ? compileExpression(args[2], grouped) : undefined;
+      return (row) => {
+        const s = String(strFn(row));
+        const start = Number(startFn(row));
+        if (lenFn) {
+          return s.substring(start, start + Number(lenFn(row)));
+        }
+        return s.substring(start);
+      };
+    }
+
+    case 'replace': {
+      if (args.length !== 3) throw new RuntimeError(`replace() expects 3 arguments, got ${args.length}`);
+      const strFn = compileExpression(args[0], grouped);
+      const searchFn = compileExpression(args[1], grouped);
+      const replaceFn = compileExpression(args[2], grouped);
+      return (row) => String(strFn(row)).replaceAll(String(searchFn(row)), String(replaceFn(row)));
+    }
+
     // Non-grouped aggregates used as functions return NaN or undefined — they're
     // only meaningful as pipeline-level AggregateOps or in grouped selects
     default:

@@ -21,6 +21,7 @@ export const AGGREGATE_FUNCTIONS = [
 
 export const BUILTIN_FUNCTIONS = [
   'if', 'coalesce', 'lower', 'upper', 'len', 'abs', 'round', 'concat',
+  'contains', 'startsWith', 'endsWith', 'trim', 'substring', 'replace',
 ] as const;
 
 export const WINDOW_FUNCTIONS = [
