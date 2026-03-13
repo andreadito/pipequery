@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Typography, alpha, keyframes } from "@mui/material";
 import { PipeQueryBuilder } from "../../../src/react/index.ts";
 import { liveQuery } from "../../../src/engine/index.ts";
+import pkgJson from "../../../package.json";
 import type {
   LiveQuery as LiveQueryType,
   LiveQueryStats,
@@ -1900,7 +1901,30 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   fontFamily: '"JetBrains Mono", monospace',
                 }}
               >
-                v1.0
+                v{pkgJson.version}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                px: 0.7,
+                py: 0.1,
+                borderRadius: 0.6,
+                bgcolor: alpha(C.orange, 0.1),
+                border: "1px solid",
+                borderColor: alpha(C.orange, 0.2),
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.58rem",
+                  fontWeight: 700,
+                  color: C.orange,
+                  fontFamily: '"JetBrains Mono", monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                beta
               </Typography>
             </Box>
           </Box>
