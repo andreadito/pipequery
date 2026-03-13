@@ -1,0 +1,560 @@
+# PipeQuery — Complete API Reference
+
+> A pipe-based query language for filtering, transforming, and aggregating data in JavaScript and TypeScript. Zero dependencies.
+
+Package: `@andreadito/pipequery-lang`
+Version: 1.0.0 (beta)
+License: MIT
+Repository: https://github.com/andreadito/pipequery
+Docs: https://andreadito.github.io/pipequery/
+
+---
+
+## Installation
+
+```bash
+npm install @andreadito/pipequery-lang
+```
+
+Requires GitHub Packages registry configuration:
+```
+# .npmrc
+@andreadito:registry=https://npm.pkg.github.com
+```
+
+---
+
+## Core Concepts
+
+PipeQuery chains operations with the `|` pipe operator:
+```
+source | operation1(...) | operation2(...) | ...
+```
+
+Data flows left-to-right through operations. Each operation receives the output of the previous one. The first token can be a source name (for DataContext) or omitted (for raw arrays).
+
+---
+
+## API Reference
+
+### query(data, expression)
+
+Execute a query on data. Returns the query result (array, object, or scalar).
+
+**Signature:**
+```ts
+function query(data: Record<string, unknown>[] | DataContext, expression: string): unknown;
+```
+
+**DataContext** is `Record<string, unknown[]>` — a map of named data sources used for multi-table queries and joins.
+
+**Examples:**
+```ts
+import { query } from '@andreadito/pipequery-lang';
+
+// Simple array query
+const items = [
+  { name: 'Laptop', price: 999, category: 'Electronics' },
+  { name: 'Mouse', price: 29, category: 'Electronics' },
+  { name: 'Desk', price: 349, category: 'Furniture' },
+];
+
+// Filter and sort
+query(items, 'where(price > 100) | sort(price desc)');
+// Result: [{ name: 'Laptop', price: 999, ... }, { name: 'Desk', price: 349, ... }]
+
+// Aggregate
+query(items, 'rollup(sum(price) as total, count() as n)');
+// Result: [{ total: 1377, n: 3 }]
+
+// Group and aggregate
+query(items, 'groupBy(category) | rollup(avg(price) as avgPrice)');
+// Result: [{ category: 'Electronics', avgPrice: 514 }, { category: 'Furniture', avgPrice: 349 }]
+
+// Named DataContext for joins
+const orders = [{ id: 1, customerId: 10, total: 250 }];
+const customers = [{ id: 10, name: 'Alice', city: 'NYC' }];
+
+query(
+  { orders, customers },
+  'orders | join(customers, customerId == id) | select(id, name, total, city)'
+);
+// Result: [{ id: 1, name: 'Alice', total: 250, city: 'NYC' }]
+```
+
+### compile(expression)
+
+Pre-compile a query for repeated use. Returns a reusable function.
+
+**Signature:**
+```ts
+function compile(expression: string): CompiledQuery;
+type CompiledQuery = (context: DataContext) => unknown;
+```
+
+**Example:**
+```ts
+import { compile } from '@andreadito/pipequery-lang';
+
+const fn = compile('where(price > 100) | sort(price desc)');
+
+// Execute against different datasets
+const result1 = fn({ _data: items1 });
+const result2 = fn({ _data: items2 });
+```
+
+Note: When using `compile()` with raw arrays, pass them as `{ _data: yourArray }`.
+
+### parseQuery(expression)
+
+Parse a query into its AST (Pipeline) without executing.
+
+**Signature:**
+```ts
+function parseQuery(expression: string): Pipeline;
+
+interface Pipeline {
+  source: string | null;
+  operations: Operation[];
+}
+
+interface Operation {
+  type: string;        // 'where', 'select', 'sort', etc.
+  expressions: Expression[];
+}
+```
+
+**Example:**
+```ts
+import { parseQuery } from '@andreadito/pipequery-lang';
+const ast = parseQuery('items | where(price > 100) | sort(price desc)');
+// ast.source === 'items'
+// ast.operations[0].type === 'where'
+// ast.operations[1].type === 'sort'
+```
+
+### liveQuery(data, expression, options)
+
+Create a streaming query evaluator that accepts incremental data patches and re-executes efficiently. Ideal for dashboards, trading screens, and live monitoring.
+
+**Signature:**
+```ts
+function liveQuery(
+  data: Record<string, unknown>[] | DataContext,
+  expression: string,
+  options: LiveQueryOptions,
+): LiveQuery;
+
+interface LiveQueryOptions {
+  key: string | string[];    // Field(s) for row identity
+  source?: string;           // DataContext source name (default: '_data')
+  throttle?: number;         // Min ms between executions (default: 0)
+}
+
+interface LiveQuery {
+  subscribe(fn: (result: unknown, stats: LiveQueryStats) => void): () => void;
+  patch(changed: Record<string, unknown>[], removals?: RemovalKey[]): void;
+  reset(data: Record<string, unknown>[]): void;
+  setQuery(expression: string): void;
+  beginBatch(): void;
+  endBatch(): void;
+  dispose(): void;
+  readonly result: unknown;
+  readonly stats: LiveQueryStats;
+  readonly size: number;
+}
+
+interface LiveQueryStats {
+  patchMs: number;
+  executionMs: number;
+  totalMs: number;
+  rowCount: number;
+  resultCount: number;
+  patchCount: number;
+  tick: number;
+}
+
+type RemovalKey = string | string[];
+```
+
+**Example:**
+```ts
+import { liveQuery } from '@andreadito/pipequery-lang';
+
+const trades = [
+  { id: 1, sym: 'AAPL', price: 189.42, qty: 150 },
+  { id: 2, sym: 'TSLA', price: 241.87, qty: 80 },
+];
+
+// Create with raw array
+const lq = liveQuery(trades, 'where(qty > 50) | sort(price desc)', {
+  key: 'id',
+  throttle: 100,
+});
+
+// Or with DataContext
+const lq2 = liveQuery(
+  { trades },
+  'trades | where(qty > 50) | sort(price desc)',
+  { key: 'id', source: 'trades', throttle: 100 },
+);
+
+// Subscribe to results
+const unsubscribe = lq.subscribe((result, stats) => {
+  console.log(`${stats.resultCount} results in ${stats.executionMs.toFixed(2)}ms`);
+  console.log('Result:', result);
+});
+
+// Push incremental updates (matched by key field)
+lq.patch([
+  { id: 1, sym: 'AAPL', price: 191.00, qty: 160 },  // update
+  { id: 3, sym: 'NVDA', price: 478.32, qty: 200 },   // insert
+]);
+
+// Remove rows by key
+lq.patch([], ['2']);  // remove id=2
+
+// Batch multiple patches
+lq.beginBatch();
+lq.patch([{ id: 4, sym: 'GOOG', price: 141.20, qty: 120 }]);
+lq.patch([{ id: 5, sym: 'MSFT', price: 378.91, qty: 90 }]);
+lq.endBatch();  // single re-execution
+
+// Change query dynamically
+lq.setQuery('where(qty > 100) | sort(sym asc)');
+
+// Clean up
+unsubscribe();
+lq.dispose();
+```
+
+### clearCache()
+
+Clear the internal compiled-query LRU cache (128 entries by default).
+
+```ts
+import { clearCache } from '@andreadito/pipequery-lang';
+clearCache();
+```
+
+---
+
+## Operations Reference
+
+### where(expression)
+Filter rows matching a boolean expression.
+```
+where(price > 100)
+where(category == 'Electronics' && active == true)
+where(price >= 50 && price <= 200)
+```
+
+### select(fields...)
+Pick specific fields from each row. Supports aliases.
+```
+select(name, price)
+select(name, price * 0.9 as discounted)
+```
+
+### sort(expression direction)
+Sort rows. Direction: `asc` (default) or `desc`. Multiple sort keys supported.
+```
+sort(price desc)
+sort(category asc, price desc)
+```
+
+### groupBy(keys...)
+Group rows by one or more fields. Usually followed by `rollup()`.
+```
+groupBy(category)
+groupBy(category, region)
+groupBy(category) | rollup(sum(price) as total)
+```
+
+### rollup(aggregations...)
+Aggregate grouped or ungrouped data. Each aggregation uses `function(field) as alias`.
+```
+rollup(sum(price) as total, count() as n)
+rollup(avg(price) as avgPrice, max(price) as maxPrice)
+groupBy(category) | rollup(sum(price) as total)
+```
+
+### join(source, condition)
+Join with another data source. Requires DataContext.
+```
+orders | join(customers, customerId == id)
+orders | join(customers, customerId == id) | select(orderId, name, total)
+```
+
+### first(n)
+Take the first N rows.
+```
+first(10)
+sort(price desc) | first(5)
+```
+
+### last(n)
+Take the last N rows.
+```
+last(5)
+```
+
+### distinct(fields?)
+Remove duplicate rows. Optionally specify fields.
+```
+distinct()
+distinct(category)
+distinct(category, region)
+```
+
+### map(expressions...)
+Transform rows by computing new fields.
+```
+map(price * 1.1 as newPrice)
+map(price * qty as total, lower(name) as lowerName)
+```
+
+### pivot(field, aggregations)
+Create a pivot table.
+```
+pivot(region, sum(sales))
+pivot(month, sum(revenue) as rev, count() as n)
+```
+
+### flatten(field?)
+Flatten nested arrays.
+```
+flatten(tags)
+flatten()
+```
+
+### transpose(header?)
+Transpose rows and columns.
+```
+transpose()
+transpose(name)
+```
+
+### reduce(initial, accumulator)
+Reduce to a single value using an accumulator. Use `$acc` for the accumulator variable.
+```
+reduce(0, $acc + price)
+reduce([], $acc)
+```
+
+---
+
+## Aggregate Functions
+
+### Basic
+- `sum(field)` — Sum of values
+- `avg(field)` — Arithmetic mean
+- `min(field)` — Minimum value
+- `max(field)` — Maximum value
+- `count()` — Count of rows (no argument) or non-null values `count(field)`
+
+### Statistical
+- `median(field)` — Median value
+- `stddev(field)` — Standard deviation
+- `var(field)` — Variance
+- `percentile(field, p)` — p-th percentile (0-100)
+- `skew(field)` — Skewness
+- `kurt(field)` — Kurtosis
+
+### Financial
+- `vwap(price, volume)` — Volume-weighted average price
+- `wavg(value, weight)` — Weighted average
+- `drawdown(field)` — Maximum drawdown
+- `sharpe(returns)` — Sharpe ratio
+- `calmar(returns)` — Calmar ratio
+- `sortino(returns)` — Sortino ratio
+- `info_ratio(returns, benchmark)` — Information ratio
+
+### Utility
+- `distinct_count(field)` — Count of unique values
+- `sum_abs(field)` — Sum of absolute values
+- `first_value(field)` — First non-null value
+- `last_value(field)` — Last non-null value
+- `pct(field)` — Percentage of total
+
+---
+
+## Window Functions
+
+Window functions compute values relative to the current row's position. Used inside `map()`:
+
+```
+map(running_sum(price) as cumPrice)
+map(row_number() as rowNum)
+map(lag(price, 1) as prevPrice)
+map(lead(price, 1) as nextPrice)
+```
+
+- `running_sum(field)` — Cumulative sum
+- `running_avg(field)` — Cumulative average
+- `running_count(field)` — Cumulative count
+- `running_min(field)` — Cumulative minimum
+- `running_max(field)` — Cumulative maximum
+- `row_number()` — 1-based row index
+- `lag(field, offset)` — Value from N rows before
+- `lead(field, offset)` — Value from N rows after
+
+---
+
+## Expression Syntax
+
+Expressions support:
+```
+// Comparison operators
+price > 100
+name == 'Laptop'
+active != false
+
+// Logical operators
+price > 100 && category == 'Electronics'
+price < 50 || onSale == true
+
+// Arithmetic
+price * 0.9
+price + tax
+qty * price as total
+
+// String functions
+lower(name)
+upper(name)
+len(name)
+concat(firstName, ' ', lastName)
+
+// Utility functions
+abs(value)
+round(price, 2)
+if(price > 100, 'expensive', 'cheap')
+coalesce(nickname, name, 'Unknown')
+
+// Dot access for nested fields
+address.city
+metadata.tags.length
+
+// Aliases
+price * 0.9 as discounted
+count() as total
+```
+
+---
+
+## Error Handling
+
+All errors include position information for editor integration.
+
+```ts
+import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@andreadito/pipequery-lang';
+
+try {
+  query(data, 'where(price >)');
+} catch (e) {
+  if (e instanceof ParseError) {
+    console.log(`Syntax error at line ${e.line}, column ${e.column}: ${e.message}`);
+  }
+  if (e instanceof RuntimeError) {
+    console.log(`Runtime error: ${e.message}`);
+  }
+}
+```
+
+Error types:
+- `LexerError` — Invalid token (position, line, column)
+- `ParseError` — Syntax error (position, line, column)
+- `RuntimeError` — Execution error (position, line, column)
+- `DataWeaveError` — Base error class
+
+---
+
+## Sub-packages
+
+### Syntax Highlighting
+
+```ts
+// CodeMirror 6
+import { pipeQuery } from '@andreadito/pipequery-lang/highlighting';
+
+// Use as a CodeMirror extension
+const extensions = [pipeQuery()];
+```
+
+Peer dependencies: `@codemirror/language`, `@codemirror/state`, `@codemirror/view`, `@lezer/highlight`
+
+A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLanguage.json` for VS Code, IntelliJ, and Sublime Text.
+
+### React Components
+
+```tsx
+import { PipeQueryBuilder } from '@andreadito/pipequery-lang/react';
+
+<PipeQueryBuilder
+  source="trades"
+  availableSources={['trades', 'positions']}
+  availableFields={['sym', 'price', 'qty', 'side']}
+  onQueryChange={(query) => console.log(query)}
+  orientation="vertical"
+  compact={false}
+  maxSteps={10}
+/>
+```
+
+**Props:**
+- `source: string` — Initial data source name
+- `onSourceChange?: (source: string) => void`
+- `availableSources?: string[]` — Dropdown options
+- `availableFields?: string[]` — Field autocomplete
+- `onQueryChange?: (query: string) => void` — Fires when pipeline changes
+- `orientation?: 'horizontal' | 'vertical'`
+- `compact?: boolean`
+- `maxSteps?: number`
+- `initialSteps?: OperationStep[]`
+- `showResult?: boolean`
+- `joinSources?: string[]`
+- `rowCount?: number`
+
+Peer dependencies: `react`, `react-dom`, `@mui/material`, `@emotion/react`, `@emotion/styled`, `@mui/icons-material`
+
+---
+
+## Common Patterns
+
+### Filter + Sort + Limit
+```ts
+query(items, 'where(price > 100) | sort(price desc) | first(10)');
+```
+
+### Group + Aggregate
+```ts
+query(items, 'groupBy(category) | rollup(sum(price) as total, count() as n) | sort(total desc)');
+```
+
+### Multi-table Join
+```ts
+query(
+  { orders, customers, products },
+  'orders | join(customers, customerId == id) | join(products, productId == id) | select(orderId, customerName, productName, total)'
+);
+```
+
+### Live Dashboard
+```ts
+const lq = liveQuery({ trades }, 'trades | where(qty > 50) | sort(price desc) | first(20)', {
+  key: 'id', source: 'trades', throttle: 100,
+});
+lq.subscribe((result, stats) => renderTable(result));
+// Push new data as it arrives
+ws.onmessage = (msg) => lq.patch([JSON.parse(msg.data)]);
+```
+
+### Computed Fields
+```ts
+query(items, 'map(price * qty as total, price * 0.9 as discounted) | sort(total desc)');
+```
+
+### Statistical Analysis
+```ts
+query(trades, 'rollup(avg(price) as mean, stddev(price) as sd, median(price) as med, percentile(price, 95) as p95)');
+```
