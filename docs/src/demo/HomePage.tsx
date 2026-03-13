@@ -1186,7 +1186,7 @@ function LiveQueryShowcase() {
           });
         }
         const removals =
-          tick % 8 === 0 ? [1 + Math.floor(Math.random() * 5)] : undefined;
+          tick % 8 === 0 ? [String(1 + Math.floor(Math.random() * 5))] : undefined;
         try {
           lq.patch(patches, removals);
         } catch {
