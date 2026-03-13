@@ -65,7 +65,7 @@
     },
     "functions": {
       "name": "entity.name.function.pipequery",
-      "match": "\\b(sum|avg|min|max|count|median|stddev|var|percentile|skew|kurt|vwap|wavg|drawdown|pct|sharpe|calmar|sortino|info_ratio|distinct_count|sum_abs|abs_sum|first_value|last_value|if|coalesce|lower|upper|len|abs|round|concat|running_sum|running_avg|running_count|running_min|running_max|row_number|lag|lead)\\b"
+      "match": "\\b(sum|avg|min|max|count|median|stddev|var|percentile|skew|kurt|vwap|wavg|drawdown|pct|sharpe|calmar|sortino|info_ratio|distinct_count|sum_abs|abs_sum|first_value|last_value|if|coalesce|lower|upper|len|abs|round|concat|contains|startsWith|endsWith|trim|substring|replace|running_sum|running_avg|running_count|running_min|running_max|row_number|lag|lead)\\b"
     },
     "identifiers": {
       "name": "variable.other.pipequery",

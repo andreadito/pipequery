@@ -165,6 +165,12 @@ const FN = new Set([
   "round",
   "if",
   "coalesce",
+  "contains",
+  "startsWith",
+  "endsWith",
+  "trim",
+  "substring",
+  "replace",
 ]);
 
 function hl(code: string) {
