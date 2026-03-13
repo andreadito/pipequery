@@ -18,6 +18,7 @@ const KEYWORDS = new Set([
 ]);
 const FUNCTIONS = new Set([
   'sum', 'avg', 'min', 'max', 'count', 'lower', 'upper', 'len', 'concat',
+  'contains', 'startsWith', 'endsWith', 'trim', 'substring', 'replace',
   'abs', 'round', 'if', 'coalesce', 'row_number', 'running_sum',
   'running_avg', 'running_min', 'running_max', 'running_count', 'lag', 'lead',
   'median', 'stddev', 'var', 'percentile',
@@ -930,7 +931,7 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
               }}
             >
               {[
-                { category: 'String', fns: [{ sig: 'lower(s)', desc: 'Lowercase' }, { sig: 'upper(s)', desc: 'Uppercase' }, { sig: 'len(s)', desc: 'Length (string or array)' }, { sig: 'concat(a, b, ...)', desc: 'Concatenate strings' }] },
+                { category: 'String', fns: [{ sig: 'lower(s)', desc: 'Lowercase' }, { sig: 'upper(s)', desc: 'Uppercase' }, { sig: 'len(s)', desc: 'Length (string or array)' }, { sig: 'concat(a, b, ...)', desc: 'Concatenate strings' }, { sig: 'contains(s, sub)', desc: 'Check if string contains substring' }, { sig: 'startsWith(s, prefix)', desc: 'Check if string starts with prefix' }, { sig: 'endsWith(s, suffix)', desc: 'Check if string ends with suffix' }, { sig: 'trim(s)', desc: 'Remove leading/trailing whitespace' }, { sig: 'substring(s, start, len?)', desc: 'Extract part of a string' }, { sig: 'replace(s, search, repl)', desc: 'Replace all occurrences' }] },
                 { category: 'Numeric', fns: [{ sig: 'abs(n)', desc: 'Absolute value' }, { sig: 'round(n, precision?)', desc: 'Round to precision' }] },
                 { category: 'Conditional', fns: [{ sig: 'if(cond, then, else)', desc: 'Ternary conditional' }, { sig: 'coalesce(a, b, ...)', desc: 'First non-null value' }] },
               ].map((group, gi) => (
