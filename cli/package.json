@@ -1,6 +1,6 @@
 {
   "name": "@andreadito/pq",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for PipeQuery — data sources, aggregations, APIs, and terminal dashboards",
   "type": "module",
   "bin": {
@@ -39,7 +39,8 @@
     "directory": "cli"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "author": "andreadito",
   "license": "MIT"
