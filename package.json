@@ -86,16 +86,36 @@
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
-    "@codemirror/language": { "optional": true },
-    "@codemirror/state": { "optional": true },
-    "@codemirror/view": { "optional": true },
-    "@emotion/react": { "optional": true },
-    "@emotion/styled": { "optional": true },
-    "@lezer/highlight": { "optional": true },
-    "@mui/icons-material": { "optional": true },
-    "@mui/material": { "optional": true },
-    "react": { "optional": true },
-    "react-dom": { "optional": true }
+    "@codemirror/language": {
+      "optional": true
+    },
+    "@codemirror/state": {
+      "optional": true
+    },
+    "@codemirror/view": {
+      "optional": true
+    },
+    "@emotion/react": {
+      "optional": true
+    },
+    "@emotion/styled": {
+      "optional": true
+    },
+    "@lezer/highlight": {
+      "optional": true
+    },
+    "@mui/icons-material": {
+      "optional": true
+    },
+    "@mui/material": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@codemirror/language": "^6.12.2",
@@ -113,5 +133,8 @@
     "tsup": "^8.4.0",
     "typescript": "~5.7.0",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.20.1"
   }
 }

@@ -3,6 +3,17 @@ import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { pipeQuery } from '../../../src/highlighting/codemirror/index';
 import { Box } from '@mui/material';
+import { formatQuery } from './QueryDisplay';
+
+/** Flatten a multi-line query back to a single-line pipe string. */
+function flattenQuery(q: string): string {
+  return q
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s*\|\s*/g, ' | ');
+}
 
 const cmTheme = EditorView.theme(
   {
@@ -21,6 +32,29 @@ const cmTheme = EditorView.theme(
     '&.cm-focused .cm-selectionBackground': { backgroundColor: 'rgba(91,156,246,0.3) !important' },
     '.cm-gutters': { display: 'none' },
     '.cm-scroller': { overflow: 'auto' },
+    // Autocomplete dropdown dark theme
+    '.cm-tooltip': {
+      backgroundColor: '#1a1f2e !important',
+      border: '1px solid rgba(91,156,246,0.25) !important',
+      borderRadius: '6px',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul': {
+        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+        fontSize: '0.75rem',
+      },
+      '& > ul > li': {
+        padding: '3px 8px',
+      },
+      '& > ul > li[aria-selected]': {
+        backgroundColor: 'rgba(91,156,246,0.2) !important',
+        color: '#e0e6ed',
+      },
+    },
+    '.cm-completionLabel': { color: '#e0e6ed' },
+    '.cm-completionDetail': { color: '#546e7a', fontStyle: 'italic', marginLeft: '8px' },
+    '.cm-completionMatchedText': { color: '#ffcb6b', textDecoration: 'none', fontWeight: '600' },
+    '.cm-completionIcon': { opacity: '0.7' },
   },
   { dark: true },
 );
@@ -28,26 +62,43 @@ const cmTheme = EditorView.theme(
 interface QueryEditorProps {
   value: string;
   onChange: (value: string) => void;
+  fields?: string[];
+  sources?: string[];
 }
 
-export default function QueryEditor({ value, onChange }: QueryEditorProps) {
+export default function QueryEditor({ value, onChange, fields, sources }: QueryEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  // Ref-based getters so completion always sees current values
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
+  const sourcesRef = useRef(sources);
+  sourcesRef.current = sources;
+
+  // Format for display in editor
+  const formatted = formatQuery(value);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
     const state = EditorState.create({
-      doc: value,
+      doc: formatted,
       extensions: [
         cmTheme,
-        pipeQuery(),
+        pipeQuery({
+          completion: {
+            fields: () => fieldsRef.current ?? [],
+            sources: () => sourcesRef.current ?? [],
+          },
+        }),
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            onChangeRef.current(update.state.doc.toString());
+            // Flatten multi-line back to single-line for storage
+            onChangeRef.current(flattenQuery(update.state.doc.toString()));
           }
         }),
       ],
@@ -68,9 +119,11 @@ export default function QueryEditor({ value, onChange }: QueryEditorProps) {
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    const current = view.state.doc.toString();
-    if (current !== value) {
-      view.dispatch({ changes: { from: 0, to: current.length, insert: value } });
+    const current = flattenQuery(view.state.doc.toString());
+    const incoming = flattenQuery(value);
+    if (current !== incoming) {
+      const newFormatted = formatQuery(value);
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: newFormatted } });
     }
   }, [value]);
 

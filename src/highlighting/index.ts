@@ -15,6 +15,8 @@ export {
 
 // CodeMirror 6
 export { pipeQuery, pipeQueryHighlightStyle, pipeQueryHighlightExtension } from './codemirror/index';
+export { pipeQueryCompletion, type PipeQueryCompletionConfig } from './codemirror/completion';
+export type { PipeQueryConfig } from './codemirror/index';
 
 // Monaco Editor
 export { registerPipeQuery, monarchLanguage, languageConfiguration, tokenThemeRules } from './monaco/index';
