@@ -6,14 +6,22 @@ Connect to any data source (REST APIs, WebSockets, files), run pipe-based querie
 
 ## Installation
 
+The package is published to [GitHub Packages](https://github.com/andreadito/pipequery/packages). To install, first configure npm to use the GitHub registry for the `@andreadito` scope:
+
 ```bash
-# From npm
+# 1. Create or edit ~/.npmrc to add the GitHub registry
+echo "@andreadito:registry=https://npm.pkg.github.com" >> ~/.npmrc
+
+# 2. Authenticate (use a GitHub PAT with read:packages scope)
+echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> ~/.npmrc
+
+# 3. Install globally
 npm install -g @andreadito/pq
+```
 
-# Or use npx without installing
-npx @andreadito/pq <command>
+Alternatively, install from source:
 
-# From source
+```bash
 git clone https://github.com/andreadito/pipequery.git
 cd pipequery/cli
 npm install && npm run build
