@@ -9,8 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/language": "^6.12.2",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.40.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@lezer/highlight": "^1.2.3",
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",
     "react": "^19.2.0",
