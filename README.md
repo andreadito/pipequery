@@ -1,19 +1,15 @@
-<p align="center">
-  <img src="https://andreadito.github.io/pipequery/logo.svg" alt="PipeQuery" width="80" />
-</p>
-
-<h1 align="center">pipequery-lang</h1>
+<h1 align="center">| PipeQuery</h1>
 
 <p align="center">
   A pipe-based query language for filtering, transforming, and aggregating data in JavaScript/TypeScript.
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@andreadito/pipequery-lang"><img src="https://img.shields.io/npm/v/@andreadito/pipequery-lang.svg" alt="npm version" /></a>
-  <a href="https://github.com/andreadito/pipequery/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@andreadito/pipequery-lang.svg" alt="license" /></a>
-  <a href="https://www.npmjs.com/package/@andreadito/pipequery-lang"><img src="https://img.shields.io/npm/dm/@andreadito/pipequery-lang.svg" alt="downloads" /></a>
+  <a href="https://github.com/andreadito/pipequery/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license" /></a>
+  <a href="https://github.com/andreadito/pipequery/packages"><img src="https://img.shields.io/badge/version-1.0.0--beta-orange.svg" alt="version" /></a>
   <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/zero-dependencies-brightgreen.svg" alt="zero dependencies" /></a>
-  <a href="https://andreadito.github.io/pipequery"><img src="https://img.shields.io/badge/demo-playground-blue.svg" alt="playground" /></a>
+  <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/TypeScript-100%25-blue.svg" alt="TypeScript" /></a>
+  <a href="https://andreadito.github.io/pipequery"><img src="https://img.shields.io/badge/demo-playground-blueviolet.svg" alt="playground" /></a>
 </p>
 
 ---
