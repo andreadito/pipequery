@@ -111,6 +111,7 @@ function CompactPicker({ onSelect }: {
       renderValue={() => (
         <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>+ step</Typography>
       )}
+      MenuProps={{ style: { zIndex: 1400 } }}
       sx={{
         minWidth: 70,
         height: 22,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Paper, Box, Typography, IconButton, Collapse, Tooltip, Chip, Popover } from '@mui/material';
+import { Paper, Box, Typography, IconButton, Collapse, Tooltip, Chip, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import RestoreIcon from '@mui/icons-material/Restore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -11,6 +12,7 @@ import { parseQueryToSteps } from '../../../src/react/types';
 import type { PipelineStep } from '../../../src/react/types';
 import type { PanelConfig } from '../config/defaultPanels';
 import QueryEditor from './QueryEditor';
+import QueryDisplay from './QueryDisplay';
 import SmartRenderer from './SmartRenderer';
 import PipeQueryBuilder from '../../../src/react/PipeQueryBuilder';
 
@@ -88,19 +90,19 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
   // Parse current query into steps when switching to builder mode
   const [builderSteps, setBuilderSteps] = useState<PipelineStep[]>([]);
   const [builderKey, setBuilderKey] = useState(0);
-  const [builderAnchor, setBuilderAnchor] = useState<HTMLElement | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
 
-  const switchToBuilder = useCallback((event: React.MouseEvent<HTMLElement>) => {
+  const switchToBuilder = useCallback((_event: React.MouseEvent<HTMLElement>) => {
     const parsed = parseQueryToSteps(draftQuery);
     setBuilderSource(parsed.source || 'crypto');
     setBuilderSteps(parsed.steps);
     setBuilderKey(k => k + 1);
-    setBuilderAnchor(event.currentTarget);
+    setBuilderOpen(true);
     setEditorMode('builder');
   }, [draftQuery]);
 
   const closeBuilder = useCallback(() => {
-    setBuilderAnchor(null);
+    setBuilderOpen(false);
     setEditorMode('code');
   }, []);
 
@@ -140,12 +142,13 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
 
         <Collapse in={editing}>
           <Box sx={{ mt: 0.5 }}>
-            <QueryEditor value={draftQuery} onChange={handleEditorChange} />
+            <QueryEditor value={draftQuery} onChange={handleEditorChange} fields={availableFields} sources={availableSources} />
           </Box>
         </Collapse>
 
         {!editing && (
           <Box
+            onClick={() => setEditing(true)}
             sx={{
               mt: 0.5,
               px: 0.75,
@@ -159,6 +162,8 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              '&:hover': { borderColor: 'rgba(91,156,246,0.3)', bgcolor: 'rgba(91,156,246,0.1)' },
             }}
           >
             {currentQuery}
@@ -207,71 +212,59 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
         </Box>
       </Box>
 
-      {/* Query display (compact, when not editing) */}
+      {/* Query display (read-only, syntax highlighted, when not editing) */}
       {!editing && (
-        <Box
-          onClick={() => setEditing(true)}
-          sx={{
-            mb: 1.5,
-            px: 1,
-            py: 0.5,
-            borderRadius: 0.75,
-            bgcolor: 'rgba(91,156,246,0.06)',
-            border: '1px solid rgba(91,156,246,0.12)',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.7rem',
-            color: '#8bbcff',
-            cursor: 'pointer',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            '&:hover': { borderColor: 'rgba(91,156,246,0.3)', bgcolor: 'rgba(91,156,246,0.1)' },
-          }}
-        >
-          {currentQuery}
+        <Box sx={{ mb: 1.5 }}>
+          <QueryDisplay value={currentQuery} onClick={() => setEditing(true)} />
         </Box>
       )}
 
-      {/* Code editor (expanded, hidden when builder popover is open) */}
-      <Collapse in={editing && !builderAnchor}>
+      {/* Code editor (expanded, hidden when builder dialog is open) */}
+      <Collapse in={editing && !builderOpen}>
         <Box sx={{ mb: 1.5 }}>
-          <QueryEditor value={draftQuery} onChange={handleEditorChange} />
+          <QueryEditor value={draftQuery} onChange={handleEditorChange} fields={availableFields} sources={availableSources} />
         </Box>
       </Collapse>
 
-      {/* Visual builder popover (horizontal) */}
-      <Popover
-        open={Boolean(builderAnchor)}
-        anchorEl={builderAnchor}
+      {/* Visual builder dialog */}
+      <Dialog
+        open={builderOpen}
         onClose={closeBuilder}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        maxWidth="sm"
+        fullWidth
         slotProps={{
           paper: {
             sx: {
-              p: 2,
               bgcolor: '#1a1f2e',
               border: '1px solid rgba(91,156,246,0.2)',
               borderRadius: 2,
-              maxWidth: '90vw',
-              overflow: 'auto',
+              maxHeight: '80vh',
             },
           },
         }}
       >
-        <PipeQueryBuilder
-          key={builderKey}
-          orientation="horizontal"
-          source={builderSource}
-          onSourceChange={setBuilderSource}
-          availableSources={availableSources}
-          availableFields={availableFields}
-          onQueryChange={(q: string) => handleEditorChange(q)}
-          initialSteps={builderSteps}
-          compact
-          showResult={false}
-        />
-      </Popover>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5, px: 2, borderBottom: '1px solid rgba(91,156,246,0.1)' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#8bbcff' }}>
+            Visual Query Builder — {config.title}
+          </Typography>
+          <IconButton size="small" onClick={closeBuilder} sx={{ color: 'text.secondary' }}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 2 }}>
+          <PipeQueryBuilder
+            key={builderKey}
+            orientation="vertical"
+            source={builderSource}
+            onSourceChange={setBuilderSource}
+            availableSources={availableSources}
+            availableFields={availableFields}
+            onQueryChange={(q: string) => handleEditorChange(q)}
+            initialSteps={builderSteps}
+            showResult={false}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Result area */}
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

@@ -63,6 +63,7 @@ export default function SourceNode({
             value={source}
             label={compact ? undefined : 'Source'}
             onChange={e => onSourceChange(e.target.value)}
+            MenuProps={{ style: { zIndex: 1400 } }}
             sx={{
               fontSize: compact ? '0.72rem' : '0.85rem',
               '& .MuiSelect-select': compact ? { py: 0.5, px: 0.75 } : {},
