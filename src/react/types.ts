@@ -231,3 +231,238 @@ function stepToDsl(step: StepConfig): string | null {
       return step.config.headerField ? `transpose(${step.config.headerField})` : 'transpose()';
   }
 }
+
+// ─── DSL Parsing (inverse of generateQuery) ──────────────────────────────────
+
+/**
+ * Split a string by a delimiter, but only at the top level
+ * (not inside parentheses or quotes).
+ */
+function splitTopLevel(input: string, delimiter: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let current = '';
+
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    const prev = i > 0 ? input[i - 1] : '';
+
+    if (ch === "'" && !inDoubleQuote && prev !== '\\') {
+      inSingleQuote = !inSingleQuote;
+    } else if (ch === '"' && !inSingleQuote && prev !== '\\') {
+      inDoubleQuote = !inDoubleQuote;
+    } else if (!inSingleQuote && !inDoubleQuote) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+    }
+
+    if (
+      depth === 0 &&
+      !inSingleQuote &&
+      !inDoubleQuote &&
+      input.slice(i, i + delimiter.length) === delimiter
+    ) {
+      parts.push(current.trim());
+      current = '';
+      i += delimiter.length - 1;
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+/**
+ * Extract the operation name and the raw args string from a segment like `sort(field desc)`.
+ * Returns null if it doesn't match the `name(...)` pattern.
+ */
+function parseOpCall(segment: string): { name: string; args: string } | null {
+  const match = segment.match(/^(\w+)\((.*)?\)$/s);
+  if (!match) return null;
+  return { name: match[1], args: (match[2] ?? '').trim() };
+}
+
+/**
+ * Parse a single DSL segment into a StepConfig.
+ * Returns null if the segment is not a recognised operation.
+ */
+function parseDslToStep(segment: string): StepConfig | null {
+  const call = parseOpCall(segment);
+  if (!call) return null;
+
+  const { name, args } = call;
+
+  switch (name) {
+    case 'where':
+      return { type: 'where', config: { condition: args } };
+
+    case 'select': {
+      const items = splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean);
+      const fields: string[] = [];
+      const expressions: string[] = [];
+      for (const item of items) {
+        // An expression is anything containing operators, function calls, or 'as' alias
+        if (/\s+as\s+/i.test(item) || /[()*/+\-]/.test(item)) {
+          expressions.push(item);
+        } else {
+          fields.push(item);
+        }
+      }
+      return { type: 'select', config: { fields, expressions } };
+    }
+
+    case 'sort': {
+      const items = splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean);
+      const criteria = items.map(item => {
+        const parts = item.split(/\s+/);
+        const field = parts[0];
+        const direction: 'asc' | 'desc' =
+          parts.length > 1 && parts[parts.length - 1].toLowerCase() === 'desc'
+            ? 'desc'
+            : 'asc';
+        return { field, direction };
+      });
+      return { type: 'sort', config: { criteria } };
+    }
+
+    case 'groupBy': {
+      const fields = splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean);
+      return { type: 'groupBy', config: { fields } };
+    }
+
+    case 'join': {
+      // join(rightSource, condition) — first arg is source, rest is condition
+      const firstComma = findTopLevelComma(args);
+      if (firstComma === -1) {
+        return { type: 'join', config: { rightSource: args.trim(), condition: '' } };
+      }
+      const rightSource = args.slice(0, firstComma).trim();
+      const condition = args.slice(firstComma + 1).trim();
+      return { type: 'join', config: { rightSource, condition } };
+    }
+
+    case 'first': {
+      const count = parseInt(args, 10);
+      return { type: 'first', config: { count: isNaN(count) ? 10 : count } };
+    }
+
+    case 'last': {
+      const count = parseInt(args, 10);
+      return { type: 'last', config: { count: isNaN(count) ? 10 : count } };
+    }
+
+    case 'distinct': {
+      const fields = args ? splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean) : [];
+      return { type: 'distinct', config: { fields } };
+    }
+
+    case 'map': {
+      const expressions = splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean);
+      return { type: 'map', config: { expressions } };
+    }
+
+    case 'reduce': {
+      const firstComma = findTopLevelComma(args);
+      if (firstComma === -1) {
+        return { type: 'reduce', config: { initial: args.trim(), accumulator: '' } };
+      }
+      return {
+        type: 'reduce',
+        config: {
+          initial: args.slice(0, firstComma).trim(),
+          accumulator: args.slice(firstComma + 1).trim(),
+        },
+      };
+    }
+
+    case 'rollup': {
+      const items = splitTopLevel(args, ',').map(s => s.trim()).filter(Boolean);
+      // Heuristic: items without parens/operators are keys, rest are aggregates
+      const keys: string[] = [];
+      const aggregates: string[] = [];
+      for (const item of items) {
+        if (/[()]/.test(item)) {
+          aggregates.push(item);
+        } else {
+          keys.push(item);
+        }
+      }
+      return { type: 'rollup', config: { keys, aggregates } };
+    }
+
+    case 'pivot': {
+      const firstComma = findTopLevelComma(args);
+      if (firstComma === -1) {
+        return { type: 'pivot', config: { pivotField: args.trim(), aggregates: [] } };
+      }
+      const pivotField = args.slice(0, firstComma).trim();
+      const rest = args.slice(firstComma + 1).trim();
+      const aggregates = splitTopLevel(rest, ',').map(s => s.trim()).filter(Boolean);
+      return { type: 'pivot', config: { pivotField, aggregates } };
+    }
+
+    case 'flatten':
+      return { type: 'flatten', config: { field: args || '' } };
+
+    case 'transpose':
+      return { type: 'transpose', config: { headerField: args || '' } };
+
+    default:
+      return null;
+  }
+}
+
+/** Find the index of the first top-level comma in a string. */
+function findTopLevelComma(input: string): number {
+  let depth = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    const prev = i > 0 ? input[i - 1] : '';
+    if (ch === "'" && !inDoubleQuote && prev !== '\\') inSingleQuote = !inSingleQuote;
+    else if (ch === '"' && !inSingleQuote && prev !== '\\') inDoubleQuote = !inDoubleQuote;
+    else if (!inSingleQuote && !inDoubleQuote) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      else if (ch === ',' && depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Parse a pipequery DSL string into a source and array of PipelineSteps.
+ * This is the inverse of `generateQuery()`.
+ *
+ * Best-effort: unrecognised operations are silently skipped.
+ *
+ * @example
+ * ```ts
+ * const { source, steps } = parseQueryToSteps('crypto | sort(price desc) | first(10)');
+ * // source === 'crypto'
+ * // steps has 2 entries: sort and first
+ * ```
+ */
+export function parseQueryToSteps(query: string): { source: string; steps: PipelineStep[] } {
+  if (!query || !query.trim()) return { source: '', steps: [] };
+
+  const segments = splitTopLevel(query.trim(), '|');
+  if (segments.length === 0) return { source: '', steps: [] };
+
+  const source = segments[0].trim();
+  const steps: PipelineStep[] = [];
+  let idCounter = 0;
+
+  for (let i = 1; i < segments.length; i++) {
+    const stepConfig = parseDslToStep(segments[i]);
+    if (stepConfig) {
+      steps.push({ id: `pq_${idCounter++}`, step: stepConfig });
+    }
+  }
+
+  return { source, steps };
+}
