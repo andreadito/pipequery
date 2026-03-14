@@ -1755,11 +1755,11 @@ const editor = monaco.editor.create(container, {
           </Typography>
 
           <SubSection title="Installation">
-            <CodeBlock lang="bash">{`npm install -g @andreadito/pq`}</CodeBlock>
+            <CodeBlock>{`npm install -g @andreadito/pq`}</CodeBlock>
           </SubSection>
 
           <SubSection title="Quick Start">
-            <CodeBlock lang="bash">{`# Scaffold a project with example config
+            <CodeBlock>{`# Scaffold a project with example config
 pq init
 
 # Start the server (foreground or daemon)
