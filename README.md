@@ -42,9 +42,13 @@ pq serve -d              # start the server as a daemon
 pq dashboard             # launch the TUI dashboard
 pq query "crypto | sort(price desc) | first(5)"
 pq stop                  # stop the server
+
+# Create a live API endpoint on the fly — no config needed
+pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
+# → http://localhost:3000/api/top-coins is instantly available
 ```
 
-The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types: table, bar chart, sparkline, stat, order book, heatmap, and candlestick chart. See [`cli/README.md`](./cli/README.md) for full documentation.
+Create API endpoints on the fly without editing config files — just `pq endpoint add` with a PipeQuery expression and your endpoint is live immediately. The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types. See [`cli/README.md`](./cli/README.md) for full documentation.
 
 ## Quick Start
 

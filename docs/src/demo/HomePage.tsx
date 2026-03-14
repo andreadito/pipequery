@@ -3894,7 +3894,7 @@ console.log(expensive);`}
          ════════════════════════════════════════════════════════════════════ */}
       <Section sx={{ py: { xs: 6, md: 8 } }}>
         <SectionLabel>CLI</SectionLabel>
-        <SectionTitle>Terminal dashboards with pq</SectionTitle>
+        <SectionTitle>Live APIs and dashboards with pq</SectionTitle>
         <Typography
           sx={{
             fontSize: "1.05rem",
@@ -3905,9 +3905,8 @@ console.log(expensive);`}
           }}
         >
           The <code style={{ color: C.orange, fontFamily: '"JetBrains Mono", monospace', fontSize: "0.9em" }}>pq</code> CLI
-          connects to any data source, runs pipe-based queries, and renders live terminal dashboards
-          with 7 visualization types — tables, bar charts, sparklines, order books, heatmaps,
-          candlestick charts, and stat boxes.
+          connects to any data source and lets you create live JSON API endpoints on the fly —
+          no config files needed. It also renders rich terminal dashboards with 7 visualization types.
         </Typography>
 
         <Box
@@ -3936,8 +3935,8 @@ console.log(expensive);`}
             },
             {
               icon: <BoltIcon sx={{ fontSize: 20, color: C.blue }} />,
-              title: "Daemon mode",
-              desc: "Run the server in the background with pq serve -d and pq stop.",
+              title: "Instant API endpoints",
+              desc: "Create live JSON endpoints on the fly with pq endpoint add — no config needed.",
             },
           ].map((item) => (
             <Box
@@ -4014,18 +4013,20 @@ console.log(expensive);`}
             </Typography>
             <CopyButton
               text={`npm install -g @andreadito/pq
-pq init
-pq serve -d
-pq dashboard`}
+pq init && pq serve -d
+pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+curl http://localhost:3000/api/top`}
             />
           </Box>
           <Box sx={{ p: { xs: 2, md: 2.5 } }}>
             <CodeBlock
               lineNumbers={false}
               code={`$ npm install -g @andreadito/pq
-$ pq init
-$ pq serve -d
-$ pq dashboard -n trading`}
+$ pq init && pq serve -d
+$ pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+  ✓ Endpoint /api/top created
+$ curl localhost:3000/api/top
+  [{ "name": "Bitcoin", "price": 67234 }, ...]`}
             />
           </Box>
         </Box>

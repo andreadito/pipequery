@@ -4,6 +4,8 @@ A command-line tool for building data pipelines, REST APIs, and terminal dashboa
 
 Connect to any data source (REST APIs, WebSockets, files), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
 
+**Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
+
 ## Installation
 
 ```bash
@@ -93,13 +95,13 @@ Source types:
 
 ### `pq endpoint`
 
-Manage API endpoints that serve query results over HTTP.
+Create API endpoints on the fly — no config file edits needed. Each endpoint runs a PipeQuery expression against live data and serves the result as JSON over HTTP. Changes take effect immediately and are persisted to `pipequery.yaml`.
 
 ```bash
 # List endpoints
 pq endpoint list
 
-# Add an endpoint with a PipeQuery expression
+# Create a live API endpoint instantly
 pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
 
 # Add with response caching
@@ -107,6 +109,9 @@ pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
 
 # Remove an endpoint
 pq endpoint remove /api/top-coins
+
+# Your endpoint is immediately available:
+# curl http://localhost:3000/api/top-coins
 ```
 
 ### `pq dashboard`

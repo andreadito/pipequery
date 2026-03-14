@@ -1749,7 +1749,9 @@ const editor = monaco.editor.create(container, {
         <Section id="cli" title="CLI — pq">
           <Typography sx={{ fontSize: '0.85rem', color: '#8899aa', lineHeight: 1.6, mb: 3 }}>
             PipeQuery ships a CLI tool (<code>pq</code>) for building data pipelines, REST APIs,
-            and rich terminal dashboards. Install it globally and connect to any data source.
+            and rich terminal dashboards. Create live JSON API endpoints on the fly — just{' '}
+            <code>pq endpoint add</code> with a PipeQuery expression and your endpoint is
+            instantly available, no config file edits needed.
           </Typography>
 
           <SubSection title="Installation">
@@ -1764,11 +1766,14 @@ pq init
 pq serve
 pq serve -d          # daemon mode
 
-# Run a query
+# Create a live API endpoint on the fly — no config needed
+pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+# → http://localhost:3000/api/top is instantly available
+
+# Run ad-hoc queries
 pq query "crypto | sort(price desc) | first(5)"
 
 # Launch the terminal dashboard
-pq dashboard
 pq dashboard -n trading
 
 # Stop the server
