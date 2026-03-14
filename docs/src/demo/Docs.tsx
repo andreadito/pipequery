@@ -310,6 +310,7 @@ const NAV_SECTIONS = [
   { id: 'performance', label: 'Performance' },
   { id: 'error-handling', label: 'Error Handling' },
   { id: 'editor-integration', label: 'Editor Integration' },
+  { id: 'cli', label: 'CLI (pq)' },
 ];
 
 function SideNav({ active }: { active: string }) {
@@ -1739,6 +1740,100 @@ const editor = monaco.editor.create(container, {
                     {t.label}
                   </Typography>
                   <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{t.example}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </SubSection>
+        </Section>
+
+        <Section id="cli" title="CLI — pq">
+          <Typography sx={{ fontSize: '0.85rem', color: '#8899aa', lineHeight: 1.6, mb: 3 }}>
+            PipeQuery ships a CLI tool (<code>pq</code>) for building data pipelines, REST APIs,
+            and rich terminal dashboards. Install it globally and connect to any data source.
+          </Typography>
+
+          <SubSection title="Installation">
+            <CodeBlock lang="bash">{`npm install -g @andreadito/pq`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Quick Start">
+            <CodeBlock lang="bash">{`# Scaffold a project with example config
+pq init
+
+# Start the server (foreground or daemon)
+pq serve
+pq serve -d          # daemon mode
+
+# Run a query
+pq query "crypto | sort(price desc) | first(5)"
+
+# Launch the terminal dashboard
+pq dashboard
+pq dashboard -n trading
+
+# Stop the server
+pq stop`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Commands">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5, mb: 2 }}>
+              {[
+                { cmd: 'pq init', desc: 'Scaffold a pipequery.yaml config file' },
+                { cmd: 'pq serve', desc: 'Start the server (-d for daemon mode)' },
+                { cmd: 'pq stop', desc: 'Stop the server (--force for SIGKILL)' },
+                { cmd: 'pq query', desc: 'Run a PipeQuery expression' },
+                { cmd: 'pq dashboard', desc: 'Launch the TUI dashboard' },
+                { cmd: 'pq source', desc: 'Manage data sources at runtime' },
+                { cmd: 'pq endpoint', desc: 'Manage API endpoints' },
+                { cmd: 'pq monitor', desc: 'Real-time activity monitor' },
+                { cmd: 'pq repl', desc: 'Interactive query REPL' },
+                { cmd: 'pq remote', desc: 'Docker-based deployment' },
+              ].map((item) => (
+                <Box key={item.cmd} sx={{ display: 'flex', gap: 1.5, alignItems: 'baseline' }}>
+                  <code style={{ color: '#ffcb6b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{item.cmd}</code>
+                  <Typography sx={{ fontSize: '0.78rem', color: '#667788' }}>{item.desc}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </SubSection>
+
+          <SubSection title="Dashboard Visualizations">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              The dashboard renders panels in a resizable 2-column grid with live SSE updates.
+              Use <code>[</code> and <code>]</code> to resize the focused panel (25%–75%).
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
+              {[
+                { label: 'table', desc: 'Scrollable data table with keyboard navigation' },
+                { label: 'bar', desc: 'Horizontal bar chart' },
+                { label: 'sparkline', desc: 'Mini line chart using braille characters' },
+                { label: 'stat', desc: 'Single value display' },
+                { label: 'orderbook', desc: 'Live bid/ask depth chart with spread' },
+                { label: 'heatmap', desc: 'Color-coded numeric grid' },
+                { label: 'candle', desc: 'ASCII candlestick chart for OHLC data' },
+              ].map((v) => (
+                <Box key={v.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
+                  <code style={{ color: '#c792ea', fontSize: '0.78rem', fontWeight: 600 }}>{v.label}</code>
+                  <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{v.desc}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </SubSection>
+
+          <SubSection title="Data Sources">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              Configure sources in <code>pipequery.yaml</code> or manage them at runtime with <code>pq source</code>.
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              {[
+                { label: 'rest', desc: 'Poll a REST API at a configurable interval' },
+                { label: 'websocket', desc: 'Stream data from a WebSocket connection' },
+                { label: 'file', desc: 'Read JSON or CSV files, optionally watch for changes' },
+                { label: 'static', desc: 'Inline JSON data defined in config' },
+              ].map((s) => (
+                <Box key={s.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
+                  <code style={{ color: '#82aaff', fontSize: '0.78rem', fontWeight: 600 }}>{s.label}</code>
+                  <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{s.desc}</Typography>
                 </Box>
               ))}
             </Box>
