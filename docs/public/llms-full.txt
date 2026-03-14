@@ -469,6 +469,154 @@ Error types:
 
 ---
 
+## CLI — pq
+
+PipeQuery ships a CLI tool (`pq`) for building data pipelines, live REST APIs, and rich terminal dashboards.
+
+### Install
+
+```bash
+npm install -g @andreadito/pq
+```
+
+### Key Feature: Instant API Endpoints
+
+Create live JSON API endpoints on the fly without editing config files. Just run a command and the endpoint is immediately available:
+
+```bash
+pq init                  # scaffold a project with pipequery.yaml
+pq serve -d              # start the server as a daemon
+
+# Create endpoints instantly — no config file edits needed
+pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
+# → http://localhost:3000/api/top-coins is immediately available
+
+pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
+# → cached for 30 seconds
+
+# Query it
+curl http://localhost:3000/api/top-coins
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `pq init` | Scaffold a project with example `pipequery.yaml` config |
+| `pq serve` | Start the HTTP server (foreground) |
+| `pq serve -d` | Start the server as a background daemon |
+| `pq stop` | Stop the running server (sends SIGTERM) |
+| `pq stop --force` | Force kill the server (SIGKILL) |
+| `pq query <expr>` | Run an ad-hoc PipeQuery expression against live sources |
+| `pq query <expr> -f json` | Output as JSON instead of table |
+| `pq endpoint add <path> -q <expr>` | Create a live API endpoint on the fly |
+| `pq endpoint add <path> -q <expr> -c <ttl>` | Create with response caching (e.g. `-c 30s`) |
+| `pq endpoint list` | List all registered endpoints |
+| `pq endpoint remove <path>` | Remove an endpoint |
+| `pq source add <name> -u <url>` | Add a REST/WebSocket data source at runtime |
+| `pq source list` | List data sources and their health status |
+| `pq source remove <name>` | Remove a data source |
+| `pq dashboard` | Launch the default terminal dashboard |
+| `pq dashboard -n <name>` | Launch a named dashboard from config |
+| `pq monitor` | Live server activity monitor |
+| `pq completion` | Generate shell completions (bash/zsh/fish) |
+
+### Configuration — pipequery.yaml
+
+```yaml
+sources:
+  crypto:
+    url: https://api.example.com/prices
+    interval: 5s
+  orderbook:
+    url: wss://stream.binance.com/ws/btcusdt@depth20@1000ms
+    type: websocket
+  trades:
+    url: wss://stream.binance.com/ws/btcusdt@aggTrade
+    type: websocket
+    maxBuffer: 200
+  local-data:
+    file: ./data/items.json
+
+endpoints:
+  /api/prices:
+    query: crypto | sort(price desc)
+  /api/top:
+    query: crypto | sort(market_cap desc) | first(10)
+    cache: 30s
+
+dashboards:
+  main:
+    panels:
+      - title: Prices
+        source: crypto
+        query: crypto | sort(price desc) | first(20)
+        viz: table
+        size: half
+      - title: Order Book
+        source: orderbook
+        query: orderbook | last(1)
+        viz: orderbook
+        size: half
+```
+
+### Data Sources
+
+- **REST API**: Polled at configurable intervals (`interval: 5s`)
+- **WebSocket**: Real-time streaming with buffer management (`maxBuffer: 200`)
+- **File**: Local CSV/JSON files with watch mode
+- **Inline**: Static data defined directly in YAML
+- All sources can be added/removed at runtime without restart
+
+### Terminal Dashboard
+
+`pq dashboard` launches an interactive TUI built with Ink (React for CLI):
+
+**7 visualization types:**
+- `table` — Scrollable data table with column alignment
+- `bar` — Horizontal bar chart
+- `sparkline` — Inline time-series sparklines
+- `stat` — Large single-value display
+- `orderbook` — Bid/ask depth chart with cumulative bars
+- `heatmap` — Color-coded numeric grid (red → yellow → green)
+- `candle` — ASCII candlestick chart with Unicode box-drawing
+
+**Layout & interaction:**
+- Resizable 2-column grid layout
+- `[` / `]` keys to resize focused panel (25%–75% bounds)
+- `Tab` to cycle focus between panels
+- `↑` / `↓` to scroll within a panel
+- `r` to force refresh, `q` to quit
+- Real-time SSE push updates with polling fallback
+
+### Server Architecture
+
+- **Fastify** HTTP server with SSE streaming endpoint
+- **Hot-reload**: sources, endpoints, and dashboards update live without restart
+- **Response caching** with configurable TTL per endpoint
+- **Activity logging** with request/response tracking
+- **Health endpoint** at `/health` with source status
+- **Control API** at `/api/_control/*` for runtime management
+- **Daemon mode** with PID file management (`.pipequery/server.json`)
+
+### Control API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/_control/sources` | GET | List all sources and health |
+| `/api/_control/sources` | POST | Add a new source |
+| `/api/_control/sources/:name` | DELETE | Remove a source |
+| `/api/_control/sources/:name/test` | POST | Test a source connection |
+| `/api/_control/endpoints` | GET | List all endpoints |
+| `/api/_control/endpoints` | POST | Add a new endpoint |
+| `/api/_control/endpoints` | DELETE | Remove an endpoint |
+| `/api/_control/query` | POST | Run an ad-hoc query |
+| `/api/_control/refresh` | POST | Force refresh all sources |
+| `/api/_control/sse?queries=<json>` | GET | SSE stream for dashboard queries |
+| `/api/_control/activity` | GET | Recent server activity log |
+
+---
+
 ## Sub-packages
 
 ### Syntax Highlighting

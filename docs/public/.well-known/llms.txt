@@ -84,6 +84,65 @@ Utility: distinct_count, sum_abs, first_value, last_value, pct
 
 running_sum, running_avg, running_count, running_min, running_max, row_number, lag, lead
 
+## CLI — pq
+
+PipeQuery ships a CLI tool (`pq`) for building data pipelines, live REST APIs, and terminal dashboards. Install globally:
+
+```bash
+npm install -g @andreadito/pq
+```
+
+### Key Feature: Instant API Endpoints
+
+Create live JSON API endpoints on the fly — no config file edits needed:
+
+```bash
+pq init                  # scaffold a project
+pq serve -d              # start server as daemon
+
+# Create an endpoint instantly
+pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+# → http://localhost:3000/api/top is immediately available
+
+pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `pq init` | Scaffold a project with example `pipequery.yaml` |
+| `pq serve` | Start the server (add `-d` for daemon mode) |
+| `pq stop` | Stop the running server (daemon or foreground) |
+| `pq query <expr>` | Run an ad-hoc PipeQuery expression against live data |
+| `pq endpoint add <path> -q <expr>` | Create a live API endpoint on the fly |
+| `pq endpoint list` | List all registered endpoints |
+| `pq endpoint remove <path>` | Remove an endpoint |
+| `pq source add <name> -u <url>` | Add a data source at runtime |
+| `pq source list` | List data sources and their health |
+| `pq dashboard [-n name]` | Launch an interactive terminal dashboard |
+| `pq monitor` | Live server activity monitor |
+
+### Data Sources
+
+Supports REST APIs, WebSockets, CSV/JSON files, and inline static data. Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support Binance-style streams (`depth`, `aggTrade`, `kline`).
+
+### Terminal Dashboard
+
+The `pq dashboard` command launches a TUI with:
+- 7 visualization types: table, bar chart, sparkline, stat, order book, heatmap, candlestick
+- Resizable 2-column grid layout (resize with `[` / `]` keys)
+- Real-time SSE push updates with polling fallback
+- Keyboard navigation: Tab (focus), ↑↓ (scroll), r (refresh), q (quit)
+
+### Server Architecture
+
+- Fastify-based HTTP server with SSE streaming
+- Hot-reload: sources, endpoints, and dashboards update without restart
+- Response caching with configurable TTL
+- Activity logging and health monitoring
+- Daemon mode with PID management
+
 ## Sub-packages
 
 - `@andreadito/pipequery-lang/highlighting` - CodeMirror 6 + Monaco editor support
