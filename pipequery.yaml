@@ -1,0 +1,113 @@
+# PipeQuery Configuration
+server:
+  port: 3000
+  host: 0.0.0.0
+
+sources:
+  products:
+    type: file
+    path: ./data/products.json
+    watch: true
+
+  crypto:
+    type: rest
+    url: https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1
+    interval: 30s
+
+  # Live streaming prices via Binance WebSocket (updates every ~1s)
+  tickers:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws/!ticker@arr
+
+  # BTC/USDT Order Book depth (top 20 levels, updates every 1s)
+  orderbook:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws/btcusdt@depth20@1000ms
+
+  # BTC/USDT aggregate trades (live trade feed)
+  trades:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws/btcusdt@aggTrade
+    maxBuffer: 200
+
+  # BTC/USDT 1-minute kline/candlestick data
+  candles:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws/btcusdt@kline_1m
+    maxBuffer: 60
+
+endpoints:
+  /api/expensive:
+    query: "products | sort(price desc) | first(5)"
+  /api/by-category:
+    query: "products | groupBy(category)"
+  /api/crypto/top10:
+    query: "crypto | select(name, symbol, current_price, market_cap, price_change_percentage_24h) | first(10)"
+  /api/crypto/gainers:
+    query: "crypto | sort(price_change_percentage_24h desc) | first(5)"
+
+dashboards:
+  main:
+    refresh: 10s
+    panels:
+      - title: All Products
+        query: "products | sort(price desc)"
+        viz: table
+      - title: Stock Levels
+        query: "products | sort(stock desc) | first(8)"
+        viz: bar
+
+  crypto:
+    refresh: 30s
+    panels:
+      - title: "🪙 Top 20 Crypto by Market Cap"
+        query: "crypto | select(name, symbol, current_price, market_cap, price_change_percentage_24h) | first(20)"
+        viz: table
+      - title: "📈 Top Gainers (24h)"
+        query: "crypto | sort(price_change_percentage_24h desc) | select(name, symbol, current_price, price_change_percentage_24h) | first(10)"
+        viz: bar
+      - title: "📉 Top Losers (24h)"
+        query: "crypto | sort(price_change_percentage_24h asc) | select(name, symbol, current_price, price_change_percentage_24h) | first(10)"
+        viz: bar
+      - title: "💰 Total Market Cap (Top 50)"
+        query: "crypto | sum(market_cap)"
+        viz: stat
+      - title: "📋 All 50 Coins (↑↓ to scroll)"
+        query: "crypto | select(name, symbol, current_price, market_cap, price_change_percentage_24h, total_volume)"
+        viz: table
+
+  live:
+    refresh: 5s
+    panels:
+      - title: "⚡ Top USDT Pairs by Volume (LIVE)"
+        query: "tickers | where(endsWith(s, 'USDT')) | sort(v desc) | first(15) | select(s, c, P, v)"
+        viz: table
+      - title: "🚀 Biggest Gainers (24h LIVE)"
+        query: "tickers | where(endsWith(s, 'USDT')) | sort(P desc) | first(10) | select(s, c, P)"
+        viz: bar
+      - title: "📉 Biggest Losers (24h LIVE)"
+        query: "tickers | where(endsWith(s, 'USDT')) | sort(P asc) | first(10) | select(s, c, P)"
+        viz: bar
+      - title: "📊 All USDT Pairs (↑↓ to scroll)"
+        query: "tickers | where(endsWith(s, 'USDT')) | sort(v desc) | select(s, c, P, v, q)"
+        viz: table
+
+  trading:
+    refresh: 2s
+    panels:
+      - title: "📊 BTC/USDT Order Book (LIVE)"
+        query: "orderbook | last(1)"
+        viz: orderbook
+        size: half
+      - title: "🕯 BTC/USDT 1m Candles (LIVE)"
+        query: "candles | last(60)"
+        viz: candle
+        size: half
+      - title: "📈 Top Movers Heatmap"
+        query: "tickers | where(endsWith(s, 'USDT')) | sort(v desc) | first(10) | select(s, c, P, v)"
+        viz: heatmap
+        size: half
+      - title: "⚡ Recent BTC Trades"
+        query: "trades | last(15) | select(p, q, m)"
+        viz: table
+        size: half

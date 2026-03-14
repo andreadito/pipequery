@@ -88,6 +88,12 @@ export class SourceManager {
     return () => this.globalListeners.delete(callback);
   }
 
+  async refreshAll(): Promise<void> {
+    await Promise.all(
+      [...this.sources.values()].map(({ adapter }) => adapter.refresh?.() ?? Promise.resolve()),
+    );
+  }
+
   async dispose(): Promise<void> {
     this.globalListeners.clear();
     for (const entry of this.sources.values()) {

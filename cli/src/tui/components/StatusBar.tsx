@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 
 interface StatusBarProps {
@@ -8,7 +8,6 @@ interface StatusBarProps {
 
 export function StatusBar({ serverUrl, refreshMs }: StatusBarProps) {
   const [status, setStatus] = useState<{ uptime: number; sources: number } | null>(null);
-  const [countdown, setCountdown] = useState(Math.floor(refreshMs / 1000));
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -25,16 +24,9 @@ export function StatusBar({ serverUrl, refreshMs }: StatusBarProps) {
     return () => clearInterval(timer);
   }, [serverUrl, refreshMs]);
 
-  useEffect(() => {
-    setCountdown(Math.floor(refreshMs / 1000));
-    const timer = setInterval(() => {
-      setCountdown((c) => (c <= 1 ? Math.floor(refreshMs / 1000) : c - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [refreshMs]);
-
   const uptimeStr = status ? formatUptime(status.uptime) : '—';
   const sourcesStr = status ? `${status.sources} source(s)` : 'disconnected';
+  const refreshStr = `${Math.floor(refreshMs / 1000)}s`;
 
   return (
     <Box justifyContent="space-between" paddingX={1} borderStyle="single" borderColor="gray" borderTop={false} borderLeft={false} borderRight={false}>
@@ -44,8 +36,8 @@ export function StatusBar({ serverUrl, refreshMs }: StatusBarProps) {
         <Text dimColor>{sourcesStr}</Text>
       </Box>
       <Box gap={2}>
-        <Text dimColor>refresh: {countdown}s</Text>
-        <Text dimColor>q: quit  tab: focus  ↑↓: scroll  r: refresh</Text>
+        <Text dimColor>refresh: {refreshStr}</Text>
+        <Text dimColor>q: quit  tab: focus  ↑↓: scroll  []: resize  r: refresh</Text>
       </Box>
     </Box>
   );

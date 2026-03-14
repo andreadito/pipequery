@@ -78,6 +78,13 @@ export function registerControlRoutes(
     return { ok: true, path };
   });
 
+  // ─── Refresh all sources ─────────────────────────────────────────────────
+
+  app.post('/api/_control/refresh', async () => {
+    await sourceManager.refreshAll();
+    return { ok: true };
+  });
+
   // ─── Ad-hoc query ────────────────────────────────────────────────────────
 
   app.post<{ Body: { query: string } }>('/api/_control/query', async (req) => {

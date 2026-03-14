@@ -51,6 +51,10 @@ export class RestSourceAdapter implements SourceAdapter {
     return () => this.listeners.delete(callback);
   }
 
+  async refresh(): Promise<void> {
+    await this.fetch();
+  }
+
   private async fetch(): Promise<void> {
     try {
       let url = this.config.url;

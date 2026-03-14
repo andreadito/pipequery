@@ -30,6 +30,22 @@
 npm install @andreadito/pipequery-lang
 ```
 
+## CLI — `pq`
+
+PipeQuery also ships a CLI tool for building data pipelines, REST APIs, and rich terminal dashboards.
+
+```bash
+npm install -g @andreadito/pq
+
+pq init                  # scaffold a project
+pq serve -d              # start the server as a daemon
+pq dashboard             # launch the TUI dashboard
+pq query "crypto | sort(price desc) | first(5)"
+pq stop                  # stop the server
+```
+
+The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types: table, bar chart, sparkline, stat, order book, heatmap, and candlestick chart. See [`cli/README.md`](./cli/README.md) for full documentation.
+
 ## Quick Start
 
 ```ts

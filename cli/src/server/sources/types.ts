@@ -11,4 +11,5 @@ export interface SourceAdapter {
   getData(): unknown[];
   getStatus(): SourceStatus;
   onUpdate(callback: (data: unknown[]) => void): () => void;
+  refresh?(): Promise<void>;
 }

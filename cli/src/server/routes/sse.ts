@@ -7,6 +7,7 @@ import type { SourceManager } from '../sources/manager.js';
  *
  * Clients connect to GET /api/_control/sse?queries=<json-encoded-array>
  * and receive server-sent events whenever source data changes.
+ * Updates are throttled to max once per second to avoid overwhelming clients.
  *
  * Each event is a JSON object: { panelIndex: number, result: unknown }
  */
@@ -36,12 +37,29 @@ export function registerSSERoutes(app: FastifyInstance, sourceManager: SourceMan
     // Send initial data for all panels
     sendAllPanels(reply.raw, queries, sourceManager);
 
-    // Subscribe to source updates
-    const unsubscribe = sourceManager.onSourceUpdate(() => {
-      sendAllPanels(reply.raw, queries, sourceManager);
-    });
+    // Throttled update: max once per second
+    let pending = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    // Also send periodic heartbeat to keep connection alive
+    const throttledSend = () => {
+      if (timer) {
+        pending = true;
+        return;
+      }
+      sendAllPanels(reply.raw, queries, sourceManager);
+      timer = setTimeout(() => {
+        timer = null;
+        if (pending) {
+          pending = false;
+          throttledSend();
+        }
+      }, 1000);
+    };
+
+    // Subscribe to source updates
+    const unsubscribe = sourceManager.onSourceUpdate(throttledSend);
+
+    // Periodic heartbeat to keep connection alive
     const heartbeat = setInterval(() => {
       reply.raw.write(':heartbeat\n\n');
     }, 15_000);
@@ -50,6 +68,7 @@ export function registerSSERoutes(app: FastifyInstance, sourceManager: SourceMan
     req.raw.on('close', () => {
       unsubscribe();
       clearInterval(heartbeat);
+      if (timer) clearTimeout(timer);
     });
 
     // Don't let Fastify auto-close the response

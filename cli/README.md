@@ -121,14 +121,45 @@ pq dashboard -n monitor   # Launch a named dashboard
 Keyboard shortcuts:
 - `Tab` / `Shift+Tab` — Cycle panel focus
 - `↑` / `↓` — Scroll table rows
+- `]` / `[` — Grow / shrink focused panel width
 - `r` — Force refresh
 - `q` — Quit
+
+Panels are arranged in an equal-width 2-column grid that fills the terminal. Use `[` and `]` to resize the focused panel (25%–75% range), with the neighboring panel adjusting automatically.
 
 Dashboard panels support multiple visualization types:
 - **table** — Scrollable, sortable data table
 - **bar** — Horizontal bar chart
 - **sparkline** — Mini line chart with braille characters
 - **stat** — Single value display
+- **orderbook** — Live bid/ask depth chart with cumulative bars and spread
+- **heatmap** — Color-coded numeric grid (red → yellow → green)
+- **candle** — ASCII candlestick chart for OHLC data
+
+### `pq stop`
+
+Stops the running PipeQuery server (daemon or foreground).
+
+```bash
+pq stop                # Graceful shutdown (SIGTERM)
+pq stop --force        # Force kill (SIGKILL)
+```
+
+### `pq monitor`
+
+Launches a real-time activity monitor showing server requests, queries, and events.
+
+```bash
+pq monitor
+```
+
+### `pq repl`
+
+Opens an interactive REPL for running PipeQuery expressions against the server.
+
+```bash
+pq repl
+```
 
 ### `pq remote`
 
@@ -269,6 +300,8 @@ pq CLI ──── REST Control API ──── Fastify Server
 ```
 
 The CLI communicates with the server via a control API at `/api/_control/*`. When the server isn't running, config-only commands (like `source list`) read directly from `pipequery.yaml`.
+
+The dashboard uses Server-Sent Events (SSE) for real-time push updates when connected, falling back to polling when SSE is unavailable.
 
 ## License
 

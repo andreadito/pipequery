@@ -68,6 +68,6 @@ export interface DashboardConfig {
 export interface PanelConfig {
   title: string;
   query: string;
-  viz: 'table' | 'bar' | 'sparkline' | 'stat' | 'auto';
+  viz: 'table' | 'bar' | 'sparkline' | 'stat' | 'orderbook' | 'heatmap' | 'candle' | 'auto';
   size?: 'full' | 'half' | 'stat';
 }

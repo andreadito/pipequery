@@ -24,6 +24,7 @@ import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import JoinInnerIcon from "@mui/icons-material/JoinInner";
 import TransformIcon from "@mui/icons-material/Transform";
+import TerminalIcon from "@mui/icons-material/Terminal";
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 
@@ -3883,6 +3884,148 @@ const products = [
 
 const expensive = query(products, 'where(price > 100) | sort(price desc)');
 console.log(expensive);`}
+            />
+          </Box>
+        </Box>
+      </Section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          CLI
+         ════════════════════════════════════════════════════════════════════ */}
+      <Section sx={{ py: { xs: 6, md: 8 } }}>
+        <SectionLabel>CLI</SectionLabel>
+        <SectionTitle>Terminal dashboards with pq</SectionTitle>
+        <Typography
+          sx={{
+            fontSize: "1.05rem",
+            color: C.textMuted,
+            maxWidth: 640,
+            lineHeight: 1.7,
+            mb: 4,
+          }}
+        >
+          The <code style={{ color: C.orange, fontFamily: '"JetBrains Mono", monospace', fontSize: "0.9em" }}>pq</code> CLI
+          connects to any data source, runs pipe-based queries, and renders live terminal dashboards
+          with 7 visualization types — tables, bar charts, sparklines, order books, heatmaps,
+          candlestick charts, and stat boxes.
+        </Typography>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 3,
+            mb: 4,
+          }}
+        >
+          {[
+            {
+              icon: <TerminalIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "Live dashboards",
+              desc: "Resizable 2-column grid with SSE real-time push and polling fallback.",
+            },
+            {
+              icon: <StreamIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "Any data source",
+              desc: "REST APIs, WebSockets, CSV/JSON files, and inline static data.",
+            },
+            {
+              icon: <DashboardIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "7 viz types",
+              desc: "Table, bar, sparkline, stat, order book, heatmap, and candlestick.",
+            },
+            {
+              icon: <BoltIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "Daemon mode",
+              desc: "Run the server in the background with pq serve -d and pq stop.",
+            },
+          ].map((item) => (
+            <Box
+              key={item.title}
+              sx={{
+                p: 2.5,
+                borderRadius: 2,
+                bgcolor: C.surface,
+                border: "1px solid",
+                borderColor: C.border,
+                display: "flex",
+                gap: 2,
+                alignItems: "flex-start",
+              }}
+            >
+              {item.icon}
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "0.92rem",
+                    fontWeight: 600,
+                    color: C.text,
+                    mb: 0.5,
+                  }}
+                >
+                  {item.title}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.82rem",
+                    color: C.textMuted,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {item.desc}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
+        <Box
+          sx={{
+            bgcolor: C.surface,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: C.border,
+            overflow: "hidden",
+            maxWidth: 680,
+          }}
+        >
+          <Box
+            sx={{
+              px: 2,
+              py: 1,
+              borderBottom: "1px solid",
+              borderColor: C.border,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                color: C.textDim,
+                fontFamily: '"JetBrains Mono", monospace',
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              terminal
+            </Typography>
+            <CopyButton
+              text={`npm install -g @andreadito/pq
+pq init
+pq serve -d
+pq dashboard`}
+            />
+          </Box>
+          <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+            <CodeBlock
+              lineNumbers={false}
+              code={`$ npm install -g @andreadito/pq
+$ pq init
+$ pq serve -d
+$ pq dashboard -n trading`}
             />
           </Box>
         </Box>

@@ -4,6 +4,7 @@ import { loadConfig } from '../config/loader.js';
 import { getServerUrl } from '../utils/server-discovery.js';
 import { log } from '../utils/logger.js';
 import { App } from '../tui/App.js';
+import { enableSyncOutput, disableSyncOutput } from '../utils/sync-output.js';
 
 export async function dashboardCommand(opts: { name?: string }) {
   const dashboardName = opts.name ?? 'main';
@@ -24,9 +25,20 @@ export async function dashboardCommand(opts: { name?: string }) {
 
   const serverUrl = await getServerUrl();
 
+  // Enter alternate screen buffer + synchronized output
+  process.stdout.write('\x1B[?1049h');
+  process.stdout.write('\x1B[?25l');
+  enableSyncOutput();
+
   const { waitUntilExit } = render(
     React.createElement(App, { serverUrl, dashboard }),
+    { patchConsole: false },
   );
 
   await waitUntilExit();
+
+  // Restore
+  disableSyncOutput();
+  process.stdout.write('\x1B[?25h');
+  process.stdout.write('\x1B[?1049l');
 }

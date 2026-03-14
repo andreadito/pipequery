@@ -6,8 +6,11 @@ import { queryCommand } from './commands/query.js';
 import { sourceListCommand, sourceAddCommand, sourceRemoveCommand, sourceTestCommand } from './commands/source.js';
 import { endpointListCommand, endpointAddCommand, endpointRemoveCommand } from './commands/endpoint.js';
 import { dashboardCommand } from './commands/dashboard.js';
+import { monitorCommand } from './commands/monitor.js';
 import { remoteDeployCommand, remoteConnectCommand, remoteStatusCommand } from './commands/remote.js';
 import { completionCommand } from './commands/completion.js';
+import { stopCommand } from './commands/stop.js';
+import { startRepl } from './commands/repl.js';
 import { printBanner } from './utils/banner.js';
 
 const program = new Command();
@@ -109,6 +112,13 @@ program
   .option('-n, --name <name>', 'Dashboard name from config', 'main')
   .action(dashboardCommand);
 
+// ─── pq monitor ─────────────────────────────────────────────────────────────
+
+program
+  .command('monitor')
+  .description('Live server monitor — sources, endpoints, logs')
+  .action(monitorCommand);
+
 // ─── pq remote ───────────────────────────────────────────────────────────────
 
 const remote = program.command('remote').description('Manage remote deployment');
@@ -128,6 +138,14 @@ remote
   .description('Check remote server health')
   .action(remoteStatusCommand);
 
+// ─── pq stop ────────────────────────────────────────────────────────────────
+
+program
+  .command('stop')
+  .description('Stop the running PipeQuery server (daemon or foreground)')
+  .option('-f, --force', 'Force kill (SIGKILL instead of SIGTERM)')
+  .action(stopCommand);
+
 // ─── pq completion ───────────────────────────────────────────────────────────
 
 program
@@ -138,4 +156,9 @@ program
 
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
-program.parse();
+// If no args, start interactive REPL
+if (process.argv.length <= 2) {
+  startRepl();
+} else {
+  program.parse();
+}

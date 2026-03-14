@@ -15,10 +15,11 @@ export function Panel({ title, focused = false, loading = false, error, children
   return (
     <Box
       flexDirection="column"
+      flexGrow={1}
       borderStyle="round"
       borderColor={borderColor}
       paddingX={1}
-      minHeight={5}
+      overflow="hidden"
     >
       <Box>
         <Text bold color={focused ? 'cyan' : undefined}>{title}</Text>

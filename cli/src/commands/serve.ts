@@ -30,7 +30,8 @@ export async function serveCommand(opts: { port?: number; host?: string; daemon?
   const { app, sourceManager } = await createServer(config, configPath, cwd);
 
   await mkdir(pqDir, { recursive: true });
-  await writeFile(serverJsonPath, JSON.stringify({ url: `http://localhost:${port}`, pid: process.pid, daemon: false }));
+  const logPath = resolve(pqDir, 'server.log');
+  await writeFile(serverJsonPath, JSON.stringify({ url: `http://localhost:${port}`, pid: process.pid, daemon: false, log: logPath }));
 
   await app.listen({ port, host });
 
@@ -94,6 +95,7 @@ async function startDaemon(cwd: string, port: number, host: string) {
     url: `http://localhost:${port}`,
     pid: child.pid,
     daemon: true,
+    log: logPath,
   }));
 
   log.success(`PipeQuery server started in background (PID: ${child.pid})`);
