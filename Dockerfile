@@ -19,8 +19,14 @@ RUN npm link
 
 WORKDIR /workspace
 
-# Smoke test: pq --help should work
+# Scaffold a default config so `pq serve` works out of the box
+RUN pq init
+
+# Smoke test
 RUN pq --help
 
-ENTRYPOINT ["pq"]
-CMD ["--help"]
+# Expose the default port
+EXPOSE 3000
+
+# Start the server, binding to all interfaces so Docker port mapping works
+CMD ["pq", "serve", "--host", "0.0.0.0"]
