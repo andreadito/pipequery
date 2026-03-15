@@ -48,7 +48,18 @@ pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
 # → http://localhost:3000/api/top-coins is instantly available
 ```
 
-Create API endpoints on the fly without editing config files — just `pq endpoint add` with a PipeQuery expression and your endpoint is live immediately. The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types. See [`cli/README.md`](./cli/README.md) for full documentation.
+Create API endpoints on the fly without editing config files — just `pq endpoint add` with a PipeQuery expression and your endpoint is live immediately.
+
+Connect to any free public API as a data source — no API keys needed:
+
+```bash
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq source add countries -t rest -u "https://restcountries.com/v3.1/all?fields=name,population,region,area" -i 1h
+pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
+pq source add quakes -t rest -u "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson" -i 5m
+```
+
+The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types. See [`cli/README.md`](./cli/README.md) for full documentation.
 
 ## Quick Start
 

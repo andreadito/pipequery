@@ -276,6 +276,34 @@ sources:
       - { code: EU, name: European Union }
 ```
 
+## Example Data Sources
+
+These free public APIs work great with `pq` — no API keys needed:
+
+```bash
+# Crypto prices (CoinGecko)
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq query "crypto | sort(market_cap desc) | first(5) | select(name, current_price, market_cap)"
+
+# World countries (REST Countries)
+pq source add countries -t rest -u "https://restcountries.com/v3.1/all?fields=name,population,region,area" -i 1h
+pq query "countries | sort(population desc) | first(10) | select(name, population, region)"
+
+# E-commerce products (Fake Store)
+pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
+pq query "store | where(price > 50) | sort(price desc) | select(title, price, category)"
+
+# Live earthquakes (USGS)
+pq source add quakes -t rest -u "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson" -i 5m
+
+# Mock users & posts (JSONPlaceholder)
+pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h
+pq source add posts -t rest -u "https://jsonplaceholder.typicode.com/posts" -i 1h
+
+# Exchange rates (NBP)
+pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?format=json" -i 1h
+```
+
 ## PipeQuery Expressions
 
 PipeQuery uses a pipe-based syntax to transform data:

@@ -1829,7 +1829,7 @@ pq stop`}</CodeBlock>
             <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
               Configure sources in <code>pipequery.yaml</code> or manage them at runtime with <code>pq source</code>.
             </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
               {[
                 { label: 'rest', desc: 'Poll a REST API at a configurable interval' },
                 { label: 'websocket', desc: 'Stream data from a WebSocket connection' },
@@ -1842,6 +1842,27 @@ pq stop`}</CodeBlock>
                 </Box>
               ))}
             </Box>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mb: 1 }}>
+              Example sources — no API keys needed
+            </Typography>
+            <CodeBlock>{`# Crypto prices (CoinGecko — 20 coins)
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+
+# World countries (REST Countries — 250 countries)
+pq source add countries -t rest -u "https://restcountries.com/v3.1/all?fields=name,population,region,area" -i 1h
+
+# E-commerce products (Fake Store — 20 products)
+pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
+
+# Live earthquakes (USGS)
+pq source add quakes -t rest -u "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson" -i 5m
+
+# Exchange rates (NBP — 32 currencies)
+pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?format=json" -i 1h
+
+# Mock users & posts (JSONPlaceholder)
+pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
           </SubSection>
         </Section>
       </Box>

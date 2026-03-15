@@ -4014,7 +4014,8 @@ console.log(expensive);`}
             <CopyButton
               text={`npm install -g @andreadito/pq
 pq init && pq serve -d
-pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
 curl http://localhost:3000/api/top`}
             />
           </Box>
@@ -4023,12 +4024,72 @@ curl http://localhost:3000/api/top`}
               lineNumbers={false}
               code={`$ npm install -g @andreadito/pq
 $ pq init && pq serve -d
-$ pq endpoint add /api/top -q "crypto | sort(price desc) | first(5)"
+$ pq source add crypto -t rest -u "https://api.coingecko.com/...&per_page=20" -i 30s
+  ✓ Source "crypto" added and live (20 rows)
+$ pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
   ✓ Endpoint /api/top created
 $ curl localhost:3000/api/top
-  [{ "name": "Bitcoin", "price": 67234 }, ...]`}
+  [{ "name": "Bitcoin", "current_price": 71832 }, ...]`}
             />
           </Box>
+        </Box>
+
+        {/* Example data sources */}
+        <Typography
+          sx={{
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            color: C.text,
+            mt: 4,
+            mb: 1.5,
+          }}
+        >
+          Example data sources — no API keys needed
+        </Typography>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 1.5,
+          }}
+        >
+          {[
+            { name: "Crypto prices", desc: "20 coins with price, market cap, volume, 24h change" },
+            { name: "World countries", desc: "250 countries with population, region, area" },
+            { name: "E-commerce", desc: "20 products with title, price, category, rating" },
+            { name: "Earthquakes", desc: "Live earthquake feed updated every 5 minutes" },
+            { name: "Exchange rates", desc: "32 currency rates updated daily" },
+            { name: "Mock data", desc: "100 posts, 10 users — great for testing queries" },
+          ].map((item) => (
+            <Box
+              key={item.name}
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                alignItems: "baseline",
+                py: 0.5,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  color: C.blue,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.name}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  color: C.textMuted,
+                }}
+              >
+                {item.desc}
+              </Typography>
+            </Box>
+          ))}
         </Box>
       </Section>
 
