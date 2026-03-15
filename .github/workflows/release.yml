@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump level'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      packages:
+        description: 'Which packages to release'
+        required: true
+        type: choice
+        options:
+          - all
+          - engine
+          - cli
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # ─── Version Bump ───────────────────────────────────────────────────────────
+  version-bump:
+    runs-on: ubuntu-latest
+    outputs:
+      engine-version: ${{ steps.bump.outputs.engine-version }}
+      cli-version: ${{ steps.bump.outputs.cli-version }}
+      release-tag: ${{ steps.bump.outputs.release-tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump versions
+        id: bump
+        run: |
+          BUMP="${{ inputs.bump }}"
+          PACKAGES="${{ inputs.packages }}"
+          COMMIT_MSG="release:"
+          RELEASE_TAG=""
+
+          # Bump engine version
+          if [[ "$PACKAGES" == "all" || "$PACKAGES" == "engine" ]]; then
+            cd $GITHUB_WORKSPACE
+            npm version "$BUMP" --no-git-tag-version
+            ENGINE_VERSION=$(node -p "require('./package.json').version")
+            echo "engine-version=$ENGINE_VERSION" >> "$GITHUB_OUTPUT"
+            COMMIT_MSG="$COMMIT_MSG engine v$ENGINE_VERSION"
+            RELEASE_TAG="v$ENGINE_VERSION"
+          fi
+
+          # Bump CLI version
+          if [[ "$PACKAGES" == "all" || "$PACKAGES" == "cli" ]]; then
+            cd $GITHUB_WORKSPACE/cli
+            npm version "$BUMP" --no-git-tag-version
+            CLI_VERSION=$(node -p "require('./package.json').version")
+            echo "cli-version=$CLI_VERSION" >> "$GITHUB_OUTPUT"
+            COMMIT_MSG="$COMMIT_MSG cli v$CLI_VERSION"
+            if [[ -z "$RELEASE_TAG" ]]; then
+              RELEASE_TAG="cli-v$CLI_VERSION"
+            fi
+          fi
+
+          echo "release-tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+          # Commit and tag
+          cd $GITHUB_WORKSPACE
+          git add -A
+          git commit -m "$COMMIT_MSG"
+
+          if [[ "$PACKAGES" == "all" || "$PACKAGES" == "engine" ]]; then
+            git tag "v$ENGINE_VERSION"
+          fi
+          if [[ "$PACKAGES" == "all" || "$PACKAGES" == "cli" ]]; then
+            git tag "cli-v$CLI_VERSION"
+          fi
+
+          git push origin main --tags
+
+  # ─── Test ───────────────────────────────────────────────────────────────────
+  test:
+    needs: version-bump
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install and test engine
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Install and test CLI
+        working-directory: cli
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+  # ─── Publish Engine to GitHub Packages ──────────────────────────────────────
+  publish-engine:
+    needs: test
+    if: inputs.packages == 'all' || inputs.packages == 'engine'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Publish CLI to GitHub Packages ─────────────────────────────────────────
+  publish-cli:
+    needs: test
+    if: inputs.packages == 'all' || inputs.packages == 'cli'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install and build
+        working-directory: cli
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish
+        working-directory: cli
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Build and Push Docker Image to GHCR ───────────────────────────────────
+  docker:
+    needs: [version-bump, publish-cli]
+    if: inputs.packages == 'all' || inputs.packages == 'cli'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ needs.version-bump.outputs.cli-version }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # ─── Create GitHub Release ──────────────────────────────────────────────────
+  github-release:
+    needs: [version-bump, test, publish-engine, publish-cli, docker]
+    if: always() && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.version-bump.outputs.release-tag }}"
+          gh release create "$TAG" \
+            --title "Release $TAG" \
+            --generate-notes
