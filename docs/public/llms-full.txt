@@ -589,6 +589,37 @@ dashboards:
 - `r` to force refresh, `q` to quit
 - Real-time SSE push updates with polling fallback
 
+### Docker & Remote Deployment
+
+The `pq` server and CLI are fully decoupled. You can run the server in Docker (locally or on a remote machine) and control it from your local terminal.
+
+**Run locally with Docker Desktop:**
+```bash
+docker build -t pipequery .
+docker run -d -p 3000:3000 pipequery
+pq remote connect http://localhost:3000
+# Now all commands work against the Docker server
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
+curl http://localhost:3000/api/top
+```
+
+**Deploy to a remote server:**
+```bash
+pq remote deploy                    # generates Dockerfile, docker-compose.yaml, .dockerignore
+scp -r . user@server:~/pipequery
+ssh user@server "cd pipequery && docker compose up -d"
+pq remote connect https://my-server.example.com:3000
+# All commands now work against the remote server
+```
+
+**How it works:**
+- `pq remote connect <url>` saves the remote URL in local `pipequery.yaml`
+- After connecting, all CLI commands (`query`, `source`, `endpoint`, `dashboard`, `monitor`) talk to the remote server
+- No local server needed — just the `pq` CLI
+- `pq remote status` checks remote server health and uptime
+- Works from any directory — creates `pipequery.yaml` automatically if needed
+
 ### Server Architecture
 
 - **Fastify** HTTP server with SSE streaming endpoint

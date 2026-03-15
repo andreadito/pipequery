@@ -168,18 +168,61 @@ pq repl
 
 ### `pq remote`
 
-Manage Docker-based deployment.
+Deploy the server with Docker and control it from anywhere.
 
 ```bash
 # Generate Dockerfile and docker-compose.yaml
 pq remote deploy
 
-# Connect CLI to a remote server
+# Connect your local CLI to a remote server
 pq remote connect https://my-server.example.com
 
 # Check remote server health
 pq remote status
 ```
+
+## Docker & Remote Deployment
+
+The `pq` server and CLI are fully decoupled. You can run the server in Docker (locally or on a remote machine) and control it from your local terminal.
+
+### Run locally with Docker Desktop
+
+```bash
+# Build and run the server
+docker build -t pipequery .
+docker run -p 3000:3000 pipequery
+
+# From any terminal, connect and start working
+pq remote connect http://localhost:3000
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
+curl http://localhost:3000/api/top
+```
+
+### Deploy to a remote server
+
+```bash
+# Generate deployment files from your project
+pq remote deploy
+# → Creates Dockerfile, docker-compose.yaml, .dockerignore
+
+# Deploy to your server
+scp -r . user@server:~/pipequery
+ssh user@server "cd pipequery && docker compose up -d"
+
+# Connect your local CLI to the remote server
+pq remote connect https://my-server.example.com:3000
+
+# Now all commands work against the remote server
+pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
+pq endpoint add /api/products -q "store | sort(price desc)"
+pq query "store | where(price > 50) | select(title, price, category)"
+pq dashboard -n main
+```
+
+### How it works
+
+Running `pq remote connect <url>` saves the remote URL in your local `pipequery.yaml`. After that, all CLI commands (`query`, `source`, `endpoint`, `dashboard`, `monitor`) talk to the remote server instead of looking for a local one. No local server needed — just the `pq` CLI.
 
 ### `pq completion`
 

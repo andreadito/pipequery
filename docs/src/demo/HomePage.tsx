@@ -3905,8 +3905,8 @@ console.log(expensive);`}
           }}
         >
           The <code style={{ color: C.orange, fontFamily: '"JetBrains Mono", monospace', fontSize: "0.9em" }}>pq</code> CLI
-          connects to any data source and lets you create live JSON API endpoints on the fly —
-          no config files needed. It also renders rich terminal dashboards with 7 visualization types.
+          connects to any data source and lets you create live JSON API endpoints on the fly.
+          Deploy the server with Docker and control it from anywhere — or run everything locally.
         </Typography>
 
         <Box
@@ -3919,24 +3919,24 @@ console.log(expensive);`}
         >
           {[
             {
+              icon: <BoltIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "Instant API endpoints",
+              desc: "Create live JSON endpoints on the fly with pq endpoint add — no config needed.",
+            },
+            {
+              icon: <WidgetsIcon sx={{ fontSize: 20, color: C.blue }} />,
+              title: "Docker & remote",
+              desc: "Run the server in Docker and control it from your local terminal — deploy anywhere.",
+            },
+            {
               icon: <TerminalIcon sx={{ fontSize: 20, color: C.blue }} />,
               title: "Live dashboards",
-              desc: "Resizable 2-column grid with SSE real-time push and polling fallback.",
+              desc: "7 viz types in a resizable 2-column grid with SSE real-time push updates.",
             },
             {
               icon: <StreamIcon sx={{ fontSize: 20, color: C.blue }} />,
               title: "Any data source",
-              desc: "REST APIs, WebSockets, CSV/JSON files, and inline static data.",
-            },
-            {
-              icon: <DashboardIcon sx={{ fontSize: 20, color: C.blue }} />,
-              title: "7 viz types",
-              desc: "Table, bar, sparkline, stat, order book, heatmap, and candlestick.",
-            },
-            {
-              icon: <BoltIcon sx={{ fontSize: 20, color: C.blue }} />,
-              title: "Instant API endpoints",
-              desc: "Create live JSON endpoints on the fly with pq endpoint add — no config needed.",
+              desc: "REST APIs, WebSockets, CSV/JSON files — add or remove at runtime.",
             },
           ].map((item) => (
             <Box
@@ -4012,8 +4012,13 @@ console.log(expensive);`}
               terminal
             </Typography>
             <CopyButton
-              text={`npm install -g @andreadito/pq
-pq init && pq serve -d
+              text={`# Run the server in Docker
+docker run -d -p 3000:3000 pipequery
+
+# Connect your local CLI to the Docker server
+pq remote connect http://localhost:3000
+
+# Add sources and create endpoints — all remote
 pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
 pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
 curl http://localhost:3000/api/top`}
@@ -4022,8 +4027,14 @@ curl http://localhost:3000/api/top`}
           <Box sx={{ p: { xs: 2, md: 2.5 } }}>
             <CodeBlock
               lineNumbers={false}
-              code={`$ npm install -g @andreadito/pq
-$ pq init && pq serve -d
+              code={`# Run the server in Docker
+$ docker run -d -p 3000:3000 pipequery
+
+# Connect your local CLI to the Docker server
+$ pq remote connect http://localhost:3000
+  ✓ Connected to remote server at http://localhost:3000
+
+# Add sources and create endpoints remotely
 $ pq source add crypto -t rest -u "https://api.coingecko.com/...&per_page=20" -i 30s
   ✓ Source "crypto" added and live (20 rows)
 $ pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"

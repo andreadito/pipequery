@@ -50,14 +50,22 @@ pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
 
 Create API endpoints on the fly without editing config files — just `pq endpoint add` with a PipeQuery expression and your endpoint is live immediately.
 
-Connect to any free public API as a data source — no API keys needed:
+### Run with Docker
+
+The server and CLI are fully decoupled — deploy the server anywhere with Docker and control it from your local terminal:
 
 ```bash
+# Run the server in Docker
+docker run -p 3000:3000 pipequery
+
+# From any folder on your machine, connect and start working
+pq remote connect http://localhost:3000
 pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
-pq source add countries -t rest -u "https://restcountries.com/v3.1/all?fields=name,population,region,area" -i 1h
-pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
-pq source add quakes -t rest -u "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson" -i 5m
+pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
+curl http://localhost:3000/api/top
 ```
+
+Works the same with a remote server — just `pq remote connect https://my-server.example.com:3000`.
 
 The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types. See [`cli/README.md`](./cli/README.md) for full documentation.
 

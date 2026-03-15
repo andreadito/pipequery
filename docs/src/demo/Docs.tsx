@@ -1864,6 +1864,49 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 # Mock users & posts (JSONPlaceholder)
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
           </SubSection>
+
+          <SubSection title="Docker & Remote Deployment">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              The <code>pq</code> server and CLI are fully decoupled. Run the server in Docker
+              (locally or on a remote machine) and control it from your local terminal.
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mb: 1 }}>
+              Run locally with Docker Desktop
+            </Typography>
+            <CodeBlock>{`# Build and run the server
+docker build -t pipequery .
+docker run -d -p 3000:3000 pipequery
+
+# Connect your local CLI to the Docker server
+pq remote connect http://localhost:3000
+
+# Now all commands work against the Docker server
+pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
+pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
+curl http://localhost:3000/api/top`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Deploy to a remote server
+            </Typography>
+            <CodeBlock>{`# Generate Dockerfile and docker-compose.yaml
+pq remote deploy
+
+# Deploy to your server
+scp -r . user@server:~/pipequery
+ssh user@server "cd pipequery && docker compose up -d"
+
+# Connect your local CLI to the remote server
+pq remote connect https://my-server.example.com:3000
+
+# All commands now work remotely
+pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
+pq endpoint add /api/products -q "store | sort(price desc)"
+pq dashboard -n main`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+              Running <code>pq remote connect {'<url>'}</code> saves the remote URL in your
+              local <code>pipequery.yaml</code>. After that, all CLI commands talk to the remote
+              server — no local server needed.
+            </Typography>
+          </SubSection>
         </Section>
       </Box>
     </Box>
