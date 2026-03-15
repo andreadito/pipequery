@@ -1,0 +1,10 @@
+node_modules
+cli/node_modules
+docs/
+demo-app/
+dist/
+cli/dist/
+.git
+.pipequery
+data
+*.md
