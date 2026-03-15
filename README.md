@@ -5,9 +5,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/andreadito/pipequery/releases/latest"><img src="https://img.shields.io/github/v/release/andreadito/pipequery?label=release&color=orange" alt="release" /></a>
+  <a href="https://github.com/andreadito/pipequery/pkgs/npm/pipequery-lang"><img src="https://img.shields.io/badge/npm-@andreadito/pipequery--lang-cb3837?logo=npm" alt="engine package" /></a>
+  <a href="https://github.com/andreadito/pipequery/pkgs/npm/pq"><img src="https://img.shields.io/badge/npm-@andreadito/pq-cb3837?logo=npm" alt="cli package" /></a>
+  <a href="https://github.com/andreadito/pipequery/pkgs/container/pipequery"><img src="https://img.shields.io/badge/ghcr.io-pipequery-blue?logo=docker" alt="docker" /></a>
   <a href="https://github.com/andreadito/pipequery/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license" /></a>
-  <a href="https://github.com/andreadito/pipequery/packages"><img src="https://img.shields.io/badge/version-1.0.0--beta-orange.svg" alt="version" /></a>
-  <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/zero-dependencies-brightgreen.svg" alt="zero dependencies" /></a>
   <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/TypeScript-100%25-blue.svg" alt="TypeScript" /></a>
   <a href="https://andreadito.github.io/pipequery"><img src="https://img.shields.io/badge/demo-playground-blueviolet.svg" alt="playground" /></a>
 </p>
@@ -17,7 +19,7 @@
 ## Features
 
 - **Pipe-based syntax** &mdash; chain operations with `|`, inspired by Unix pipes and SQL
-- **Zero dependencies** &mdash; core engine has no runtime dependencies
+- **Minimal dependencies** &mdash; lightweight core engine
 - **TypeScript-first** &mdash; full type definitions included
 - **25+ aggregate functions** &mdash; basic, statistical, and financial aggregations
 - **LiveQuery** &mdash; streaming queries with delta/patch support
@@ -56,7 +58,7 @@ The server and CLI are fully decoupled — deploy the server anywhere with Docke
 
 ```bash
 # Run the server in Docker
-docker run -p 3000:3000 pipequery
+docker run -p 3000:3000 ghcr.io/andreadito/pipequery
 
 # From any folder on your machine, connect and start working
 pq remote connect http://localhost:3000
@@ -72,7 +74,7 @@ The dashboard features a resizable 2-column grid with live SSE updates and 7 vis
 ## Quick Start
 
 ```ts
-import { query } from 'pipequery-lang';
+import { query } from '@andreadito/pipequery-lang';
 
 const data = [
   { name: 'Laptop', price: 999, category: 'Electronics' },
@@ -165,7 +167,7 @@ nested.field.path                          // dot access
 Execute a query on data. Accepts a raw array or a named `DataContext` for multi-table queries.
 
 ```ts
-import { query } from 'pipequery-lang';
+import { query } from '@andreadito/pipequery-lang';
 
 // Array shorthand
 query(items, 'where(price > 50) | sort(name asc)');
@@ -182,7 +184,7 @@ query(
 Pre-compile a query for repeated use. Returns a reusable function.
 
 ```ts
-import { compile } from 'pipequery-lang';
+import { compile } from '@andreadito/pipequery-lang';
 
 const fn = compile('where(price > 100) | sort(price desc)');
 const result = fn({ _data: items });
@@ -193,7 +195,7 @@ const result = fn({ _data: items });
 Parse a query into its AST without executing.
 
 ```ts
-import { parseQuery } from 'pipequery-lang';
+import { parseQuery } from '@andreadito/pipequery-lang';
 
 const ast = parseQuery('items | where(price > 100)');
 // Inspect tokens, operations, expressions
@@ -204,7 +206,7 @@ const ast = parseQuery('items | where(price > 100)');
 Streaming query evaluator that accepts data patches and re-executes efficiently.
 
 ```ts
-import { liveQuery } from 'pipequery-lang';
+import { liveQuery } from '@andreadito/pipequery-lang';
 
 const lq = liveQuery(initialData, 'where(active == true) | sort(updatedAt desc)', {
   key: 'id',
@@ -227,7 +229,7 @@ lq.dispose();
 Clear the internal compiled-query LRU cache (128 entries by default).
 
 ```ts
-import { clearCache } from 'pipequery-lang';
+import { clearCache } from '@andreadito/pipequery-lang';
 
 clearCache();
 ```
@@ -237,7 +239,7 @@ clearCache();
 All errors include position info (`position`, `line`, `column`) for editor integration.
 
 ```ts
-import { LexerError, ParseError, RuntimeError, DataWeaveError } from 'pipequery-lang';
+import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@andreadito/pipequery-lang';
 
 try {
   query(data, 'where(price >)');
@@ -254,10 +256,10 @@ try {
 
 ```ts
 // CodeMirror 6
-import { pipeQuery } from 'pipequery-lang/highlighting';
+import { pipeQuery } from '@andreadito/pipequery-lang/highlighting';
 
 // Monaco Editor
-import { registerPipeQuery } from 'pipequery-lang/highlighting';
+import { registerPipeQuery } from '@andreadito/pipequery-lang/highlighting';
 ```
 
 A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLanguage.json` for VS Code, IntelliJ, and Sublime Text.
@@ -267,7 +269,7 @@ A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLangua
 ### React Components
 
 ```tsx
-import { PipeQueryBuilder } from 'pipequery-lang/react';
+import { PipeQueryBuilder } from '@andreadito/pipequery-lang/react';
 
 <PipeQueryBuilder
   datasets={datasets}
