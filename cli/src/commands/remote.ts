@@ -1,6 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { loadConfig, saveConfig } from '../config/loader.js';
+import { findConfigPath, loadConfig, saveConfig } from '../config/loader.js';
+import { DEFAULT_CONFIG } from '../config/defaults.js';
+import type { PipeQueryConfig } from '../config/schema.js';
 import { log } from '../utils/logger.js';
 import { generateDockerfile, generateDockerCompose, generateDockerignore } from '../docker/templates.js';
 
@@ -19,11 +21,29 @@ export async function remoteDeployCommand() {
   log.info(`Then: pq remote connect http://localhost:${port}`);
 }
 
-export async function remoteConnectCommand(url: string) {
-  const cwd = process.cwd();
-  const { config, path: configPath } = await loadConfig(cwd);
+/**
+ * Load config if it exists, or create a minimal one for remote-only usage.
+ */
+async function loadOrCreateConfig(cwd: string): Promise<{ config: PipeQueryConfig; path: string }> {
+  const existing = findConfigPath(cwd);
+  if (existing) {
+    return loadConfig(cwd);
+  }
 
-  // Verify the remote server is reachable
+  // No local config — create a minimal one for remote connection
+  const configPath = resolve(cwd, 'pipequery.yaml');
+  const config: PipeQueryConfig = {
+    server: { ...DEFAULT_CONFIG.server },
+    sources: {},
+    endpoints: {},
+    dashboards: {},
+  };
+  await saveConfig(config, configPath);
+  return { config, path: configPath };
+}
+
+export async function remoteConnectCommand(url: string) {
+  // Verify the remote server is reachable first
   try {
     const res = await fetch(`${url}/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -32,6 +52,9 @@ export async function remoteConnectCommand(url: string) {
     return;
   }
 
+  const cwd = process.cwd();
+  const { config, path: configPath } = await loadOrCreateConfig(cwd);
+
   config.remote = { url };
   await saveConfig(config, configPath);
   log.success(`Connected to remote server at ${url}`);
@@ -39,8 +62,14 @@ export async function remoteConnectCommand(url: string) {
 
 export async function remoteStatusCommand() {
   const cwd = process.cwd();
-  const { config } = await loadConfig(cwd);
 
+  const existing = findConfigPath(cwd);
+  if (!existing) {
+    log.error('No remote server configured. Use: pq remote connect <url>');
+    return;
+  }
+
+  const { config } = await loadConfig(cwd);
   const url = config.remote?.url;
   if (!url) {
     log.error('No remote server configured. Use: pq remote connect <url>');
