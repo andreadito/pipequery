@@ -212,9 +212,135 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  # ─── Smoke Test: Docker ─────────────────────────────────────────────────────
+  smoke-test-docker:
+    needs: [version-bump, docker]
+    if: inputs.packages == 'all' || inputs.packages == 'cli'
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ needs.version-bump.outputs.cli-version }}
+    steps:
+      - name: Pull image
+        run: docker pull "$IMAGE"
+
+      - name: Start container
+        run: |
+          docker run -d --name pq-smoke -p 3099:3000 "$IMAGE"
+          sleep 3
+          docker ps --format '{{.Names}}' | grep -q pq-smoke
+
+      - name: Verify pq --help
+        run: docker exec pq-smoke pq --help
+
+      - name: Verify server responds
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3099/)
+          [[ "$HTTP_CODE" =~ ^(200|404)$ ]]
+
+      - name: Add source, endpoint, and query
+        run: |
+          docker exec pq-smoke pq source add testapi -t rest -u "https://jsonplaceholder.typicode.com/todos" -i 60s
+          sleep 2
+          docker exec pq-smoke pq endpoint add /api/todos -q "testapi | first(3)"
+          sleep 1
+          curl -s http://localhost:3099/api/todos | grep -q "title"
+          docker exec pq-smoke pq query "testapi | count()" -f json | grep -qE "[0-9]"
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f pq-smoke || true
+
+  # ─── Smoke Test: CLI ──────────────────────────────────────────────────────
+  smoke-test-cli:
+    needs: publish-cli
+    if: inputs.packages == 'all' || inputs.packages == 'cli'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install CLI from GitHub Packages
+        run: |
+          mkdir test-cli && cd test-cli
+          npm init -y
+          echo "@andreadito:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          npm install @andreadito/pq
+
+      - name: Verify pq --help and --version
+        working-directory: test-cli
+        run: |
+          npx pq --help | grep -qi "pipequery\|usage\|serve"
+          npx pq --version | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+"
+
+      - name: Init, serve, add source, query, stop
+        working-directory: test-cli
+        run: |
+          npx pq init
+          test -f pipequery.yaml
+          npx pq serve -p 3098 -d
+          sleep 2
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:3098/ | grep -qE "200|404"
+          npx pq source add todos -t rest -u "https://jsonplaceholder.typicode.com/todos" -i 60s
+          sleep 2
+          npx pq endpoint add /api/top -q "todos | where(completed == true) | first(5)"
+          sleep 1
+          curl -s http://localhost:3098/api/top | grep -q "title"
+          npx pq query "todos | count()" -f json | grep -qE "[0-9]"
+          npx pq stop
+
+  # ─── Smoke Test: Engine ────────────────────────────────────────────────────
+  smoke-test-engine:
+    needs: publish-engine
+    if: inputs.packages == 'all' || inputs.packages == 'engine'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install engine from GitHub Packages
+        run: |
+          mkdir test-engine && cd test-engine
+          npm init -y
+          echo "@andreadito:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          node -e "const p=require('./package.json'); p.type='module'; require('fs').writeFileSync('package.json',JSON.stringify(p,null,2))"
+          npm install @andreadito/pipequery-lang
+
+      - name: Test ESM import and query execution
+        working-directory: test-engine
+        run: |
+          cat > test.mjs << 'EOF'
+          import { parseQuery, query } from "@andreadito/pipequery-lang";
+
+          // Test parse
+          const ast = parseQuery("data | where(price > 100) | sort(price desc) | first(5)");
+          if (!ast) { console.error("parseQuery failed"); process.exit(1); }
+          console.log("parseQuery OK");
+
+          // Test execute
+          const data = [
+            { name: "Alice", age: 30 },
+            { name: "Bob", age: 25 },
+            { name: "Charlie", age: 35 },
+          ];
+          const result = query(data, "where(age > 28) | sort(age desc)");
+          if (!Array.isArray(result) || result[0].name !== "Charlie") {
+            console.error("query() wrong result:", result);
+            process.exit(1);
+          }
+          console.log("query OK:", JSON.stringify(result));
+          EOF
+          node test.mjs
+
+      - name: Test CJS require
+        working-directory: test-engine
+        run: |
+          cat > test.cjs << 'EOF'
+          const pq = require("@andreadito/pipequery-lang");
+          const keys = Object.keys(pq);
+          if (keys.length === 0) { console.error("empty exports"); process.exit(1); }
+          console.log("CJS OK:", keys.join(", "));
+          EOF
+          node test.cjs
+
   # ─── Create GitHub Release ──────────────────────────────────────────────────
   github-release:
-    needs: [version-bump, test, publish-engine, publish-cli, docker]
+    needs: [version-bump, test, publish-engine, publish-cli, docker, smoke-test-docker, smoke-test-cli, smoke-test-engine]
     if: always() && needs.test.result == 'success'
     runs-on: ubuntu-latest
     steps:
