@@ -17,7 +17,7 @@
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
     "csv-parse": "^5.6.0",
-    "fastify": "^5.3.3",
+    "fastify": "^5.8.3",
     "@fastify/cors": "^11.0.0",
     "ink": "^5.2.0",
     "ora": "^8.2.0",
