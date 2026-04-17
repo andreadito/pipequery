@@ -23,8 +23,8 @@ export function enableSyncOutput() {
 
   process.stdout.write = function (
     chunk: string | Uint8Array,
-    encodingOrCallback?: BufferEncoding | ((err?: Error) => void),
-    callback?: (err?: Error) => void,
+    encodingOrCallback?: BufferEncoding | ((err?: Error | null) => void),
+    callback?: (err?: Error | null) => void,
   ): boolean {
     // Start a synchronized update block
     if (!inSync) {
