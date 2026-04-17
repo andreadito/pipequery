@@ -191,7 +191,7 @@ export default function LivePanel({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       {/* Stats bar */}
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, flexWrap: 'wrap' }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
         <Chip
           icon={<FiberManualRecordIcon sx={{ fontSize: 10 }} />}
           label={playing ? 'STREAMING' : 'PAUSED'}
@@ -241,7 +241,7 @@ export default function LivePanel({
       </Stack>
 
       {/* Controls */}
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
         <IconButton
           onClick={() => setPlaying(!playing)}
           color={playing ? 'warning' : 'success'}

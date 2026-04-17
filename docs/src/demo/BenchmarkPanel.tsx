@@ -172,7 +172,7 @@ export default function BenchmarkPanel() {
   return (
     <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
       {/* Controls */}
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <SpeedIcon sx={{ color: 'primary.main', fontSize: 20 }} />
         <Typography sx={{ fontWeight: 600, fontSize: '0.85rem' }}>Benchmark</Typography>
         <Box sx={{ flex: 1 }} />
@@ -227,7 +227,7 @@ export default function BenchmarkPanel() {
       {/* Results */}
       {suite && (
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
             <Chip
               label={`${suite.size.toLocaleString()} rows`}
               size="small"
@@ -253,7 +253,7 @@ export default function BenchmarkPanel() {
           {/* Legend */}
           <Stack direction="row" spacing={2} sx={{ mb: 1.5, pl: '108px' }}>
             {Object.entries(LIB_COLORS).map(([lib, color]) => (
-              <Stack key={lib} direction="row" spacing={0.5} alignItems="center">
+              <Stack key={lib} direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: 1, bgcolor: color }} />
                 <Typography sx={{ fontSize: '0.62rem', color: '#8899aa' }}>{lib}</Typography>
               </Stack>

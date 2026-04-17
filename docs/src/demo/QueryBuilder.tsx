@@ -20,7 +20,7 @@ import {
   alpha,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -214,7 +214,7 @@ function SourceNode({ source, onSourceChange, availableSources, rowCount }: {
         background: (t) => `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.06)} 0%, transparent 60%)`,
       }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="center">
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
         <StorageIcon sx={{ color: 'primary.main', fontSize: 20 }} />
         <FormControl size="small" sx={{ flex: 1 }}>
           <InputLabel>Source</InputLabel>
@@ -328,7 +328,7 @@ function StepPicker({ anchorEl, onClose, onSelect }: {
           >
             {label}
           </Typography>
-          <Stack direction="row" flexWrap="wrap" gap={0.75}>
+          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.75 }}>
             {ops.map(op => (
               <Chip
                 key={op}
@@ -403,9 +403,9 @@ function StepCard({
       <Stack
         direction="row"
         spacing={1}
-        alignItems="center"
         onClick={onToggleExpand}
         sx={{
+          alignItems: 'center',
           px: 1.5,
           py: 1,
           cursor: 'pointer',
@@ -487,7 +487,7 @@ function ResultNode({ query }: { query: string }) {
         background: (t) => `linear-gradient(135deg, ${alpha(t.palette.success.main, 0.04)} 0%, transparent 60%)`,
       }}
     >
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
         <CodeIcon sx={{ fontSize: 18, color: 'success.main' }} />
         <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
           Generated Query
@@ -541,7 +541,7 @@ function StepConfigForm({
             multiple size="small" freeSolo options={availableFields}
             value={step.config.fields}
             onChange={(_, v) => onChange({ ...step, config: { ...step.config, fields: v } })}
-            renderInput={p => <TextField {...p} placeholder="Fields..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+            renderInput={p => <TextField {...p} placeholder="Fields..." sx={{ '& input': monoSx }} />}
           />
           {step.config.expressions.map((expr, i) => (
             <TextField
@@ -565,7 +565,7 @@ function StepConfigForm({
       return (
         <Stack spacing={1}>
           {step.config.criteria.map((c, i) => (
-            <Stack key={i} direction="row" spacing={1} alignItems="center">
+            <Stack key={i} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Autocomplete
                 size="small" freeSolo options={availableFields} sx={{ flex: 1 }}
                 value={c.field}
@@ -574,7 +574,7 @@ function StepConfigForm({
                   criteria[i] = { ...criteria[i], field: v };
                   onChange({ ...step, config: { criteria } });
                 }}
-                renderInput={p => <TextField {...p} placeholder="Field" InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+                renderInput={p => <TextField {...p} placeholder="Field" sx={{ '& input': monoSx }} />}
               />
               <ToggleButtonGroup
                 size="small" exclusive
@@ -611,7 +611,7 @@ function StepConfigForm({
           multiple size="small" freeSolo options={availableFields}
           value={step.config.fields}
           onChange={(_, v) => onChange({ ...step, config: { fields: v } })}
-          renderInput={p => <TextField {...p} placeholder="Fields to group by..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+          renderInput={p => <TextField {...p} placeholder="Fields to group by..." sx={{ '& input': monoSx }} />}
         />
       );
 
@@ -654,7 +654,7 @@ function StepConfigForm({
           multiple size="small" freeSolo options={availableFields}
           value={step.config.fields}
           onChange={(_, v) => onChange({ ...step, config: { fields: v } })}
-          renderInput={p => <TextField {...p} placeholder="Fields (empty = all)..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+          renderInput={p => <TextField {...p} placeholder="Fields (empty = all)..." sx={{ '& input': monoSx }} />}
         />
       );
 
@@ -704,7 +704,7 @@ function StepConfigForm({
             multiple size="small" freeSolo options={availableFields}
             value={step.config.keys}
             onChange={(_, v) => onChange({ ...step, config: { ...step.config, keys: v } })}
-            renderInput={p => <TextField {...p} placeholder="Group keys..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+            renderInput={p => <TextField {...p} placeholder="Group keys..." sx={{ '& input': monoSx }} />}
           />
           {step.config.aggregates.map((agg, i) => (
             <TextField
@@ -731,7 +731,7 @@ function StepConfigForm({
             size="small" freeSolo options={availableFields}
             value={step.config.pivotField}
             onInputChange={(_, v) => onChange({ ...step, config: { ...step.config, pivotField: v } })}
-            renderInput={p => <TextField {...p} placeholder="Pivot field..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+            renderInput={p => <TextField {...p} placeholder="Pivot field..." sx={{ '& input': monoSx }} />}
           />
           {step.config.aggregates.map((agg, i) => (
             <TextField
@@ -757,7 +757,7 @@ function StepConfigForm({
           size="small" freeSolo options={availableFields}
           value={step.config.field}
           onInputChange={(_, v) => onChange({ ...step, config: { field: v } })}
-          renderInput={p => <TextField {...p} placeholder="Field (optional)..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+          renderInput={p => <TextField {...p} placeholder="Field (optional)..." sx={{ '& input': monoSx }} />}
         />
       );
 
@@ -767,7 +767,7 @@ function StepConfigForm({
           size="small" freeSolo options={availableFields}
           value={step.config.headerField}
           onInputChange={(_, v) => onChange({ ...step, config: { headerField: v } })}
-          renderInput={p => <TextField {...p} placeholder="Header field (optional)..." InputProps={p.InputProps} sx={{ '& input': monoSx }} />}
+          renderInput={p => <TextField {...p} placeholder="Header field (optional)..." sx={{ '& input': monoSx }} />}
         />
       );
   }
