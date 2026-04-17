@@ -59,7 +59,7 @@ function PopoverPicker({ anchorEl, onClose, onSelect, orientation }: {
           >
             {label}
           </Typography>
-          <Stack direction="row" flexWrap="wrap" gap={0.5}>
+          <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
             {ops.map(op => (
               <Chip
                 key={op}

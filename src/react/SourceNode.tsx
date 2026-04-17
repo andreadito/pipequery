@@ -53,8 +53,7 @@ export default function SourceNode({
       <Stack
         direction={isH && compact ? 'column' : 'row'}
         spacing={compact ? 0.5 : 1}
-        alignItems={isH && compact ? 'flex-start' : 'center'}
-        sx={{ width: '100%' }}
+        sx={{ alignItems: isH && compact ? 'flex-start' : 'center', width: '100%' }}
       >
         <StorageIcon sx={{ color: 'primary.main', fontSize: iconSz }} />
         <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>

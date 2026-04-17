@@ -34,7 +34,7 @@ export default function ResultNode({
         background: (t) => `linear-gradient(135deg, ${alpha(t.palette.success.main, 0.04)} 0%, transparent 60%)`,
       }}
     >
-      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: compact ? 0.25 : 0.75 }}>
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mb: compact ? 0.25 : 0.75 }}>
         <CodeIcon sx={{ fontSize: compact ? 14 : 18, color: 'success.main' }} />
         <Typography sx={{ fontWeight: 600, fontSize: compact ? '0.65rem' : '0.8rem' }}>
           Query
