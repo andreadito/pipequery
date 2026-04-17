@@ -7,7 +7,7 @@ import {
   Collapse,
   alpha,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -96,9 +96,9 @@ export default function StepCard({
       <Stack
         direction="row"
         spacing={0.5}
-        alignItems="center"
         onClick={onToggleExpand}
         sx={{
+          alignItems: 'center',
           px: compact ? 0.75 : 1.25,
           py: compact ? 0.375 : 0.75,
           cursor: 'pointer',

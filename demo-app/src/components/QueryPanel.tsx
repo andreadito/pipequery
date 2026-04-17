@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Paper, Box, Typography, IconButton, Collapse, Tooltip, Chip, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import RestoreIcon from '@mui/icons-material/Restore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

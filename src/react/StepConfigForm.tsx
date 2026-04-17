@@ -14,7 +14,7 @@ import {
   Box,
   alpha,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import type { StepConfig } from './types';
 
 const MONO = '"JetBrains Mono", "Fira Code", monospace';
@@ -101,7 +101,7 @@ function AggregateExprRow({
   // Fallback to raw TextField if expression can't be parsed as an aggregate
   if (parsed === null) {
     return (
-      <Stack direction="row" spacing={0.5} alignItems="center">
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
         <TextField
           size="small" fullWidth placeholder="e.g. sum(revenue) as total"
           value={value}
@@ -129,7 +129,7 @@ function AggregateExprRow({
   };
 
   return (
-    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
       {/* Function picker */}
       <Autocomplete
         size="small"
@@ -152,7 +152,7 @@ function AggregateExprRow({
         )}
         sx={{ minWidth: compact ? 100 : 130, flex: '0 1 auto' }}
         renderInput={p => (
-          <TextField {...p} placeholder="fn" InputProps={p.InputProps} sx={{ '& input': { ...mono, minWidth: '60px !important' } }} />
+          <TextField {...p} placeholder="fn" sx={{ '& input': { ...mono, minWidth: '60px !important' } }} />
         )}
       />
 
@@ -165,7 +165,7 @@ function AggregateExprRow({
           sx={{ minWidth: compact ? 80 : 100, flex: 1 }}
           slotProps={{ popper: POPPER_PROPS }}
           renderInput={p => (
-            <TextField {...p} placeholder="field" InputProps={p.InputProps} sx={{ '& input': mono }} />
+            <TextField {...p} placeholder="field" sx={{ '& input': mono }} />
           )}
         />
       )}
@@ -179,7 +179,7 @@ function AggregateExprRow({
           sx={{ minWidth: compact ? 80 : 100, flex: 1 }}
           slotProps={{ popper: POPPER_PROPS }}
           renderInput={p => (
-            <TextField {...p} placeholder="arg2" InputProps={p.InputProps} sx={{ '& input': mono }} />
+            <TextField {...p} placeholder="arg2" sx={{ '& input': mono }} />
           )}
         />
       )}
@@ -281,7 +281,7 @@ export default function StepConfigForm({
             value={step.config.fields}
             onChange={(_, v) => onChange({ ...step, config: { ...step.config, fields: v } })}
             slotProps={{ popper: POPPER_PROPS }}
-            renderInput={p => <TextField {...p} placeholder="Fields..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+            renderInput={p => <TextField {...p} placeholder="Fields..." sx={{ '& input': mono }} />}
           />
           <AggregateList
             aggregates={step.config.expressions}
@@ -297,7 +297,7 @@ export default function StepConfigForm({
       return (
         <Stack spacing={sp}>
           {step.config.criteria.map((c, i) => (
-            <Stack key={i} direction="row" spacing={0.5} alignItems="center">
+            <Stack key={i} direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
               <Autocomplete
                 size="small" freeSolo options={availableFields} sx={{ flex: 1 }}
                 value={c.field}
@@ -307,7 +307,7 @@ export default function StepConfigForm({
                   criteria[i] = { ...criteria[i], field: v };
                   onChange({ ...step, config: { criteria } });
                 }}
-                renderInput={p => <TextField {...p} placeholder="Field" InputProps={p.InputProps} sx={{ '& input': mono }} />}
+                renderInput={p => <TextField {...p} placeholder="Field" sx={{ '& input': mono }} />}
               />
               <ToggleButtonGroup
                 size="small" exclusive
@@ -346,7 +346,7 @@ export default function StepConfigForm({
           value={step.config.fields}
           onChange={(_, v) => onChange({ ...step, config: { fields: v } })}
           slotProps={{ popper: POPPER_PROPS }}
-          renderInput={p => <TextField {...p} placeholder="Fields to group by..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+          renderInput={p => <TextField {...p} placeholder="Fields to group by..." sx={{ '& input': mono }} />}
         />
       );
 
@@ -391,7 +391,7 @@ export default function StepConfigForm({
           value={step.config.fields}
           onChange={(_, v) => onChange({ ...step, config: { fields: v } })}
           slotProps={{ popper: POPPER_PROPS }}
-          renderInput={p => <TextField {...p} placeholder="Fields (empty = all)..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+          renderInput={p => <TextField {...p} placeholder="Fields (empty = all)..." sx={{ '& input': mono }} />}
         />
       );
 
@@ -443,7 +443,7 @@ export default function StepConfigForm({
             value={step.config.keys}
             onChange={(_, v) => onChange({ ...step, config: { ...step.config, keys: v } })}
             slotProps={{ popper: POPPER_PROPS }}
-            renderInput={p => <TextField {...p} placeholder="Group keys..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+            renderInput={p => <TextField {...p} placeholder="Group keys..." sx={{ '& input': mono }} />}
           />
           <AggregateList
             aggregates={step.config.aggregates}
@@ -463,7 +463,7 @@ export default function StepConfigForm({
             value={step.config.pivotField}
             onInputChange={(_, v) => onChange({ ...step, config: { ...step.config, pivotField: v } })}
             slotProps={{ popper: POPPER_PROPS }}
-            renderInput={p => <TextField {...p} placeholder="Pivot field..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+            renderInput={p => <TextField {...p} placeholder="Pivot field..." sx={{ '& input': mono }} />}
           />
           <AggregateList
             aggregates={step.config.aggregates}
@@ -482,7 +482,7 @@ export default function StepConfigForm({
           value={step.config.field}
           onInputChange={(_, v) => onChange({ ...step, config: { field: v } })}
           slotProps={{ popper: POPPER_PROPS }}
-          renderInput={p => <TextField {...p} placeholder="Field (optional)..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+          renderInput={p => <TextField {...p} placeholder="Field (optional)..." sx={{ '& input': mono }} />}
         />
       );
 
@@ -493,7 +493,7 @@ export default function StepConfigForm({
           value={step.config.headerField}
           onInputChange={(_, v) => onChange({ ...step, config: { headerField: v } })}
           slotProps={{ popper: POPPER_PROPS }}
-          renderInput={p => <TextField {...p} placeholder="Header field..." InputProps={p.InputProps} sx={{ '& input': mono }} />}
+          renderInput={p => <TextField {...p} placeholder="Header field..." sx={{ '& input': mono }} />}
         />
       );
   }

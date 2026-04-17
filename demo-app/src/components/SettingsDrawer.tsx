@@ -165,7 +165,7 @@ export default function SettingsDrawer({
   const isEditing = editingName !== null;
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: 380, bgcolor: 'background.default', p: 2.5, overflow: 'auto' } }}>
+    <Drawer anchor="right" open={open} onClose={onClose} slotProps={{ paper: { sx: { width: 380, bgcolor: 'background.default', p: 2.5, overflow: 'auto' } } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h6" sx={{ fontSize: '1rem' }}>Settings</Typography>
         <IconButton size="small" onClick={onClose}><CloseIcon sx={{ fontSize: 18 }} /></IconButton>
