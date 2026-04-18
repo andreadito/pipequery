@@ -148,6 +148,41 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # ─── Publish Engine to Public npm (mirror) ──────────────────────────────────
+  publish-engine-npm:
+    needs: test
+    if: inputs.packages == 'all' || inputs.packages == 'engine'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Rename package for public npm
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.name = "pipequery-lang";
+            delete pkg.publishConfig;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+          '
+
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   # ─── Publish CLI to GitHub Packages ─────────────────────────────────────────
   publish-cli:
     needs: test
@@ -174,6 +209,44 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Publish CLI to Public npm (mirror) ─────────────────────────────────────
+  publish-cli-npm:
+    needs: test
+    if: inputs.packages == 'all' || inputs.packages == 'cli'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install and build
+        working-directory: cli
+        run: |
+          npm ci
+          npm run build
+
+      - name: Rename package for public npm
+        working-directory: cli
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.name = "pipequery-cli";
+            delete pkg.publishConfig;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+          '
+
+      - name: Publish
+        working-directory: cli
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ─── Build and Push Docker Image to GHCR ───────────────────────────────────
   docker:
@@ -340,7 +413,7 @@ jobs:
 
   # ─── Create GitHub Release ──────────────────────────────────────────────────
   github-release:
-    needs: [version-bump, test, publish-engine, publish-cli, docker, smoke-test-docker, smoke-test-cli, smoke-test-engine]
+    needs: [version-bump, test, publish-engine, publish-engine-npm, publish-cli, publish-cli-npm, docker, smoke-test-docker, smoke-test-cli, smoke-test-engine]
     if: always() && needs.test.result == 'success'
     runs-on: ubuntu-latest
     steps:
