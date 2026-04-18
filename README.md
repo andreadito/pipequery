@@ -1,7 +1,7 @@
 <h1 align="center">| PipeQuery</h1>
 
 <p align="center">
-  A pipe-based query language for filtering, transforming, and aggregating data in JavaScript/TypeScript.
+  A pipe-based query language for filtering, transforming, and aggregating data in JavaScript/TypeScript — with a built-in <strong>MCP server</strong> that lets Claude, Cursor, and other AI agents query your live data.
 </p>
 
 <p align="center">
@@ -19,6 +19,7 @@
 ## Features
 
 - **Pipe-based syntax** &mdash; chain operations with `|`, inspired by Unix pipes and SQL
+- **MCP server** &mdash; plug pipequery into Claude Desktop, Claude Code, Cursor, Copilot, or any MCP client with one command
 - **Minimal dependencies** &mdash; lightweight core engine
 - **TypeScript-first** &mdash; full type definitions included
 - **25+ aggregate functions** &mdash; basic, statistical, and financial aggregations
@@ -70,6 +71,16 @@ curl http://localhost:3000/api/top
 Works the same with a remote server — just `pq remote connect https://my-server.example.com:3000`.
 
 The dashboard features a resizable 2-column grid with live SSE updates and 7 visualization types. See [`cli/README.md`](./cli/README.md) for full documentation.
+
+## Use with AI (MCP)
+
+```bash
+pq mcp serve                      # stdio — plug into Claude Desktop / Cursor / Claude Code
+pq mcp serve --http --port 3001   # HTTP/SSE — for remote clients or hosted deployments
+pq mcp serve --attach http://localhost:3000  # attach to a running `pq serve`
+```
+
+Your AI agent gets 5 tools: `query`, `list_sources`, `describe_source`, `list_endpoints`, `call_endpoint`. See [`cli/README.md`](./cli/README.md#use-with-ai-mcp) for client setup recipes.
 
 ## Quick Start
 
