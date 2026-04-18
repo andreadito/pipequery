@@ -8,6 +8,7 @@ import { endpointListCommand, endpointAddCommand, endpointRemoveCommand } from '
 import { dashboardCommand } from './commands/dashboard.js';
 import { monitorCommand } from './commands/monitor.js';
 import { remoteDeployCommand, remoteConnectCommand, remoteStatusCommand } from './commands/remote.js';
+import { mcpServeCommand, mcpInspectCommand } from './commands/mcp.js';
 import { completionCommand } from './commands/completion.js';
 import { stopCommand } from './commands/stop.js';
 import { startRepl } from './commands/repl.js';
@@ -137,6 +138,25 @@ remote
   .command('status')
   .description('Check remote server health')
   .action(remoteStatusCommand);
+
+// ─── pq mcp ──────────────────────────────────────────────────────────────────
+
+const mcp = program.command('mcp').description('Model Context Protocol server for AI clients');
+
+mcp
+  .command('serve')
+  .description('Start an MCP server exposing pipequery as tools (for Claude, Cursor, Copilot, etc.)')
+  .option('--http', 'Serve over HTTP/SSE instead of stdio')
+  .option('-p, --port <port>', 'HTTP port (when --http is set)', parseInt)
+  .option('-H, --host <host>', 'HTTP host (when --http is set)')
+  .option('--attach <url>', 'Attach to a running `pq serve` instance at the given URL instead of loading pipequery.yaml locally')
+  .action(mcpServeCommand);
+
+mcp
+  .command('inspect')
+  .description('Print the MCP tool schemas as JSON (useful for directory submission / debugging)')
+  .option('--attach <url>', 'Attach to a running `pq serve` instance at the given URL instead of loading pipequery.yaml locally')
+  .action(mcpInspectCommand);
 
 // ─── pq stop ────────────────────────────────────────────────────────────────
 

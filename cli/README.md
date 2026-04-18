@@ -6,6 +6,8 @@ Connect to any data source (REST APIs, WebSockets, files), run pipe-based querie
 
 **Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
 
+**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, and WebSocket streams directly.
+
 ## Installation
 
 ```bash
@@ -180,6 +182,60 @@ pq remote connect https://my-server.example.com
 # Check remote server health
 pq remote status
 ```
+
+## Use with AI (MCP)
+
+PipeQuery ships a [Model Context Protocol](https://modelcontextprotocol.io) server so any MCP-aware AI client — Claude Desktop, Claude Code, Cursor, Copilot, custom agents — can query your configured sources directly.
+
+```bash
+# stdio mode — what Claude Desktop / Cursor want
+pq mcp serve
+
+# HTTP/SSE mode — for remote clients or future hosted deployments
+pq mcp serve --http --port 3001
+
+# Attach to a running `pq serve` instance instead of loading pipequery.yaml locally
+pq mcp serve --attach http://localhost:3000
+
+# Inspect the tool schemas (useful for directory submission / debugging)
+pq mcp inspect
+```
+
+**Tools exposed** to the AI:
+
+| Tool | What it does |
+|------|-------------|
+| `query` | Run any PipeQuery expression against live sources |
+| `list_sources` | List configured sources and their health |
+| `describe_source` | Return a sample + inferred field names for one source |
+| `list_endpoints` | List pre-configured endpoints and their stored queries |
+| `call_endpoint` | Execute a pre-configured endpoint by path |
+
+### Claude Desktop setup
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "pipequery": {
+      "command": "pq",
+      "args": ["mcp", "serve"],
+      "cwd": "/path/to/your/project-with-pipequery.yaml"
+    }
+  }
+}
+```
+
+Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
+
+### Claude Code / Cursor setup
+
+Same idea — consult each tool's MCP config section. The stdio command is `pq mcp serve` with `cwd` pointing at a directory containing `pipequery.yaml`.
+
+### Hosted pipequery MCP
+
+Running pipequery for a team and want a hosted, authenticated MCP endpoint with audit trails, multi-source secrets, and SLA? [Talk to Vault Gradient](https://github.com/andreadito/pipequery/issues/new?template=hosted-mcp.yml).
 
 ## Docker & Remote Deployment
 
