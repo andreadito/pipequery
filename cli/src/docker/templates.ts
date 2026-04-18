@@ -7,7 +7,7 @@ COPY pipequery.yaml .
 COPY data/ data/ 2>/dev/null || true
 
 # Install PipeQuery CLI
-RUN npm install -g @andreadito/pq
+RUN npm install -g @vaultgradient/pipequery-cli
 
 EXPOSE ${port}
 

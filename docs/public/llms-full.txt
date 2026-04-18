@@ -2,7 +2,7 @@
 
 > A pipe-based query language for filtering, transforming, and aggregating data in JavaScript and TypeScript. Zero dependencies.
 
-Package: `@andreadito/pipequery-lang`
+Package: `@vaultgradient/pipequery-lang`
 Version: 1.0.0 (beta)
 License: MIT
 Repository: https://github.com/andreadito/pipequery
@@ -13,12 +13,11 @@ Docs: https://andreadito.github.io/pipequery/
 ## Installation
 
 ```bash
-npm install @andreadito/pipequery-lang
+npm install @vaultgradient/pipequery-lang
 ```
 
-Requires GitHub Packages registry configuration:
+Also published to GitHub Packages as `@andreadito/pipequery-lang`. To use that variant, add to `.npmrc`:
 ```
-# .npmrc
 @andreadito:registry=https://npm.pkg.github.com
 ```
 
@@ -50,7 +49,7 @@ function query(data: Record<string, unknown>[] | DataContext, expression: string
 
 **Examples:**
 ```ts
-import { query } from '@andreadito/pipequery-lang';
+import { query } from '@vaultgradient/pipequery-lang';
 
 // Simple array query
 const items = [
@@ -94,7 +93,7 @@ type CompiledQuery = (context: DataContext) => unknown;
 
 **Example:**
 ```ts
-import { compile } from '@andreadito/pipequery-lang';
+import { compile } from '@vaultgradient/pipequery-lang';
 
 const fn = compile('where(price > 100) | sort(price desc)');
 
@@ -126,7 +125,7 @@ interface Operation {
 
 **Example:**
 ```ts
-import { parseQuery } from '@andreadito/pipequery-lang';
+import { parseQuery } from '@vaultgradient/pipequery-lang';
 const ast = parseQuery('items | where(price > 100) | sort(price desc)');
 // ast.source === 'items'
 // ast.operations[0].type === 'where'
@@ -179,7 +178,7 @@ type RemovalKey = string | string[];
 
 **Example:**
 ```ts
-import { liveQuery } from '@andreadito/pipequery-lang';
+import { liveQuery } from '@vaultgradient/pipequery-lang';
 
 const trades = [
   { id: 1, sym: 'AAPL', price: 189.42, qty: 150 },
@@ -233,7 +232,7 @@ lq.dispose();
 Clear the internal compiled-query LRU cache (128 entries by default).
 
 ```ts
-import { clearCache } from '@andreadito/pipequery-lang';
+import { clearCache } from '@vaultgradient/pipequery-lang';
 clearCache();
 ```
 
@@ -447,7 +446,7 @@ count() as total
 All errors include position information for editor integration.
 
 ```ts
-import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@andreadito/pipequery-lang';
+import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@vaultgradient/pipequery-lang';
 
 try {
   query(data, 'where(price >)');
@@ -476,7 +475,7 @@ PipeQuery ships a CLI tool (`pq`) for building data pipelines, live REST APIs, a
 ### Install
 
 ```bash
-npm install -g @andreadito/pq
+npm install -g @vaultgradient/pipequery-cli
 ```
 
 ### Key Feature: Instant API Endpoints
@@ -654,7 +653,7 @@ pq remote connect https://my-server.example.com:3000
 
 ```ts
 // CodeMirror 6
-import { pipeQuery } from '@andreadito/pipequery-lang/highlighting';
+import { pipeQuery } from '@vaultgradient/pipequery-lang/highlighting';
 
 // Use as a CodeMirror extension
 const extensions = [pipeQuery()];
@@ -667,7 +666,7 @@ A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLangua
 ### React Components
 
 ```tsx
-import { PipeQueryBuilder } from '@andreadito/pipequery-lang/react';
+import { PipeQueryBuilder } from '@vaultgradient/pipequery-lang/react';
 
 <PipeQueryBuilder
   source="trades"

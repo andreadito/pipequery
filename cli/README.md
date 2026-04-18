@@ -9,7 +9,7 @@ Connect to any data source (REST APIs, WebSockets, files), run pipe-based querie
 ## Installation
 
 ```bash
-npm install -g @andreadito/pq
+npm install -g @vaultgradient/pipequery-cli
 ```
 
 Or install from source:

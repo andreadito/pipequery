@@ -6,8 +6,8 @@
 
 <p align="center">
   <a href="https://github.com/andreadito/pipequery/releases/latest"><img src="https://img.shields.io/github/v/release/andreadito/pipequery?label=release&color=orange" alt="release" /></a>
-  <a href="https://github.com/andreadito/pipequery/pkgs/npm/pipequery-lang"><img src="https://img.shields.io/badge/npm-@andreadito/pipequery--lang-cb3837?logo=npm" alt="engine package" /></a>
-  <a href="https://github.com/andreadito/pipequery/pkgs/npm/pq"><img src="https://img.shields.io/badge/npm-@andreadito/pq-cb3837?logo=npm" alt="cli package" /></a>
+  <a href="https://www.npmjs.com/package/@vaultgradient/pipequery-lang"><img src="https://img.shields.io/npm/v/@vaultgradient/pipequery-lang?label=npm%20%28engine%29&color=cb3837&logo=npm" alt="engine package" /></a>
+  <a href="https://www.npmjs.com/package/@vaultgradient/pipequery-cli"><img src="https://img.shields.io/npm/v/@vaultgradient/pipequery-cli?label=npm%20%28cli%29&color=cb3837&logo=npm" alt="cli package" /></a>
   <a href="https://github.com/andreadito/pipequery/pkgs/container/pipequery"><img src="https://img.shields.io/badge/ghcr.io-pipequery-blue?logo=docker" alt="docker" /></a>
   <a href="https://github.com/andreadito/pipequery/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license" /></a>
   <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/TypeScript-100%25-blue.svg" alt="TypeScript" /></a>
@@ -29,7 +29,7 @@
 ## Install
 
 ```bash
-npm install @andreadito/pipequery-lang
+npm install @vaultgradient/pipequery-lang
 ```
 
 ## CLI — `pq`
@@ -37,7 +37,7 @@ npm install @andreadito/pipequery-lang
 PipeQuery also ships a CLI tool for building data pipelines, REST APIs, and rich terminal dashboards.
 
 ```bash
-npm install -g @andreadito/pq
+npm install -g @vaultgradient/pipequery-cli
 
 pq init                  # scaffold a project
 pq serve -d              # start the server as a daemon
@@ -74,7 +74,7 @@ The dashboard features a resizable 2-column grid with live SSE updates and 7 vis
 ## Quick Start
 
 ```ts
-import { query } from '@andreadito/pipequery-lang';
+import { query } from '@vaultgradient/pipequery-lang';
 
 const data = [
   { name: 'Laptop', price: 999, category: 'Electronics' },
@@ -167,7 +167,7 @@ nested.field.path                          // dot access
 Execute a query on data. Accepts a raw array or a named `DataContext` for multi-table queries.
 
 ```ts
-import { query } from '@andreadito/pipequery-lang';
+import { query } from '@vaultgradient/pipequery-lang';
 
 // Array shorthand
 query(items, 'where(price > 50) | sort(name asc)');
@@ -184,7 +184,7 @@ query(
 Pre-compile a query for repeated use. Returns a reusable function.
 
 ```ts
-import { compile } from '@andreadito/pipequery-lang';
+import { compile } from '@vaultgradient/pipequery-lang';
 
 const fn = compile('where(price > 100) | sort(price desc)');
 const result = fn({ _data: items });
@@ -195,7 +195,7 @@ const result = fn({ _data: items });
 Parse a query into its AST without executing.
 
 ```ts
-import { parseQuery } from '@andreadito/pipequery-lang';
+import { parseQuery } from '@vaultgradient/pipequery-lang';
 
 const ast = parseQuery('items | where(price > 100)');
 // Inspect tokens, operations, expressions
@@ -206,7 +206,7 @@ const ast = parseQuery('items | where(price > 100)');
 Streaming query evaluator that accepts data patches and re-executes efficiently.
 
 ```ts
-import { liveQuery } from '@andreadito/pipequery-lang';
+import { liveQuery } from '@vaultgradient/pipequery-lang';
 
 const lq = liveQuery(initialData, 'where(active == true) | sort(updatedAt desc)', {
   key: 'id',
@@ -229,7 +229,7 @@ lq.dispose();
 Clear the internal compiled-query LRU cache (128 entries by default).
 
 ```ts
-import { clearCache } from '@andreadito/pipequery-lang';
+import { clearCache } from '@vaultgradient/pipequery-lang';
 
 clearCache();
 ```
@@ -239,7 +239,7 @@ clearCache();
 All errors include position info (`position`, `line`, `column`) for editor integration.
 
 ```ts
-import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@andreadito/pipequery-lang';
+import { LexerError, ParseError, RuntimeError, DataWeaveError } from '@vaultgradient/pipequery-lang';
 
 try {
   query(data, 'where(price >)');
@@ -256,10 +256,10 @@ try {
 
 ```ts
 // CodeMirror 6
-import { pipeQuery } from '@andreadito/pipequery-lang/highlighting';
+import { pipeQuery } from '@vaultgradient/pipequery-lang/highlighting';
 
 // Monaco Editor
-import { registerPipeQuery } from '@andreadito/pipequery-lang/highlighting';
+import { registerPipeQuery } from '@vaultgradient/pipequery-lang/highlighting';
 ```
 
 A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLanguage.json` for VS Code, IntelliJ, and Sublime Text.
@@ -269,7 +269,7 @@ A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLangua
 ### React Components
 
 ```tsx
-import { PipeQueryBuilder } from '@andreadito/pipequery-lang/react';
+import { PipeQueryBuilder } from '@vaultgradient/pipequery-lang/react';
 
 <PipeQueryBuilder
   datasets={datasets}
