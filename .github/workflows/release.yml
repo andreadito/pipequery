@@ -173,7 +173,7 @@ jobs:
           node -e '
             const fs = require("fs");
             const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.name = "pipequery-lang";
+            pkg.name = "@vg/pipequery-lang";
             delete pkg.publishConfig;
             fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
           '
@@ -237,7 +237,7 @@ jobs:
           node -e '
             const fs = require("fs");
             const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.name = "pipequery-cli";
+            pkg.name = "@vg/pipequery-cli";
             delete pkg.publishConfig;
             fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
           '
