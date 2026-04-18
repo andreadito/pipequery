@@ -4,7 +4,7 @@
 
 ## Overview
 
-PipeQuery (package: `@andreadito/pipequery-lang`) is a query language that chains operations with `|` pipe operators, inspired by Unix pipes and SQL. It works on arrays of objects and supports filtering, sorting, grouping, aggregation, joins, window functions, and real-time streaming queries.
+PipeQuery (package: `@vaultgradient/pipequery-lang`) is a query language that chains operations with `|` pipe operators, inspired by Unix pipes and SQL. It works on arrays of objects and supports filtering, sorting, grouping, aggregation, joins, window functions, and real-time streaming queries.
 
 - Version: 1.0.0 (beta)
 - License: MIT
@@ -15,10 +15,10 @@ PipeQuery (package: `@andreadito/pipequery-lang`) is a query language that chain
 ## Install
 
 ```bash
-npm install @andreadito/pipequery-lang
+npm install @vaultgradient/pipequery-lang
 ```
 
-Requires GitHub Packages registry config: `@andreadito:registry=https://npm.pkg.github.com`
+Also published to GitHub Packages as `@andreadito/pipequery-lang` (requires `@andreadito:registry=https://npm.pkg.github.com` in `.npmrc`).
 
 ## Core API
 
@@ -26,7 +26,7 @@ Requires GitHub Packages registry config: `@andreadito:registry=https://npm.pkg.
 Execute a query on an array or named DataContext.
 
 ```ts
-import { query } from '@andreadito/pipequery-lang';
+import { query } from '@vaultgradient/pipequery-lang';
 query(items, 'where(price > 100) | sort(price desc)');
 query({ orders, customers }, 'orders | join(customers, customerId == id)');
 ```
@@ -35,7 +35,7 @@ query({ orders, customers }, 'orders | join(customers, customerId == id)');
 Pre-compile for repeated execution.
 
 ```ts
-import { compile } from '@andreadito/pipequery-lang';
+import { compile } from '@vaultgradient/pipequery-lang';
 const fn = compile('where(price > 100) | sort(price desc)');
 fn({ _data: items });
 ```
@@ -44,7 +44,7 @@ fn({ _data: items });
 Streaming query with incremental patch support.
 
 ```ts
-import { liveQuery } from '@andreadito/pipequery-lang';
+import { liveQuery } from '@vaultgradient/pipequery-lang';
 const lq = liveQuery(data, 'where(active) | sort(ts desc)', { key: 'id' });
 lq.subscribe((result, stats) => { /* stats: executionMs, patchMs, rowCount */ });
 lq.patch([{ id: 1, active: true }]);
@@ -89,7 +89,7 @@ running_sum, running_avg, running_count, running_min, running_max, row_number, l
 PipeQuery ships a CLI tool (`pq`) for building data pipelines, live REST APIs, and terminal dashboards. Install globally:
 
 ```bash
-npm install -g @andreadito/pq
+npm install -g @vaultgradient/pipequery-cli
 ```
 
 ### Key Feature: Instant API Endpoints
@@ -167,8 +167,8 @@ pq dashboard -n main
 
 ## Sub-packages
 
-- `@andreadito/pipequery-lang/highlighting` - CodeMirror 6 + Monaco editor support
-- `@andreadito/pipequery-lang/react` - PipeQueryBuilder visual component
+- `@vaultgradient/pipequery-lang/highlighting` - CodeMirror 6 + Monaco editor support
+- `@vaultgradient/pipequery-lang/react` - PipeQueryBuilder visual component
 
 ## Links
 

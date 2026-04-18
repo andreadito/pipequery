@@ -2423,14 +2423,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 install
               </Box>{" "}
               <Box component="span" sx={{ color: C.text }}>
-                @andreadito/pipequery-lang
+                @vaultgradient/pipequery-lang
               </Box>
             </Typography>
-            <CopyButton text="npm install @andreadito/pipequery-lang" />
+            <CopyButton text="npm install @vaultgradient/pipequery-lang" />
           </Box>
           <Typography
             component="a"
-            href="https://github.com/andreadito/pipequery/packages"
+            href="https://www.npmjs.com/package/@vaultgradient/pipequery-lang"
             target="_blank"
             rel="noopener"
             sx={{
@@ -2441,7 +2441,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               '&:hover': { color: C.textMuted },
             }}
           >
-            Requires <Box component="span" sx={{ fontFamily: '"JetBrains Mono", monospace', color: C.textMuted }}>@andreadito</Box> registry config →
+            View on npm →
           </Typography>
         </Box>
       </Section>

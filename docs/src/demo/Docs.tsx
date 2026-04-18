@@ -1755,7 +1755,7 @@ const editor = monaco.editor.create(container, {
           </Typography>
 
           <SubSection title="Installation">
-            <CodeBlock>{`npm install -g @andreadito/pq`}</CodeBlock>
+            <CodeBlock>{`npm install -g @vaultgradient/pipequery-cli`}</CodeBlock>
           </SubSection>
 
           <SubSection title="Quick Start">
