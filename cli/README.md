@@ -233,10 +233,6 @@ Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
 
 Same idea — consult each tool's MCP config section. The stdio command is `pq mcp serve` with `cwd` pointing at a directory containing `pipequery.yaml`.
 
-### Hosted pipequery MCP
-
-Running pipequery for a team and want a hosted, authenticated MCP endpoint with audit trails, multi-source secrets, and SLA? [Talk to Vault Gradient](https://github.com/andreadito/pipequery/issues/new?template=hosted-mcp.yml).
-
 ## Docker & Remote Deployment
 
 The `pq` server and CLI are fully decoupled. You can run the server in Docker (locally or on a remote machine) and control it from your local terminal.
