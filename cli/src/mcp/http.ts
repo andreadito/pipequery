@@ -10,6 +10,16 @@ export interface HttpServerOptions {
   port: number;
   path?: string;
   info?: McpServerInfo;
+  /**
+   * Require clients to send `Authorization: Bearer <token>` matching this
+   * value. When undefined, the endpoint is UNAUTHENTICATED and the server
+   * prints a loud stderr warning at startup. Intended for localhost /
+   * trusted-network deployments only when auth is unset.
+   *
+   * For hosted deployments, always set this (via `--auth-token` flag or
+   * the `PIPEQUERY_MCP_TOKEN` environment variable).
+   */
+  authToken?: string;
 }
 
 export interface HttpServerHandle {
@@ -31,6 +41,14 @@ export async function runHttp(provider: Provider, opts: HttpServerOptions): Prom
   const mountPath = opts.path ?? '/mcp';
 
   const transports = new Map<string, StreamableHTTPServerTransport>();
+  const authToken = opts.authToken;
+
+  if (!authToken) {
+    process.stderr.write(
+      '[pipequery-mcp] WARNING: HTTP endpoint is UNAUTHENTICATED. ' +
+        'Set --auth-token or PIPEQUERY_MCP_TOKEN for anything beyond localhost.\n',
+    );
+  }
 
   const attachTransport = async (): Promise<StreamableHTTPServerTransport> => {
     const transport = new StreamableHTTPServerTransport({
@@ -58,6 +76,21 @@ export async function runHttp(provider: Provider, opts: HttpServerOptions): Prom
     if (requestPath !== mountPath) {
       res.statusCode = 404;
       res.end('Not Found');
+      return;
+    }
+
+    // Bearer-token auth check (only when a token is configured).
+    if (authToken && !isAuthorized(req, authToken)) {
+      res.statusCode = 401;
+      res.setHeader('content-type', 'application/json');
+      res.setHeader('www-authenticate', 'Bearer realm="pipequery-mcp"');
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          error: { code: -32001, message: 'Unauthorized: missing or invalid bearer token' },
+          id: null,
+        }),
+      );
       return;
     }
 
@@ -106,6 +139,25 @@ export async function runHttp(provider: Provider, opts: HttpServerOptions): Prom
       await provider.dispose();
     },
   };
+}
+
+function isAuthorized(req: IncomingMessage, expected: string): boolean {
+  const header = req.headers['authorization'];
+  const raw = typeof header === 'string' ? header : Array.isArray(header) ? header[0] : undefined;
+  if (!raw) return false;
+  // Format: "Bearer <token>", case-insensitive scheme.
+  const match = raw.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  const token = match[1].trim();
+  // Constant-time comparison — avoids timing oracles on short tokens.
+  return timingSafeEqual(token, expected);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 function getSessionId(req: IncomingMessage): string | undefined {

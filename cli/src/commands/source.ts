@@ -54,6 +54,7 @@ export async function sourceAddCommand(name: string, opts: {
   query?: string;
   ssl?: string;
   maxRows?: string;
+  readonly?: boolean;
 }) {
   const cwd = process.cwd();
   const { config, path: configPath } = await loadConfig(cwd);
@@ -95,8 +96,33 @@ export async function sourceAddCommand(name: string, opts: {
         ...(opts.maxRows ? { maxRows: Number.parseInt(opts.maxRows, 10) } : {}),
       };
       break;
+    case 'mysql':
+      if (!opts.url) throw new Error('--url is required for MySQL sources');
+      if (!opts.query) throw new Error('--query is required for MySQL sources');
+      sourceConfig = {
+        type: 'mysql',
+        url: opts.url,
+        query: opts.query,
+        interval: opts.interval ?? '30s',
+        ...(opts.ssl === 'no-verify' ? { ssl: 'no-verify' as const } : {}),
+        ...(opts.ssl === 'false' ? { ssl: false as const } : {}),
+        ...(opts.maxRows ? { maxRows: Number.parseInt(opts.maxRows, 10) } : {}),
+      };
+      break;
+    case 'sqlite':
+      if (!opts.path) throw new Error('--path is required for SQLite sources');
+      if (!opts.query) throw new Error('--query is required for SQLite sources');
+      sourceConfig = {
+        type: 'sqlite',
+        path: opts.path,
+        query: opts.query,
+        interval: opts.interval ?? '30s',
+        ...(opts.maxRows ? { maxRows: Number.parseInt(opts.maxRows, 10) } : {}),
+        ...(opts.readonly === false ? { readonly: false } : {}),
+      };
+      break;
     default:
-      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file, postgres`);
+      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file, postgres, mysql, sqlite`);
   }
 
   // Save to config

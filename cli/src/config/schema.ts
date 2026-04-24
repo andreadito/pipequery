@@ -22,7 +22,9 @@ export type SourceConfig =
   | WebSocketSourceConfig
   | FileSourceConfig
   | StaticSourceConfig
-  | PostgresSourceConfig;
+  | PostgresSourceConfig
+  | MysqlSourceConfig
+  | SqliteSourceConfig;
 
 export interface RestSourceConfig {
   type: 'rest';
@@ -74,6 +76,45 @@ export interface PostgresSourceConfig {
    */
   ssl?: 'require' | 'no-verify' | false;
   /** Safety cap. If the query returns more rows, the fetch errors. Default 10000. */
+  maxRows?: number;
+}
+
+export interface MysqlSourceConfig {
+  type: 'mysql';
+  /**
+   * MySQL connection URL. Supports `${ENV_VAR}` interpolation so
+   * credentials can live in the environment instead of the yaml.
+   * Example: `mysql://${DB_USER}:${DB_PASS}@db.internal:3306/app`.
+   */
+  url: string;
+  /** The SELECT query to run on each poll. */
+  query: string;
+  /** Poll interval, e.g. "30s", "5m". Defaults to "30s". */
+  interval?: string;
+  /**
+   * SSL policy. `"require"` verifies the cert (production default).
+   * `"no-verify"` skips verification. `false` disables TLS.
+   */
+  ssl?: 'require' | 'no-verify' | false;
+  /** Safety cap. Default 10000. */
+  maxRows?: number;
+}
+
+export interface SqliteSourceConfig {
+  type: 'sqlite';
+  /**
+   * Path to the SQLite database file, relative to the directory
+   * containing pipequery.yaml. Use `:memory:` for an in-memory database
+   * (useful for tests; data will not persist across restarts).
+   */
+  path: string;
+  /** The SELECT query to run on each poll. */
+  query: string;
+  /** Poll interval, e.g. "30s", "5m". Defaults to "30s". */
+  interval?: string;
+  /** Open the database read-only. Recommended for query-only sources. Default true. */
+  readonly?: boolean;
+  /** Safety cap. Default 10000. */
   maxRows?: number;
 }
 

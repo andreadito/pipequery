@@ -2,11 +2,11 @@
 
 A command-line tool for building data pipelines, REST APIs, and terminal dashboards using PipeQuery expressions.
 
-Connect to any data source (REST APIs, WebSockets, files, Postgres), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
+Connect to any data source (REST APIs, WebSockets, files, Postgres, MySQL, SQLite), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
 
 **Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
 
-**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres databases, and WebSocket streams directly.
+**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres / MySQL / SQLite databases, and WebSocket streams directly.
 
 ## Installation
 
@@ -88,6 +88,17 @@ pq source add users -t postgres \
   -q "SELECT id, email, created_at FROM users WHERE created_at > NOW() - INTERVAL '7 days'" \
   -i 60s
 
+# Add a MySQL source
+pq source add orders -t mysql \
+  -u "mysql://\${DB_USER}:\${DB_PASS}@db.internal:3306/shop" \
+  -q "SELECT id, total, status FROM orders WHERE created_at > NOW() - INTERVAL 1 DAY" \
+  -i 60s
+
+# Add a SQLite source (path is relative to pipequery.yaml; opens read-only by default)
+pq source add events -t sqlite -p ./events.db \
+  -q "SELECT * FROM events WHERE ts > strftime('%s', 'now', '-1 hour')" \
+  -i 30s
+
 # Test a source (fetch sample data)
 pq source test coins
 
@@ -100,7 +111,9 @@ Source types:
 - **websocket** — Streams data from a WebSocket connection
 - **file** — Reads JSON or CSV files, optionally watches for changes
 - **static** — Inline JSON data defined in config
-- **postgres** — Polls a Postgres query at a configurable interval. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of `pipequery.yaml`. A `maxRows` safety cap (default 10000) protects against runaway queries. Options: `-u` connection URL, `-q` SELECT query, `-i` interval, `--ssl <require\|no-verify\|false>`, `--max-rows <n>`.
+- **postgres** — Polls a Postgres query. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of `pipequery.yaml`. Options: `-u` URL, `-q` query, `-i` interval, `--ssl <require\|no-verify\|false>`, `--max-rows <n>` (default 10000).
+- **mysql** — Polls a MySQL (or MariaDB) query. Same env-var interpolation and `--ssl` / `--max-rows` options as `postgres`.
+- **sqlite** — Polls a query against a local SQLite file (or `:memory:`). Opens read-only by default (pass `--no-readonly` to open read-write). Options: `-p` path, `-q` query, `-i` interval, `--max-rows <n>`, `--no-readonly`.
 
 ### `pq endpoint`
 
@@ -201,12 +214,19 @@ pq mcp serve
 # HTTP/SSE mode — for remote clients or future hosted deployments
 pq mcp serve --http --port 3001
 
+# HTTP with bearer-token auth (recommended for anything non-localhost)
+PIPEQUERY_MCP_TOKEN=$(openssl rand -hex 32) pq mcp serve --http --port 3001
+# or inline:
+pq mcp serve --http --port 3001 --auth-token "my-secret"
+
 # Attach to a running `pq serve` instance instead of loading pipequery.yaml locally
 pq mcp serve --attach http://localhost:3000
 
 # Inspect the tool schemas (useful for directory submission / debugging)
 pq mcp inspect
 ```
+
+**HTTP authentication** — when a token is set (`PIPEQUERY_MCP_TOKEN` env var or `--auth-token` flag), clients must send `Authorization: Bearer <token>` on every request; unauthenticated requests are rejected with `401`. If no token is set, the endpoint is open and the server prints a loud startup warning — fine for localhost, never OK for a publicly reachable deployment.
 
 **Tools exposed** to the AI:
 
