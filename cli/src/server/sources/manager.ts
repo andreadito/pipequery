@@ -5,6 +5,8 @@ import { WebSocketSourceAdapter } from './websocket.js';
 import { FileSourceAdapter } from './file.js';
 import { StaticSourceAdapter } from './static.js';
 import { PostgresSourceAdapter } from './postgres.js';
+import { MysqlSourceAdapter } from './mysql.js';
+import { SqliteSourceAdapter } from './sqlite.js';
 
 export type DataContext = Record<string, unknown[]>;
 
@@ -116,6 +118,10 @@ export class SourceManager {
         return new StaticSourceAdapter(config);
       case 'postgres':
         return new PostgresSourceAdapter(config);
+      case 'mysql':
+        return new MysqlSourceAdapter(config);
+      case 'sqlite':
+        return new SqliteSourceAdapter(config, this.cwd);
       default:
         throw new Error(`Unknown source type: ${(config as { type: string }).type}`);
     }

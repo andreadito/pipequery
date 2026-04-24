@@ -66,15 +66,16 @@ source
 source
   .command('add <name>')
   .description('Add a data source')
-  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres')
-  .option('-u, --url <url>', 'URL for REST / WebSocket / Postgres sources')
-  .option('-i, --interval <interval>', 'Poll interval for REST / Postgres (e.g., 30s, 5m)', '30s')
-  .option('-d, --data-path <path>', 'Dot-path to extract data from response')
-  .option('-p, --path <path>', 'File path for file sources')
-  .option('-w, --watch', 'Watch file for changes')
-  .option('-q, --query <sql>', 'SELECT query for Postgres sources')
-  .option('--ssl <mode>', 'Postgres SSL: require (default), no-verify, false')
-  .option('--max-rows <n>', 'Postgres safety cap on rows per fetch (default 10000)')
+  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres, mysql, sqlite')
+  .option('-u, --url <url>', 'Connection URL for REST / WebSocket / Postgres / MySQL sources')
+  .option('-i, --interval <interval>', 'Poll interval (e.g., 30s, 5m)', '30s')
+  .option('-d, --data-path <path>', 'Dot-path to extract data from REST response')
+  .option('-p, --path <path>', 'File path for file or sqlite sources')
+  .option('-w, --watch', 'Watch file for changes (file sources)')
+  .option('-q, --query <sql>', 'SELECT query for Postgres / MySQL / SQLite sources')
+  .option('--ssl <mode>', 'Postgres / MySQL SSL: require (default), no-verify, false')
+  .option('--max-rows <n>', 'DB sources: safety cap on rows per fetch (default 10000)')
+  .option('--no-readonly', 'SQLite: open the database read-write instead of read-only')
   .action(sourceAddCommand);
 
 source
