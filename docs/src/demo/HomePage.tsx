@@ -3936,7 +3936,7 @@ console.log(expensive);`}
             {
               icon: <StreamIcon sx={{ fontSize: 20, color: C.blue }} />,
               title: "Any data source",
-              desc: "REST APIs, WebSockets, CSV/JSON files — add or remove at runtime.",
+              desc: "REST APIs, WebSockets, CSV/JSON files, Postgres, MySQL, SQLite, Kafka — add or remove at runtime.",
             },
           ].map((item) => (
             <Box

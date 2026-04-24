@@ -125,7 +125,29 @@ pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
 
 ### Data Sources
 
-Supports REST APIs, WebSockets, CSV/JSON files, and inline static data. Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support Binance-style streams (`depth`, `aggTrade`, `kline`).
+Supports REST APIs, WebSockets, CSV/JSON files, inline static data, Postgres (+ TimescaleDB, which is Postgres-wire), MySQL / MariaDB, SQLite, and Kafka (including Redpanda or anything Kafka-wire compatible). Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support Binance-style streams (`depth`, `aggTrade`, `kline`). DB sources support `${ENV_VAR}` interpolation in connection URLs so credentials can live in the environment; each query is guarded by a `maxRows` safety cap (default 10000). Kafka sources buffer the most recent N messages (default 1000) in a ring.
+
+### MCP — Model Context Protocol (AI agents)
+
+The CLI ships an MCP server so any MCP-aware AI client (Claude Desktop, Claude Code, Cursor, Copilot, custom agents) can query configured pipequery sources directly.
+
+```bash
+pq mcp serve                                        # stdio (Claude Desktop / Cursor)
+pq mcp serve --http --port 3001                     # HTTP/SSE for remote clients
+pq mcp serve --http --auth-token "$PIPEQUERY_MCP_TOKEN"   # bearer-token auth
+pq mcp serve --attach http://localhost:3000         # reuse a running pq serve instance
+pq mcp inspect                                      # print tool schemas as JSON
+```
+
+Tools exposed to the AI:
+
+- `query(expression)` — run any PipeQuery expression against live sources
+- `list_sources()` — list configured sources and their health
+- `describe_source(name)` — sample rows + inferred field names
+- `list_endpoints()` — list pre-configured endpoints
+- `call_endpoint(path)` — execute a pre-configured endpoint by path
+
+HTTP authentication: when `--auth-token` or `PIPEQUERY_MCP_TOKEN` is set, clients must send `Authorization: Bearer <token>`; unauthenticated requests get 401. With no token set, the endpoint is open (localhost-only use case) and prints a loud startup warning. stdio mode needs no auth — there's no network surface.
 
 ### Terminal Dashboard
 
