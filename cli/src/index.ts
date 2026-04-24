@@ -66,16 +66,22 @@ source
 source
   .command('add <name>')
   .description('Add a data source')
-  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres, mysql, sqlite')
+  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres, mysql, sqlite, kafka')
   .option('-u, --url <url>', 'Connection URL for REST / WebSocket / Postgres / MySQL sources')
   .option('-i, --interval <interval>', 'Poll interval (e.g., 30s, 5m)', '30s')
   .option('-d, --data-path <path>', 'Dot-path to extract data from REST response')
   .option('-p, --path <path>', 'File path for file or sqlite sources')
   .option('-w, --watch', 'Watch file for changes (file sources)')
   .option('-q, --query <sql>', 'SELECT query for Postgres / MySQL / SQLite sources')
-  .option('--ssl <mode>', 'Postgres / MySQL SSL: require (default), no-verify, false')
+  .option('--ssl <mode>', 'Postgres / MySQL SSL: require (default), no-verify, false; Kafka: true / false')
   .option('--max-rows <n>', 'DB sources: safety cap on rows per fetch (default 10000)')
   .option('--no-readonly', 'SQLite: open the database read-write instead of read-only')
+  .option('-b, --brokers <list>', 'Kafka: comma-separated bootstrap brokers (supports ${ENV_VAR})')
+  .option('--topic <topic>', 'Kafka topic to subscribe to')
+  .option('--group-id <id>', 'Kafka consumer group (default: ephemeral per-process)')
+  .option('--from-beginning', 'Kafka: read topic from the start instead of latest')
+  .option('--value-format <fmt>', 'Kafka value decoding: json (default), string, raw')
+  .option('--max-buffer <n>', 'Kafka / WebSocket: ring buffer size (default 1000)')
   .action(sourceAddCommand);
 
 source

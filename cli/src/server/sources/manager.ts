@@ -7,6 +7,7 @@ import { StaticSourceAdapter } from './static.js';
 import { PostgresSourceAdapter } from './postgres.js';
 import { MysqlSourceAdapter } from './mysql.js';
 import { SqliteSourceAdapter } from './sqlite.js';
+import { KafkaSourceAdapter } from './kafka.js';
 
 export type DataContext = Record<string, unknown[]>;
 
@@ -122,6 +123,8 @@ export class SourceManager {
         return new MysqlSourceAdapter(config);
       case 'sqlite':
         return new SqliteSourceAdapter(config, this.cwd);
+      case 'kafka':
+        return new KafkaSourceAdapter(config);
       default:
         throw new Error(`Unknown source type: ${(config as { type: string }).type}`);
     }

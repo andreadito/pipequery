@@ -24,7 +24,8 @@ export type SourceConfig =
   | StaticSourceConfig
   | PostgresSourceConfig
   | MysqlSourceConfig
-  | SqliteSourceConfig;
+  | SqliteSourceConfig
+  | KafkaSourceConfig;
 
 export interface RestSourceConfig {
   type: 'rest';
@@ -98,6 +99,44 @@ export interface MysqlSourceConfig {
   ssl?: 'require' | 'no-verify' | false;
   /** Safety cap. Default 10000. */
   maxRows?: number;
+}
+
+export interface KafkaSourceConfig {
+  type: 'kafka';
+  /**
+   * Comma-separated list of Kafka bootstrap brokers, or an array. Supports
+   * `${ENV_VAR}` interpolation. Example: `"broker1:9092,broker2:9092"`.
+   */
+  brokers: string | string[];
+  /** Topic to subscribe to. Only one topic per source; use multiple sources for multiple topics. */
+  topic: string;
+  /**
+   * Consumer group ID. If omitted, an ephemeral per-process group is generated
+   * so this pipequery instance sees the full firehose. Set explicitly to share
+   * a partitioned subscription across pipequery replicas.
+   */
+  groupId?: string;
+  /** Start reading from the topic's beginning on first connect. Default false (latest). */
+  fromBeginning?: boolean;
+  /** Ring buffer size. Oldest messages are evicted. Default 1000. */
+  maxBuffer?: number;
+  /**
+   * How to decode the message value.
+   *   - `"json"` (default): `JSON.parse(buffer.toString())`; non-JSON messages are skipped.
+   *   - `"string"`: UTF-8 string, stored as `{ value }`.
+   *   - `"raw"`: base64-encoded bytes, stored as `{ value }`.
+   */
+  valueFormat?: 'json' | 'string' | 'raw';
+  /** SSL / TLS toggle. Default false (plaintext). */
+  ssl?: boolean;
+  /**
+   * SASL authentication. Supports `${ENV_VAR}` interpolation in username/password.
+   */
+  sasl?: {
+    mechanism: 'plain' | 'scram-sha-256' | 'scram-sha-512';
+    username: string;
+    password: string;
+  };
 }
 
 export interface SqliteSourceConfig {

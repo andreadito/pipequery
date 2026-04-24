@@ -2,11 +2,11 @@
 
 A command-line tool for building data pipelines, REST APIs, and terminal dashboards using PipeQuery expressions.
 
-Connect to any data source (REST APIs, WebSockets, files, Postgres, MySQL, SQLite), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
+Connect to any data source (REST APIs, WebSockets, files, Postgres, MySQL, SQLite, Kafka), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
 
 **Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
 
-**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres / MySQL / SQLite databases, and WebSocket streams directly.
+**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres / MySQL / SQLite databases, Kafka streams, and WebSocket feeds directly.
 
 ## Installation
 
@@ -99,6 +99,12 @@ pq source add events -t sqlite -p ./events.db \
   -q "SELECT * FROM events WHERE ts > strftime('%s', 'now', '-1 hour')" \
   -i 30s
 
+# Add a Kafka / Redpanda source (streaming — last 1000 messages kept in a ring buffer)
+pq source add live_orders -t kafka \
+  --brokers "broker1:9092,broker2:9092" \
+  --topic order-events \
+  --value-format json
+
 # Test a source (fetch sample data)
 pq source test coins
 
@@ -114,6 +120,7 @@ Source types:
 - **postgres** — Polls a Postgres query. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of `pipequery.yaml`. Options: `-u` URL, `-q` query, `-i` interval, `--ssl <require\|no-verify\|false>`, `--max-rows <n>` (default 10000).
 - **mysql** — Polls a MySQL (or MariaDB) query. Same env-var interpolation and `--ssl` / `--max-rows` options as `postgres`.
 - **sqlite** — Polls a query against a local SQLite file (or `:memory:`). Opens read-only by default (pass `--no-readonly` to open read-write). Options: `-p` path, `-q` query, `-i` interval, `--max-rows <n>`, `--no-readonly`.
+- **kafka** — Streams messages from a Kafka (or Kafka-compatible, e.g. Redpanda) topic into a bounded ring buffer. Each message is decoded per `valueFormat` and spread into a row alongside `_kafka_topic`/`_kafka_partition`/`_kafka_offset`/`_kafka_timestamp`/`_kafka_key` metadata. Auto-generates a per-process consumer group so each pipequery instance sees the full firehose; set `groupId` explicitly to load-balance across replicas. Options: `--brokers` (comma list, supports `${ENV_VAR}`), `--topic`, `--group-id`, `--from-beginning`, `--value-format <json\|string\|raw>`, `--max-buffer <n>` (default 1000), `--ssl true`. SASL is config-only (not CLI-exposed yet).
 
 ### `pq endpoint`
 
