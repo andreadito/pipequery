@@ -154,6 +154,7 @@ mcp
   .option('-p, --port <port>', 'HTTP port (when --http is set)', parseInt)
   .option('-H, --host <host>', 'HTTP host (when --http is set)')
   .option('--attach <url>', 'Attach to a running `pq serve` instance at the given URL instead of loading pipequery.yaml locally')
+  .option('--auth-token <token>', 'Require Authorization: Bearer <token> on HTTP requests. Falls back to $PIPEQUERY_MCP_TOKEN. Without either, the endpoint is unauthenticated.')
   .action(mcpServeCommand);
 
 mcp

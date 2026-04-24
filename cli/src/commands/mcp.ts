@@ -12,6 +12,7 @@ interface McpServeOptions {
   port?: number;
   host?: string;
   attach?: string;
+  authToken?: string;
 }
 
 export async function mcpServeCommand(opts: McpServeOptions): Promise<void> {
@@ -26,7 +27,10 @@ export async function mcpServeCommand(opts: McpServeOptions): Promise<void> {
 
   const port = opts.port ?? 3001;
   const host = opts.host ?? '127.0.0.1';
-  const handle = await runHttp(provider, { port, host });
+  // CLI flag takes precedence over env var. No token => unauthenticated
+  // (runHttp warns loudly at startup).
+  const authToken = opts.authToken ?? process.env.PIPEQUERY_MCP_TOKEN;
+  const handle = await runHttp(provider, { port, host, authToken });
 
   log.success(`PipeQuery MCP server listening on ${handle.url}`);
   log.info('Connect any MCP client to the URL above (Claude, Cursor, custom agents).');

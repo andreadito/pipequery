@@ -214,12 +214,19 @@ pq mcp serve
 # HTTP/SSE mode — for remote clients or future hosted deployments
 pq mcp serve --http --port 3001
 
+# HTTP with bearer-token auth (recommended for anything non-localhost)
+PIPEQUERY_MCP_TOKEN=$(openssl rand -hex 32) pq mcp serve --http --port 3001
+# or inline:
+pq mcp serve --http --port 3001 --auth-token "my-secret"
+
 # Attach to a running `pq serve` instance instead of loading pipequery.yaml locally
 pq mcp serve --attach http://localhost:3000
 
 # Inspect the tool schemas (useful for directory submission / debugging)
 pq mcp inspect
 ```
+
+**HTTP authentication** — when a token is set (`PIPEQUERY_MCP_TOKEN` env var or `--auth-token` flag), clients must send `Authorization: Bearer <token>` on every request; unauthenticated requests are rejected with `401`. If no token is set, the endpoint is open and the server prints a loud startup warning — fine for localhost, never OK for a publicly reachable deployment.
 
 **Tools exposed** to the AI:
 
