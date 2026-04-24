@@ -1835,6 +1835,10 @@ pq stop`}</CodeBlock>
                 { label: 'websocket', desc: 'Stream data from a WebSocket connection' },
                 { label: 'file', desc: 'Read JSON or CSV files, optionally watch for changes' },
                 { label: 'static', desc: 'Inline JSON data defined in config' },
+                { label: 'postgres', desc: 'Poll a SELECT query against Postgres (or TimescaleDB)' },
+                { label: 'mysql', desc: 'Poll a SELECT query against MySQL or MariaDB' },
+                { label: 'sqlite', desc: 'Poll a query against a local SQLite file (read-only by default)' },
+                { label: 'kafka', desc: 'Stream messages from a Kafka topic into a ring buffer' },
               ].map((s) => (
                 <Box key={s.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
                   <code style={{ color: '#82aaff', fontSize: '0.78rem', fontWeight: 600 }}>{s.label}</code>
@@ -1863,6 +1867,46 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 
 # Mock users & posts (JSONPlaceholder)
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Use with AI (MCP)">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              <code>pq mcp serve</code> starts a Model Context Protocol server that plugs into any
+              MCP client — Claude Desktop, Claude Code, Cursor, Copilot, custom agents. The AI gets
+              five tools against your live sources: <code>query</code>, <code>list_sources</code>,{' '}
+              <code>describe_source</code>, <code>list_endpoints</code>, <code>call_endpoint</code>.
+            </Typography>
+            <CodeBlock>{`# stdio mode — what Claude Desktop / Cursor expect
+pq mcp serve
+
+# HTTP/SSE for remote clients
+pq mcp serve --http --port 3001
+
+# Bearer-token auth (recommended for anything non-localhost)
+PIPEQUERY_MCP_TOKEN=$(openssl rand -hex 32) pq mcp serve --http --port 3001
+
+# Attach to an existing \`pq serve\` instance
+pq mcp serve --attach http://localhost:3000
+
+# Dump tool schemas (for MCP-directory submissions / debugging)
+pq mcp inspect`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Claude Desktop setup
+            </Typography>
+            <CodeBlock>{`// ~/Library/Application Support/Claude/claude_desktop_config.json
+{
+  "mcpServers": {
+    "pipequery": {
+      "command": "pq",
+      "args": ["mcp", "serve"],
+      "cwd": "/path/to/your/project-with-pipequery.yaml"
+    }
+  }
+}`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1.5 }}>
+              Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
+              For Claude Code / Cursor, the stdio command is the same — check each tool's MCP config.
+            </Typography>
           </SubSection>
 
           <SubSection title="Docker & Remote Deployment">
