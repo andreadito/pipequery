@@ -4249,6 +4249,84 @@ $ curl localhost:3000/api/top
       </Section>
 
       {/* ════════════════════════════════════════════════════════════════════
+          ENTERPRISE / COMMERCIAL
+         ════════════════════════════════════════════════════════════════════ */}
+      <Box sx={{
+        position: 'relative', zIndex: 1,
+        py: { xs: 6, md: 8 },
+        borderTop: '1px solid', borderColor: C.border,
+        background: `radial-gradient(ellipse at top, ${alpha(C.blue, 0.04)} 0%, transparent 60%)`,
+      }}>
+        <Box sx={{
+          maxWidth: 880, mx: 'auto', px: { xs: 2.5, md: 4 },
+          display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+        }}>
+          <Typography sx={{
+            fontSize: '0.72rem', fontWeight: 600, letterSpacing: 1.5,
+            textTransform: 'uppercase', color: C.blue, mb: 1.5,
+            fontFamily: '"JetBrains Mono", monospace',
+          }}>
+            For teams &amp; enterprises
+          </Typography>
+          <Typography variant="h3" sx={{
+            fontSize: { xs: '1.6rem', md: '2rem' }, fontWeight: 700, color: C.text, mb: 1.5,
+            fontFamily: '"DM Sans", sans-serif',
+          }}>
+            Run pipequery in production, safely.
+          </Typography>
+          <Typography sx={{
+            fontSize: '0.95rem', color: C.textMuted, maxWidth: 640, mb: 4,
+            lineHeight: 1.6, fontFamily: '"DM Sans", sans-serif',
+          }}>
+            Commercialized by <Box component="span" sx={{ fontWeight: 600, color: C.text }}>Vault Gradient</Box>.
+            Self-host the OSS freely. For teams that need hosted multi-tenant MCP,
+            API-key or SSO auth, audit logs, SLA, or a commercial license for embedded use &mdash;
+            we&apos;ll handle the parts that aren&apos;t fun to build yourself.
+          </Typography>
+          <Box sx={{
+            display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center',
+          }}>
+            <Box
+              component="a"
+              href="https://github.com/andreadito/pipequery/issues/new?template=hosted-mcp.yml"
+              target="_blank"
+              rel="noopener"
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.8,
+                px: 2.5, py: 1.1, borderRadius: 1.5,
+                bgcolor: alpha(C.blue, 0.1),
+                border: '1px solid', borderColor: alpha(C.blue, 0.3),
+                color: C.blue, textDecoration: 'none',
+                fontFamily: '"DM Sans", sans-serif', fontSize: '0.85rem', fontWeight: 600,
+                transition: 'all 0.2s',
+                '&:hover': { bgcolor: alpha(C.blue, 0.16), borderColor: alpha(C.blue, 0.5) },
+              }}
+            >
+              Hosted MCP for your team &rarr;
+            </Box>
+            <Box
+              component="a"
+              href="https://github.com/andreadito/pipequery/issues/new?template=commercial-license.yml"
+              target="_blank"
+              rel="noopener"
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.8,
+                px: 2.5, py: 1.1, borderRadius: 1.5,
+                bgcolor: 'transparent',
+                border: '1px solid', borderColor: C.border,
+                color: C.textMuted, textDecoration: 'none',
+                fontFamily: '"DM Sans", sans-serif', fontSize: '0.85rem', fontWeight: 500,
+                transition: 'all 0.2s',
+                '&:hover': { borderColor: C.borderHover, color: C.text },
+              }}
+            >
+              Commercial license &amp; support &rarr;
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* ════════════════════════════════════════════════════════════════════
           AUTHOR
          ════════════════════════════════════════════════════════════════════ */}
       <Box sx={{

@@ -1,0 +1,99 @@
+name: Hosted pipequery MCP — interest
+description: Tell us about running pipequery MCP as a hosted service for your team (auth, audit, multi-source, SLA).
+title: "[Hosted MCP] "
+labels: ["hosted-mcp"]
+assignees:
+  - andreadito
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the interest. This form goes to Vault Gradient, the company commercializing pipequery.
+        We'll respond within a few business days. Nothing you fill in here is shared publicly unless you want it to be.
+
+  - type: input
+    id: company
+    attributes:
+      label: Company / team
+      placeholder: "e.g. Acme Inc."
+    validations:
+      required: true
+
+  - type: input
+    id: contact
+    attributes:
+      label: Your name and role
+      placeholder: "e.g. Jane Doe, Head of Platform"
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: Email (for follow-up)
+      placeholder: "you@company.com"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ai-tools
+    attributes:
+      label: Which AI clients do your engineers use?
+      multiple: true
+      options:
+        - Claude Desktop
+        - Claude Code
+        - Cursor
+        - GitHub Copilot
+        - Windsurf
+        - Continue
+        - A custom / in-house agent
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: data-sources
+    attributes:
+      label: What internal data would the AI need access to?
+      description: One line per source. REST APIs, Postgres, Snowflake, S3, files, etc.
+      placeholder: |
+        - Internal product API (REST)
+        - Postgres (product DB, read replica)
+        - Snowflake analytics warehouse
+    validations:
+      required: true
+
+  - type: dropdown
+    id: volume
+    attributes:
+      label: Rough expected query volume
+      options:
+        - "< 1K queries/month (exploring)"
+        - "1K–10K queries/month (single team)"
+        - "10K–100K queries/month (multiple teams)"
+        - "100K+ queries/month (company-wide)"
+        - "Not sure yet"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: requirements
+    attributes:
+      label: Which of these are hard requirements for your procurement?
+      multiple: true
+      options:
+        - API key or OAuth auth on the MCP endpoint
+        - Per-user / per-agent audit log exportable to our SIEM
+        - SSO (SAML / OIDC)
+        - Private networking / VPC peering to our data sources
+        - SOC 2 Type II report
+        - Data residency (specific region)
+        - SLA / indemnification contract
+        - None — still exploring
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Timeline, current DIY attempts, specific pain points, etc.

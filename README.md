@@ -12,6 +12,8 @@
   <a href="https://github.com/andreadito/pipequery/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license" /></a>
   <a href="https://github.com/andreadito/pipequery"><img src="https://img.shields.io/badge/TypeScript-100%25-blue.svg" alt="TypeScript" /></a>
   <a href="https://andreadito.github.io/pipequery"><img src="https://img.shields.io/badge/demo-playground-blueviolet.svg" alt="playground" /></a>
+  <a href="https://github.com/sponsors/andreadito"><img src="https://img.shields.io/badge/sponsor-andreadito-ea4aaa?logo=github" alt="sponsor" /></a>
+  <a href="https://github.com/andreadito/pipequery/issues/new?template=hosted-mcp.yml"><img src="https://img.shields.io/badge/enterprise-hosted%20MCP-4f46e5" alt="hosted MCP" /></a>
 </p>
 
 ---
@@ -298,7 +300,7 @@ Works in all modern browsers and Node.js 18+. The core engine uses only standard
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions welcome. Open an issue first for anything non-trivial, sign off commits with `git commit -s` (DCO — no CLA), and submit a PR. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the full flow.
 
 ```bash
 git clone https://github.com/andreadito/pipequery.git
@@ -307,6 +309,13 @@ npm install
 npm test
 ```
 
-## License
+## License & commercial use
 
-[MIT](./LICENSE) &copy; andreadito
+The engine and CLI are currently both [MIT](./LICENSE) &copy; andreadito. The CLI is moving to the Business Source License 1.1 in an upcoming minor release to protect the hosted-MCP roadmap &mdash; details will land in `cli/LICENSING.md` alongside that change.
+
+Running (or planning to run) pipequery commercially? Two lightweight channels:
+
+- **Hosted pipequery MCP for your team** &mdash; [open an inquiry](https://github.com/andreadito/pipequery/issues/new?template=hosted-mcp.yml).
+- **Commercial license or paid support** &mdash; [open an inquiry](https://github.com/andreadito/pipequery/issues/new?template=commercial-license.yml).
+
+Commercialization is run by **Vault Gradient**. The repo stays on [`andreadito`](https://github.com/andreadito) for now.

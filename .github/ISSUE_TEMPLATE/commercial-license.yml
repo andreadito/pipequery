@@ -1,0 +1,94 @@
+name: Commercial license or paid support — self-hosted pipequery
+description: Running (or planning to run) pipequery CLI yourself and need a commercial license, paid support, SLA, or indemnification.
+title: "[Commercial] "
+labels: ["commercial-license"]
+assignees:
+  - andreadito
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The pipequery engine is MIT. The CLI (`@vaultgradient/pipequery-cli`) ships under the Business Source License 1.1,
+        which allows internal production use but restricts running it as a competing hosted service.
+        Use this form if you need a commercial license, paid support, or indemnification for a self-hosted deployment.
+
+        We'll respond within a few business days.
+
+  - type: input
+    id: company
+    attributes:
+      label: Company / team
+      placeholder: "e.g. Acme Inc."
+    validations:
+      required: true
+
+  - type: input
+    id: contact
+    attributes:
+      label: Your name and role
+      placeholder: "e.g. Jane Doe, Head of Platform"
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: Email (for follow-up)
+      placeholder: "you@company.com"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: use-case
+    attributes:
+      label: What's the intended use?
+      options:
+        - Internal use only (self-hosted for our own engineering teams)
+        - Embedded in our product (shipped to our customers)
+        - Offered as part of a hosted service to our customers
+        - Evaluating — not sure yet
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: deployment
+    attributes:
+      label: Deployment target
+      description: Where will pipequery run? (Cloud, region, self-managed Kubernetes, VPC, etc.)
+      placeholder: |
+        e.g. AWS us-east-1, self-managed Kubernetes, one cluster per customer tenant
+    validations:
+      required: true
+
+  - type: dropdown
+    id: needs
+    attributes:
+      label: What do you need from Vault Gradient?
+      multiple: true
+      options:
+        - Commercial license to run as a hosted service
+        - Legal indemnification (IP, license terms)
+        - Written SLA / support contract
+        - Paid implementation or onboarding help
+        - Private Slack / email support
+        - Roadmap influence (feature request priority)
+        - Security review / questionnaire response
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timeline
+    attributes:
+      label: Procurement timeline
+      options:
+        - "< 30 days"
+        - "1–3 months"
+        - "3–6 months"
+        - "6+ months"
+        - "Not sure yet"
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
