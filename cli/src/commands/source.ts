@@ -55,6 +55,12 @@ export async function sourceAddCommand(name: string, opts: {
   ssl?: string;
   maxRows?: string;
   readonly?: boolean;
+  brokers?: string;
+  topic?: string;
+  groupId?: string;
+  fromBeginning?: boolean;
+  valueFormat?: string;
+  maxBuffer?: string;
 }) {
   const cwd = process.cwd();
   const { config, path: configPath } = await loadConfig(cwd);
@@ -121,8 +127,22 @@ export async function sourceAddCommand(name: string, opts: {
         ...(opts.readonly === false ? { readonly: false } : {}),
       };
       break;
+    case 'kafka':
+      if (!opts.brokers) throw new Error('--brokers is required for Kafka sources (comma-separated)');
+      if (!opts.topic) throw new Error('--topic is required for Kafka sources');
+      sourceConfig = {
+        type: 'kafka',
+        brokers: opts.brokers,
+        topic: opts.topic,
+        ...(opts.groupId ? { groupId: opts.groupId } : {}),
+        ...(opts.fromBeginning ? { fromBeginning: true } : {}),
+        ...(opts.maxBuffer ? { maxBuffer: Number.parseInt(opts.maxBuffer, 10) } : {}),
+        ...(opts.valueFormat ? { valueFormat: opts.valueFormat as 'json' | 'string' | 'raw' } : {}),
+        ...(opts.ssl === 'true' ? { ssl: true } : {}),
+      };
+      break;
     default:
-      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file, postgres, mysql, sqlite`);
+      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file, postgres, mysql, sqlite, kafka`);
   }
 
   // Save to config
