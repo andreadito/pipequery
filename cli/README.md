@@ -2,11 +2,11 @@
 
 A command-line tool for building data pipelines, REST APIs, and terminal dashboards using PipeQuery expressions.
 
-Connect to any data source (REST APIs, WebSockets, files), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
+Connect to any data source (REST APIs, WebSockets, files, Postgres), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
 
 **Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
 
-**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, and WebSocket streams directly.
+**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres databases, and WebSocket streams directly.
 
 ## Installation
 
@@ -82,6 +82,12 @@ pq source add coins -t rest -u "https://api.example.com/coins" -i 30s
 # Add a file source with live watching
 pq source add orders -t file -p ./data/orders.csv -w
 
+# Add a Postgres source (credentials interpolated from env at runtime)
+pq source add users -t postgres \
+  -u "postgres://\${DB_USER}:\${DB_PASS}@db.internal:5432/app" \
+  -q "SELECT id, email, created_at FROM users WHERE created_at > NOW() - INTERVAL '7 days'" \
+  -i 60s
+
 # Test a source (fetch sample data)
 pq source test coins
 
@@ -94,6 +100,7 @@ Source types:
 - **websocket** — Streams data from a WebSocket connection
 - **file** — Reads JSON or CSV files, optionally watches for changes
 - **static** — Inline JSON data defined in config
+- **postgres** — Polls a Postgres query at a configurable interval. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of `pipequery.yaml`. A `maxRows` safety cap (default 10000) protects against runaway queries. Options: `-u` connection URL, `-q` SELECT query, `-i` interval, `--ssl <require\|no-verify\|false>`, `--max-rows <n>`.
 
 ### `pq endpoint`
 
