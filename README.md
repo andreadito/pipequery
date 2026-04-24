@@ -311,7 +311,10 @@ npm test
 
 ## License & commercial use
 
-The engine and CLI are currently both [MIT](./LICENSE) &copy; andreadito. The CLI is moving to the Business Source License 1.1 in an upcoming minor release to protect the hosted-MCP roadmap &mdash; details will land in `cli/LICENSING.md` alongside that change.
+This repo ships two packages with different licenses:
+
+- **Engine** &mdash; [`@vaultgradient/pipequery-lang`](https://www.npmjs.com/package/@vaultgradient/pipequery-lang) and everything under `src/` is [MIT](./LICENSE).
+- **CLI** &mdash; [`@vaultgradient/pipequery-cli`](https://www.npmjs.com/package/@vaultgradient/pipequery-cli) (under `cli/`) is **[Business Source License 1.1](./cli/LICENSE)** from version 0.4.0 onward. You can use and embed it freely in production inside your own company or product. What the BSL blocks is running it as a competing hosted Model Context Protocol service or data-query-as-a-service. Each released version converts to MIT four years after it ships. Plain-English summary: [`cli/LICENSING.md`](./cli/LICENSING.md).
 
 Running (or planning to run) pipequery commercially? Two lightweight channels:
 
@@ -319,3 +322,5 @@ Running (or planning to run) pipequery commercially? Two lightweight channels:
 - **Commercial license or paid support** &mdash; [open an inquiry](https://github.com/andreadito/pipequery/issues/new?template=commercial-license.yml).
 
 Commercialization is run by **Vault Gradient**. The repo stays on [`andreadito`](https://github.com/andreadito) for now.
+
+&copy; andreadito &middot; [MIT](./LICENSE) (engine) &middot; [BSL 1.1](./cli/LICENSE) (CLI, from v0.4.0)

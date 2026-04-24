@@ -437,4 +437,10 @@ The dashboard uses Server-Sent Events (SSE) for real-time push updates when conn
 
 ## License
 
-MIT
+**Business Source License 1.1** (BSL 1.1) from version 0.4.0 onward. The full license is in [`LICENSE`](./LICENSE); a plain-English summary — what you can do, what you can't, how the Change Date works — is in [`LICENSING.md`](./LICENSING.md).
+
+Short version: run the CLI in your own company or product freely; you need a commercial license to offer it as a competing hosted MCP or data-query service. Every release converts to MIT four years after it ships.
+
+The pipequery **engine** library (`@vaultgradient/pipequery-lang`) is separately licensed under MIT and unaffected.
+
+Commercial inquiries: [open a commercial-license issue](https://github.com/andreadito/pipequery/issues/new?template=commercial-license.yml).
