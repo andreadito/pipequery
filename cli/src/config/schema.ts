@@ -21,7 +21,8 @@ export type SourceConfig =
   | RestSourceConfig
   | WebSocketSourceConfig
   | FileSourceConfig
-  | StaticSourceConfig;
+  | StaticSourceConfig
+  | PostgresSourceConfig;
 
 export interface RestSourceConfig {
   type: 'rest';
@@ -48,6 +49,32 @@ export interface FileSourceConfig {
 export interface StaticSourceConfig {
   type: 'static';
   data: unknown[];
+}
+
+export interface PostgresSourceConfig {
+  type: 'postgres';
+  /**
+   * Postgres connection URL. Supports `${ENV_VAR}` interpolation so
+   * credentials can live in the environment instead of the yaml.
+   * Example: `postgres://${DB_USER}:${DB_PASS}@db.internal:5432/app`.
+   */
+  url: string;
+  /**
+   * The SELECT query to run on each poll. Must be a single statement.
+   * It's the caller's responsibility to add LIMIT/WHERE clauses that
+   * bound the result set; `maxRows` below is a hard safety cap.
+   */
+  query: string;
+  /** Poll interval, e.g. "30s", "5m". Defaults to "30s". */
+  interval?: string;
+  /**
+   * SSL policy. `"require"` verifies the cert (production default for
+   * most hosted Postgres). `"no-verify"` skips verification (useful for
+   * self-signed dev setups). `false` disables TLS entirely.
+   */
+  ssl?: 'require' | 'no-verify' | false;
+  /** Safety cap. If the query returns more rows, the fetch errors. Default 10000. */
+  maxRows?: number;
 }
 
 // ─── Endpoint config ─────────────────────────────────────────────────────────

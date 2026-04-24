@@ -4,6 +4,7 @@ import { RestSourceAdapter } from './rest.js';
 import { WebSocketSourceAdapter } from './websocket.js';
 import { FileSourceAdapter } from './file.js';
 import { StaticSourceAdapter } from './static.js';
+import { PostgresSourceAdapter } from './postgres.js';
 
 export type DataContext = Record<string, unknown[]>;
 
@@ -113,6 +114,8 @@ export class SourceManager {
         return new FileSourceAdapter(config, this.cwd);
       case 'static':
         return new StaticSourceAdapter(config);
+      case 'postgres':
+        return new PostgresSourceAdapter(config);
       default:
         throw new Error(`Unknown source type: ${(config as { type: string }).type}`);
     }

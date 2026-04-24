@@ -51,6 +51,9 @@ export async function sourceAddCommand(name: string, opts: {
   dataPath?: string;
   path?: string;
   watch?: boolean;
+  query?: string;
+  ssl?: string;
+  maxRows?: string;
 }) {
   const cwd = process.cwd();
   const { config, path: configPath } = await loadConfig(cwd);
@@ -79,8 +82,21 @@ export async function sourceAddCommand(name: string, opts: {
         ...(opts.watch ? { watch: true } : {}),
       };
       break;
+    case 'postgres':
+      if (!opts.url) throw new Error('--url is required for Postgres sources');
+      if (!opts.query) throw new Error('--query is required for Postgres sources');
+      sourceConfig = {
+        type: 'postgres',
+        url: opts.url,
+        query: opts.query,
+        interval: opts.interval ?? '30s',
+        ...(opts.ssl === 'no-verify' ? { ssl: 'no-verify' as const } : {}),
+        ...(opts.ssl === 'false' ? { ssl: false as const } : {}),
+        ...(opts.maxRows ? { maxRows: Number.parseInt(opts.maxRows, 10) } : {}),
+      };
+      break;
     default:
-      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file`);
+      throw new Error(`Unknown source type: ${opts.type}. Use: rest, websocket, file, postgres`);
   }
 
   // Save to config
