@@ -114,14 +114,9 @@ jobs:
           npm ci
           npm run build
 
-      - name: Test CLI (if tests exist)
+      - name: Test CLI
         working-directory: cli
-        run: |
-          if compgen -G "src/**/*.test.*" > /dev/null || compgen -G "src/**/*.spec.*" > /dev/null; then
-            npm test
-          else
-            echo "No test files found, skipping"
-          fi
+        run: npm test
 
   # ─── Publish Engine to GitHub Packages ──────────────────────────────────────
   publish-engine:
