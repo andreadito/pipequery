@@ -25,6 +25,9 @@ import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import JoinInnerIcon from "@mui/icons-material/JoinInner";
 import TransformIcon from "@mui/icons-material/Transform";
 import TerminalIcon from "@mui/icons-material/Terminal";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import SendIcon from "@mui/icons-material/Send";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 
@@ -464,6 +467,24 @@ const FEATURES = [
     title: "React Components",
     desc: "Visual pipeline builder component with point-and-click.",
     accent: "#00bcd4",
+  },
+  {
+    icon: AutoAwesomeIcon,
+    title: "MCP Server",
+    desc: "Companion CLI ships an MCP server so Claude / Cursor / Copilot can query your live sources directly.",
+    accent: "#7c4dff",
+  },
+  {
+    icon: SendIcon,
+    title: "Telegram Bot",
+    desc: "pq telegram serve maps the same query verbs to chat. Optional NL translation via Anthropic's API.",
+    accent: "#0ea5e9",
+  },
+  {
+    icon: NotificationsActiveIcon,
+    title: "Alert Watches",
+    desc: "Declarative pq watch — query → notification on transition. Idempotent, no flapping.",
+    accent: "#f59e0b",
   },
 ];
 
