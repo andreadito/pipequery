@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import type { PipeQueryConfig, EndpointConfig, SourceConfig } from '../config/schema.js';
 import { SourceManager } from './sources/manager.js';
+import { WatchManager } from './watches/manager.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerControlRoutes } from './routes/control.js';
 import { registerDynamicRoutes } from './routes/dynamic.js';
@@ -14,6 +15,7 @@ export interface ServerContext {
   app: ReturnType<typeof Fastify>;
   sourceManager: SourceManager;
   endpoints: Map<string, EndpointConfig>;
+  watchManager: WatchManager;
 }
 
 export async function createServer(
@@ -95,7 +97,14 @@ export async function createServer(
   registerSSERoutes(app, sourceManager);
   registerDynamicRoutes(app, sourceManager, endpoints);
 
+  // Watches: register and start polling. Failures in any single watch are
+  // isolated — see WatchManager for the per-watch error handling.
+  const watchManager = new WatchManager(sourceManager);
+  if (config.watches && Object.keys(config.watches).length > 0) {
+    watchManager.start(config.watches);
+  }
+
   activity.info('Server ready');
 
-  return { app, sourceManager, endpoints };
+  return { app, sourceManager, endpoints, watchManager };
 }

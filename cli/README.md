@@ -8,6 +8,8 @@ Connect to any data source (REST APIs, WebSockets, files, Postgres, MySQL, SQLit
 
 **Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres / MySQL / SQLite databases, Kafka streams, and WebSocket feeds directly.
 
+**Use it from Telegram** — `pq telegram serve` runs a Telegram bot that maps the same MCP commands to chat (`/query`, `/sources`, `/describe`, `/call`). Pair with `pq watch add` to push alerts to a Telegram channel when a query result transitions (`when_non_empty`, `when_empty`, or `on_change`).
+
 ## Installation
 
 ```bash
@@ -266,6 +268,56 @@ Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
 ### Claude Code / Cursor setup
 
 Same idea — consult each tool's MCP config section. The stdio command is `pq mcp serve` with `cwd` pointing at a directory containing `pipequery.yaml`.
+
+## Use from Telegram
+
+`pq telegram serve` runs a Telegram bot that exposes the same five verbs as MCP, mapped to slash commands.
+
+```bash
+PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
+
+# Or attach to a running pq serve instance
+pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname
+```
+
+Bot commands:
+
+| Command | What it does |
+|---|---|
+| `/sources` | List configured sources and their health |
+| `/describe <name>` | Sample rows + inferred field names |
+| `/endpoints` | List pre-configured endpoints |
+| `/call <path>` | Execute a pre-configured endpoint by path |
+| `/query <expression>` | Run an arbitrary pipequery expression |
+| `/help` | Show usage |
+
+Without `--allow-user`, the bot replies to anyone who finds it (a stderr warning prints on first message). For anything reachable from the public internet, set the allowlist.
+
+## Watch — alerts to Telegram
+
+`pq watch add` registers a query that runs on every interval; when its result transitions (becomes non-empty, becomes empty, or changes content), pipequery posts a notification to a Telegram chat / channel.
+
+```bash
+# Set up the bot token once
+export PIPEQUERY_TG_BOT_TOKEN=<your-bot-token>
+
+# BTC dropped under $80k? Tell me.
+pq watch add btc_dip \
+  -q "crypto | where(symbol == 'BTC' && price < 80000) | first(1)" \
+  -i 30s \
+  --telegram-chat-id -1001234567890 \
+  --telegram-message "🚨 BTC dipped: \${{ .price }}"
+
+pq watch list
+pq watch remove btc_dip
+```
+
+`fireWhen` modes:
+- **`when_non_empty`** (default) — fire on the empty → non-empty transition. Standard alerting shape; no spam while still triggered, re-fires after going empty and back.
+- **`when_empty`** — inverse, e.g. liveness checks that fire when nothing matches.
+- **`on_change`** — fire whenever the result content changes. Use sparingly; can be chatty.
+
+Message templates support `{{ .field }}` (first-row field), `{{ .count }}` (total row count), `{{ .watchName }}`, and `{{ .reason }}`. If you omit the template, the bot posts a default summary plus the rendered result.
 
 ## Docker & Remote Deployment
 

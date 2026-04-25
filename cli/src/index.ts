@@ -10,6 +10,7 @@ import { monitorCommand } from './commands/monitor.js';
 import { remoteDeployCommand, remoteConnectCommand, remoteStatusCommand } from './commands/remote.js';
 import { mcpServeCommand, mcpInspectCommand } from './commands/mcp.js';
 import { telegramServeCommand } from './commands/telegram.js';
+import { watchListCommand, watchAddCommand, watchRemoveCommand } from './commands/watch.js';
 import { completionCommand } from './commands/completion.js';
 import { stopCommand } from './commands/stop.js';
 import { startRepl } from './commands/repl.js';
@@ -184,6 +185,31 @@ telegram
   .option('--attach <url>', 'Attach to a running `pq serve` instance instead of loading pipequery.yaml locally')
   .option('--allow-user <handle>', 'Allowlist a user (numeric id or @username); repeatable. With no allowlist, anyone with the bot username can query.', collectRepeated, [])
   .action(telegramServeCommand);
+
+// ─── pq watch ────────────────────────────────────────────────────────────────
+
+const watch = program.command('watch').description('Manage alert watches (query → notification when condition fires)');
+
+watch
+  .command('list')
+  .description('List configured watches')
+  .action(watchListCommand);
+
+watch
+  .command('add <name>')
+  .description('Add a watch that fires a notification when its query result triggers the configured condition')
+  .requiredOption('-q, --query <expression>', 'PipeQuery expression to evaluate on each tick')
+  .option('-i, --interval <duration>', 'Poll interval (e.g., 30s, 5m). Default 60s.')
+  .option('-f, --fire-when <mode>', 'Fire condition: when_non_empty (default), when_empty, on_change')
+  .option('--telegram-chat-id <id>', 'Telegram chat / channel / group ID to notify')
+  .option('--telegram-bot-token <token>', 'Bot token override (defaults to $PIPEQUERY_TG_BOT_TOKEN)')
+  .option('--telegram-message <template>', 'Optional message template; supports {{ .field }} from the first row, plus {{ .count }}, {{ .watchName }}, {{ .reason }}')
+  .action(watchAddCommand);
+
+watch
+  .command('remove <name>')
+  .description('Remove a watch')
+  .action(watchRemoveCommand);
 
 // ─── pq stop ────────────────────────────────────────────────────────────────
 
