@@ -2,11 +2,13 @@ import { loadConfig } from '../config/loader.js';
 import { log } from '../utils/logger.js';
 import { LocalProvider, AttachedProvider, type Provider } from '../mcp/provider.js';
 import { buildBot } from '../telegram/bot.js';
+import { createNLTranslator } from '../telegram/nl.js';
 
 interface TelegramServeOptions {
   botToken?: string;
   attach?: string;
   allowUser?: string[];
+  anthropicKey?: string;
 }
 
 export async function telegramServeCommand(opts: TelegramServeOptions): Promise<void> {
@@ -18,11 +20,24 @@ export async function telegramServeCommand(opts: TelegramServeOptions): Promise<
     process.exit(1);
   }
 
+  const anthropicKey = opts.anthropicKey ?? process.env.ANTHROPIC_API_KEY;
   const provider = await buildProvider(opts.attach);
-  const bot = buildBot(token, provider, { allowUsers: opts.allowUser ?? [] });
+  const nl = anthropicKey
+    ? createNLTranslator(provider, { apiKey: anthropicKey })
+    : undefined;
+
+  const bot = buildBot(token, provider, {
+    allowUsers: opts.allowUser ?? [],
+    nl,
+  });
 
   const me = await bot.api.getMe();
   log.success(`Telegram bot listening as @${me.username} (id ${me.id})`);
+  if (nl) {
+    log.info('Natural-language translation enabled (claude-haiku-4-5).');
+  } else {
+    log.dim('Natural-language translation disabled. Pass --anthropic-key or set ANTHROPIC_API_KEY to enable.');
+  }
   if (!opts.allowUser || opts.allowUser.length === 0) {
     log.warn('No --allow-user set: anyone with the bot username can query. Add allowlist for production.');
   }

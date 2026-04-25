@@ -180,10 +180,11 @@ const telegram = program.command('telegram').description('Telegram bot transport
 
 telegram
   .command('serve')
-  .description('Run a Telegram bot that exposes pipequery commands (/query, /sources, /describe, /endpoints, /call)')
+  .description('Run a Telegram bot that exposes pipequery commands (/query, /sources, /describe, /endpoints, /call) plus natural-language queries when --anthropic-key is set')
   .option('-t, --bot-token <token>', 'Telegram bot token (or set $PIPEQUERY_TG_BOT_TOKEN)')
   .option('--attach <url>', 'Attach to a running `pq serve` instance instead of loading pipequery.yaml locally')
   .option('--allow-user <handle>', 'Allowlist a user (numeric id or @username); repeatable. With no allowlist, anyone with the bot username can query.', collectRepeated, [])
+  .option('--anthropic-key <key>', 'Anthropic API key (or set $ANTHROPIC_API_KEY) — enables natural-language → pipequery translation on plain-text messages via claude-haiku-4-5.')
   .action(telegramServeCommand);
 
 // ─── pq watch ────────────────────────────────────────────────────────────────

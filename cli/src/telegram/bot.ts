@@ -9,16 +9,21 @@
 import { Bot, type Context, GrammyError, HttpError } from 'grammy';
 import type { Provider } from '../mcp/provider.js';
 import { formatError, formatResult, escapeHtml } from './format.js';
+import type { NLTranslator } from './nl.js';
 
 export interface BotOptions {
   /** Whitelist of Telegram user IDs (numeric) or @usernames allowed to query.
    *  Empty array = anyone with the bot token can query (NOT recommended). */
   allowUsers?: string[];
+  /** Optional natural-language translator. If present, plain-text messages
+   *  (no leading slash) are routed through it. */
+  nl?: NLTranslator;
 }
 
 export function buildBot(token: string, provider: Provider, opts: BotOptions = {}): Bot {
   const bot = new Bot(token);
   const allowList = normalizeAllowList(opts.allowUsers ?? []);
+  const nl = opts.nl;
 
   // Auth middleware — runs before any handler.
   bot.use(async (ctx, next) => {
@@ -57,22 +62,30 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
   });
 
   bot.command('help', async (ctx) => {
-    await ctx.reply(
-      [
-        '<b>Examples</b>',
-        '<code>/sources</code>',
-        '<code>/describe products</code>',
-        '<code>/query products | sort(price desc) | first(5)</code>',
-        '<code>/query crypto | where(price &gt; 100) | rollup(avg(price) as avg)</code>',
-        '<code>/call /api/top-coins</code>',
+    const lines = [
+      '<b>Examples</b>',
+      '<code>/sources</code>',
+      '<code>/describe products</code>',
+      '<code>/query products | sort(price desc) | first(5)</code>',
+      '<code>/query crypto | where(price &gt; 100) | rollup(avg(price) as avg)</code>',
+      '<code>/call /api/top-coins</code>',
+    ];
+    if (nl) {
+      lines.push(
         '',
-        '<b>Tips</b>',
-        '• Wrap quoted strings carefully — Telegram\'s autocorrect can mangle them. Send long expressions as a separate message.',
-        '• Use <code>/describe &lt;source&gt;</code> to discover field names before constructing a where clause.',
-        '• Results &gt; 30 rows are truncated with a footer; tighten your query to see all of them.',
-      ].join('\n'),
-      { parse_mode: 'HTML' },
+        '<b>Natural language</b>',
+        'Send any plain-text message (no leading <code>/</code>) and I\'ll translate it into a pipequery expression and run it.',
+        'Example: <i>"top 5 most expensive paid orders"</i>',
+      );
+    }
+    lines.push(
+      '',
+      '<b>Tips</b>',
+      '• Wrap quoted strings carefully — Telegram\'s autocorrect can mangle them. Send long expressions as a separate message.',
+      '• Use <code>/describe &lt;source&gt;</code> to discover field names before constructing a where clause.',
+      '• Results &gt; 30 rows are truncated with a footer; tighten your query to see all of them.',
     );
+    await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' });
   });
 
   bot.command('sources', async (ctx) => {
@@ -156,6 +169,36 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
     try {
       const result = await provider.runQuery(expr);
       await ctx.reply(formatResult(result), { parse_mode: 'HTML' });
+    } catch (err) {
+      await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+    }
+  });
+
+  // Plain-text fallback — only fires if NL translation is enabled. Anything
+  // starting with `/` is already routed by grammy's command matchers above;
+  // bot.on('message:text') still receives them, so we filter explicitly.
+  bot.on('message:text', async (ctx) => {
+    const text = ctx.message.text.trim();
+    if (!text || text.startsWith('/')) return;
+    if (!nl) {
+      await ctx.reply(
+        'I don\'t recognise that. Use <code>/help</code> to see the available commands. ' +
+          'Natural-language queries are disabled — start the bot with <code>--anthropic-key</code> to enable them.',
+        { parse_mode: 'HTML' },
+      );
+      return;
+    }
+    try {
+      await ctx.replyWithChatAction('typing');
+      const { expression, explanation } = await nl.translate(text);
+      if (!expression) {
+        const reason = explanation || 'I couldn\'t translate that into a pipequery expression.';
+        await ctx.reply(`🤔 ${escapeHtml(reason)}`, { parse_mode: 'HTML' });
+        return;
+      }
+      const result = await provider.runQuery(expression);
+      const header = `<i>${escapeHtml(explanation || 'Translated query')}</i>\n<code>${escapeHtml(expression)}</code>\n\n`;
+      await ctx.reply(header + formatResult(result), { parse_mode: 'HTML' });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
     }

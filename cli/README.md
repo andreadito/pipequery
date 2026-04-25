@@ -293,6 +293,18 @@ Bot commands:
 
 Without `--allow-user`, the bot replies to anyone who finds it (a stderr warning prints on first message). For anything reachable from the public internet, set the allowlist.
 
+### Natural-language queries
+
+Pass `--anthropic-key` (or set `ANTHROPIC_API_KEY`) and the bot accepts plain-English questions in addition to slash commands. Anything that doesn't start with `/` is translated into a pipequery expression by `claude-haiku-4-5` and executed against the configured sources.
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
+```
+
+Then in Telegram: `top 5 most expensive paid orders` → bot replies with the translated expression and the result.
+
+The translator uses prompt caching for both the system prompt (always-stable DSL grammar) and the per-tenant schema preamble (source list + inferred fields), so repeated queries are cheap. The schema preamble refreshes every minute.
+
 ## Watch — alerts to Telegram
 
 `pq watch add` registers a query that runs on every interval; when its result transitions (becomes non-empty, becomes empty, or changes content), pipequery posts a notification to a Telegram chat / channel.
