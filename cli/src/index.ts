@@ -9,10 +9,14 @@ import { dashboardCommand } from './commands/dashboard.js';
 import { monitorCommand } from './commands/monitor.js';
 import { remoteDeployCommand, remoteConnectCommand, remoteStatusCommand } from './commands/remote.js';
 import { mcpServeCommand, mcpInspectCommand } from './commands/mcp.js';
+import { telegramServeCommand } from './commands/telegram.js';
 import { completionCommand } from './commands/completion.js';
 import { stopCommand } from './commands/stop.js';
 import { startRepl } from './commands/repl.js';
 import { printBanner } from './utils/banner.js';
+
+// Commander helper: accumulate `--allow-user @a --allow-user @b` into an array.
+const collectRepeated = (value: string, acc: string[]): string[] => [...acc, value];
 
 const program = new Command();
 
@@ -168,6 +172,18 @@ mcp
   .description('Print the MCP tool schemas as JSON (useful for directory submission / debugging)')
   .option('--attach <url>', 'Attach to a running `pq serve` instance at the given URL instead of loading pipequery.yaml locally')
   .action(mcpInspectCommand);
+
+// ─── pq telegram ─────────────────────────────────────────────────────────────
+
+const telegram = program.command('telegram').description('Telegram bot transport for pipequery');
+
+telegram
+  .command('serve')
+  .description('Run a Telegram bot that exposes pipequery commands (/query, /sources, /describe, /endpoints, /call)')
+  .option('-t, --bot-token <token>', 'Telegram bot token (or set $PIPEQUERY_TG_BOT_TOKEN)')
+  .option('--attach <url>', 'Attach to a running `pq serve` instance instead of loading pipequery.yaml locally')
+  .option('--allow-user <handle>', 'Allowlist a user (numeric id or @username); repeatable. With no allowlist, anyone with the bot username can query.', collectRepeated, [])
+  .action(telegramServeCommand);
 
 // ─── pq stop ────────────────────────────────────────────────────────────────
 
