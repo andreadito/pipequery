@@ -620,6 +620,92 @@ Claude Desktop setup (`~/Library/Application Support/Claude/claude_desktop_confi
 }
 ```
 
+### Telegram bot — `pq telegram serve`
+
+Same five verbs as MCP, exposed as Telegram slash commands. Same `Provider` abstraction underneath as MCP — anything added to the provider (auth, governance, push-down policy) applies uniformly to both surfaces.
+
+```bash
+# Run the bot (loads pipequery.yaml from cwd)
+PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
+
+# Attach to a running pq serve instance instead of loading yaml locally
+pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname
+```
+
+Commands:
+
+| Command | Description |
+|---------|-------------|
+| `/sources` | List configured sources and their health |
+| `/describe <name>` | Sample rows + inferred field names |
+| `/endpoints` | List pre-configured endpoints |
+| `/call <path>` | Execute a pre-configured endpoint |
+| `/query <expression>` | Run an arbitrary pipequery expression |
+| `/help` | Usage |
+
+Authorization: `--allow-user <handle>` (repeatable) whitelists Telegram numeric user IDs or `@usernames`. With no allowlist, the bot replies to anyone who finds it and prints a per-user stderr warning on first message.
+
+Result rendering (Telegram has a 4096-char-per-message limit):
+- Object arrays → fixed-width Markdown table inside `<pre>` with column-width capping at 24 chars
+- Scalar arrays → JSON inside `<pre>`
+- Single objects → pretty-printed JSON inside `<pre>`
+- Empty results → `(no rows)`
+- Errors → `❌ Error` header + message in `<pre>`
+- Truncation footer: `showing N of M rows — narrow your query`
+- HTML escaping on every interpolated value so cell data cannot inject markup
+
+**Natural-language queries**: pass `--anthropic-key <key>` (or set `ANTHROPIC_API_KEY`) and the bot accepts plain-English questions in addition to slash commands. Anything that doesn't start with `/` is translated into a pipequery expression by `claude-haiku-4-5` and executed against the configured sources. The bot replies with both the translated expression and the result so the user can see what got run. The translator uses two prompt-cache breakpoints — the always-stable DSL grammar/system prompt, and the per-tenant schema preamble (source list + inferred fields, refreshed every 60 seconds) — so repeated translations are cheap. Empty `expression` field in the model's reply signals "not answerable from this schema" and is surfaced verbatim.
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
+
+# Then in Telegram:
+#   "top 5 most expensive paid orders"
+# → bot replies: "<i>Top 5 paid orders by total.</i>
+#                 <code>orders | where(status == 'paid') | sort(total desc) | first(5)</code>
+#                 <pre>... table ...</pre>"
+```
+
+### Watches — `pq watch`
+
+Declarative alert watches: register a query that runs on every interval; when its result transitions, pipequery posts a notification to a Telegram chat / channel. Idempotent across the chosen mode — no flapping, even with bursty data.
+
+```bash
+pq watch add <name> \
+  --query "<pipequery expression>" \
+  --interval <duration>      # default 60s; e.g. 30s, 5m
+  --fire-when <mode>         # when_non_empty (default) | when_empty | on_change
+  --telegram-chat-id <id>    # numeric chat / group / channel ID
+  --telegram-bot-token <token>      # optional override; defaults to $PIPEQUERY_TG_BOT_TOKEN
+  --telegram-message <template>     # optional Go-template-style message
+
+pq watch list
+pq watch remove <name>
+```
+
+Fire conditions:
+- `when_non_empty` — fires once on the empty → non-empty transition; doesn't re-fire while still non-empty; re-arms on the non-empty → empty transition
+- `when_empty` — the inverse
+- `on_change` — fires whenever the SHA-256 hash of the result differs from the previous tick's hash; doesn't fire on identical-result ticks
+
+Templating: messages support `{{ .field }}` (substituted from the first row of the result), plus `{{ .count }}` (row count), `{{ .watchName }}`, and `{{ .reason }}`. If the template references a field not in the row, the placeholder is left intact and a warning is logged.
+
+Storage: watches persist in `pipequery.yaml` under a `watches:` block. Restart `pq serve` to pick up new watches. Failure-isolation: a notifier that throws (e.g. Telegram API down) does not stop state advancement — the watch's `lastWasEmpty` / `lastHash` is updated regardless, so a recovered Telegram won't replay every missed fire.
+
+Example yaml:
+
+```yaml
+watches:
+  btc-dip:
+    query: "crypto | where(symbol == 'BTC' && price < 50000)"
+    interval: 60s
+    fireWhen: when_non_empty
+    notify:
+      telegram:
+        chatId: -1001234567890
+        message: "🚨 BTC dipped: \${{ .price }}"
+```
+
 ### Terminal Dashboard
 
 `pq dashboard` launches an interactive TUI built with Ink (React for CLI):

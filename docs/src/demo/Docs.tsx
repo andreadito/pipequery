@@ -1909,6 +1909,71 @@ pq mcp inspect`}</CodeBlock>
             </Typography>
           </SubSection>
 
+          <SubSection title="Use from Telegram">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              <code>pq telegram serve</code> exposes the same five verbs as MCP, mapped to slash
+              commands in a Telegram chat: <code>/sources</code>, <code>/describe</code>,{' '}
+              <code>/endpoints</code>, <code>/call</code>, <code>/query</code>. Same Provider
+              abstraction underneath as MCP — policy and governance work added to the provider
+              applies uniformly to both surfaces.
+            </Typography>
+            <CodeBlock>{`# Run the bot (loads pipequery.yaml from the current directory)
+PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
+
+# Or attach to a running pq serve instance
+pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+              Without <code>--allow-user</code> the bot replies to anyone who finds it (a stderr
+              warning prints on the first message). For anything reachable from the public
+              internet, set the allowlist.
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Natural-language queries
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              Pass <code>--anthropic-key</code> (or set <code>ANTHROPIC_API_KEY</code>) and the bot
+              accepts plain-English questions in addition to slash commands. Anything that doesn't
+              start with <code>/</code> is translated into a pipequery expression by{' '}
+              <code>claude-haiku-4-5</code> and executed against the configured sources. The
+              translator uses prompt caching for both the system prompt (always-stable DSL grammar)
+              and the per-tenant schema preamble (source list + inferred fields), so repeated
+              queries are cheap.
+            </Typography>
+            <CodeBlock>{`ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
+
+# Then in Telegram:
+#   "top 5 most expensive paid orders"
+# → bot replies with the translated expression and the result.`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Watches — alerts to Telegram">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              <code>pq watch add</code> registers a query that runs on every interval; when its
+              result transitions, pipequery posts a notification to a Telegram chat / channel.
+              Three fire conditions: <code>when_non_empty</code> (default — fires on the empty →
+              non-empty transition), <code>when_empty</code> (the inverse), and{' '}
+              <code>on_change</code> (fires whenever the result hash differs from the previous
+              tick). Idempotent across the chosen mode — no flapping.
+            </Typography>
+            <CodeBlock>{`# BTC dipped below $50k → alert
+pq watch add btc-dip \\
+  --query "crypto | where(symbol == 'BTC' && price < 50000)" \\
+  --interval 60s \\
+  --fire-when when_non_empty \\
+  --telegram-chat-id -1001234567890 \\
+  --telegram-message "🚨 BTC dipped: \\\${{ .price }}"
+
+# List / remove
+pq watch list
+pq watch remove btc-dip`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+              Templates support <code>{`{{ .field }}`}</code> from the first row, plus{' '}
+              <code>{`{{ .count }}`}</code>, <code>{`{{ .watchName }}`}</code>, and{' '}
+              <code>{`{{ .reason }}`}</code>. Token defaults to{' '}
+              <code>$PIPEQUERY_TG_BOT_TOKEN</code> if not provided per-watch.
+            </Typography>
+          </SubSection>
+
           <SubSection title="Docker & Remote Deployment">
             <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
               The <code>pq</code> server and CLI are fully decoupled. Run the server in Docker
