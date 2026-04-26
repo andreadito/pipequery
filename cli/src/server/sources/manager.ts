@@ -1,5 +1,5 @@
 import type { SourceConfig } from '../../config/schema.js';
-import type { SourceAdapter, SourceStatus } from './types.js';
+import type { PushdownResult, SourceAdapter, SourceStatus } from './types.js';
 import { RestSourceAdapter } from './rest.js';
 import { WebSocketSourceAdapter } from './websocket.js';
 import { FileSourceAdapter } from './file.js';
@@ -8,6 +8,7 @@ import { PostgresSourceAdapter } from './postgres.js';
 import { MysqlSourceAdapter } from './mysql.js';
 import { SqliteSourceAdapter } from './sqlite.js';
 import { KafkaSourceAdapter } from './kafka.js';
+import { parseQuery, query } from '../../engine.js';
 
 export type DataContext = Record<string, unknown[]>;
 
@@ -96,6 +97,66 @@ export class SourceManager {
     await Promise.all(
       [...this.sources.values()].map(({ adapter }) => adapter.refresh?.() ?? Promise.resolve()),
     );
+  }
+
+  /**
+   * Run a pipe expression, preferring adapter-native push-down when the
+   * source supports it.
+   *
+   * Decision tree:
+   *   1. Parse the expression. If it can't parse, fall straight through to
+   *      the in-process engine, which will throw the same parse error a
+   *      caller would have seen before push-down existed (no behaviour
+   *      change for malformed input).
+   *   2. Look up the source named in the pipeline. If it exists and its
+   *      adapter exposes `runPushdown`, try it. On `{ ok: true }` we're
+   *      done — return the rows. On `{ ok: false }` (decline) or any
+   *      thrown error, fall back to in-process.
+   *   3. In-process: query(getContext(), expression) — the existing path.
+   *
+   * The push-down attempt is best-effort and *invisible to callers*: same
+   * return type as `query()`, no new failure modes. Telemetry (which
+   * branch ran, latency, source-engine SQL) belongs in the audit log when
+   * Phase 5 lands; not threaded through here.
+   */
+  async runQuery(expression: string): Promise<unknown> {
+    const pushed = await this.tryPushdown(expression);
+    if (pushed && pushed.ok) return pushed.rows;
+    return query(this.getContext(), expression);
+  }
+
+  /**
+   * Inspect the pipeline AST and dispatch to an adapter's runPushdown when
+   * eligible. Returns `null` when push-down isn't even attempted (no parse,
+   * no source, no capability). Returns a PushdownResult when it was tried —
+   * `{ ok: true }` for success, `{ ok: false, reason }` for decline.
+   *
+   * Exposed on the manager (rather than tucked inside runQuery) so the
+   * future `event.audit` channel can record `pushed_down: bool` and the
+   * `source_engine_query` SQL string for governance. Today only Postgres
+   * implements runPushdown; MySQL / SQLite / ClickHouse will follow the
+   * same interface.
+   */
+  async tryPushdown(expression: string): Promise<PushdownResult | null> {
+    let pipeline;
+    try {
+      pipeline = parseQuery(expression);
+    } catch {
+      // Bad expression — let the in-process engine raise the canonical error.
+      return null;
+    }
+    const entry = this.sources.get(pipeline.source);
+    if (!entry) return null;
+    if (!entry.adapter.runPushdown) return null;
+    try {
+      return await entry.adapter.runPushdown(expression);
+    } catch (err) {
+      // A throw from runPushdown is treated as a decline: same fallback
+      // path as `{ ok: false }`. We don't surface the thrown error because
+      // the in-process retry will produce a more useful one (or succeed).
+      const reason = err instanceof Error ? err.message : String(err);
+      return { ok: false, reason: `pushdown threw: ${reason}` };
+    }
   }
 
   async dispose(): Promise<void> {
