@@ -185,6 +185,7 @@ telegram
   .option('--attach <url>', 'Attach to a running `pq serve` instance instead of loading pipequery.yaml locally')
   .option('--allow-user <handle>', 'Allowlist a user (numeric id or @username); repeatable. With no allowlist, anyone with the bot username can query.', collectRepeated, [])
   .option('--anthropic-key <key>', 'Anthropic API key (or set $ANTHROPIC_API_KEY) — enables natural-language → pipequery translation on plain-text messages via claude-haiku-4-5.')
+  .option('--log-file <path>', 'Append every bot event (commands, NL queries, unauthorized attempts) as JSONL to <path>. Stderr always carries a colored, human-readable copy.')
   .action(telegramServeCommand);
 
 // ─── pq watch ────────────────────────────────────────────────────────────────
