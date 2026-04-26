@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import type { WebSocketSourceConfig } from '../../config/schema.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
+import { parseDuration } from '../../utils/parseDuration.js';
 
 export class WebSocketSourceAdapter implements SourceAdapter {
   private data: unknown[] = [];
@@ -9,21 +10,44 @@ export class WebSocketSourceAdapter implements SourceAdapter {
   private error?: string;
   private listeners = new Set<(data: unknown[]) => void>();
   private maxBuffer: number;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  /** Tracks whether stop() was called so reconnect respects intent. */
+  private stopped = false;
 
   constructor(private config: WebSocketSourceConfig) {
     this.maxBuffer = config.maxBuffer ?? 1000;
   }
 
   async start(): Promise<void> {
+    this.stopped = false;
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(this.config.url);
+      const ws = new WebSocket(this.config.url);
+      this.ws = ws;
+      let settled = false;
 
-      this.ws.on('open', () => {
+      ws.on('open', () => {
         this.error = undefined;
-        resolve();
+        try {
+          this.sendSubscribePayloads(ws);
+          this.startHeartbeat(ws);
+        } catch (err) {
+          // A failure to send the subscribe frame leaves the socket open
+          // but useless; record it and reject the start() promise.
+          this.error = err instanceof Error ? err.message : String(err);
+          ws.close();
+          if (!settled) {
+            settled = true;
+            reject(err instanceof Error ? err : new Error(this.error));
+          }
+          return;
+        }
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
       });
 
-      this.ws.on('message', (raw) => {
+      ws.on('message', (raw) => {
         try {
           const parsed = JSON.parse(raw.toString());
           if (Array.isArray(parsed)) {
@@ -42,21 +66,30 @@ export class WebSocketSourceAdapter implements SourceAdapter {
         }
       });
 
-      this.ws.on('error', (err) => {
+      ws.on('error', (err) => {
         this.error = err.message;
-        reject(err);
+        if (!settled) {
+          settled = true;
+          reject(err);
+        }
       });
 
-      this.ws.on('close', () => {
-        // Auto-reconnect after 5s
+      ws.on('close', () => {
+        this.stopHeartbeat();
+        // Auto-reconnect after 5s unless stop() was explicitly called.
+        // Re-running start() also re-sends the subscribe payloads, which
+        // is exactly what every exchange expects after a connection drop.
+        if (this.stopped) return;
         setTimeout(() => {
-          if (this.ws) this.start().catch(() => {});
+          if (!this.stopped) this.start().catch(() => {});
         }, 5000);
       });
     });
   }
 
   stop(): void {
+    this.stopped = true;
+    this.stopHeartbeat();
     const ws = this.ws;
     this.ws = null;
     ws?.close();
@@ -82,5 +115,36 @@ export class WebSocketSourceAdapter implements SourceAdapter {
 
   private notify(): void {
     for (const cb of this.listeners) cb(this.data);
+  }
+
+  private sendSubscribePayloads(ws: WebSocket): void {
+    const subscribe = this.config.subscribe;
+    if (subscribe === undefined || subscribe === null) return;
+    const list = Array.isArray(subscribe) ? subscribe : [subscribe];
+    for (const payload of list) {
+      ws.send(JSON.stringify(payload));
+    }
+  }
+
+  private startHeartbeat(ws: WebSocket): void {
+    this.stopHeartbeat();
+    const hb = this.config.heartbeat;
+    if (!hb) return;
+    const intervalMs = parseDuration(hb.interval);
+    this.heartbeatTimer = setInterval(() => {
+      if (ws.readyState !== WebSocket.OPEN) return;
+      try {
+        ws.send(JSON.stringify(hb.payload));
+      } catch {
+        // Ignore — next 'close' / 'error' will surface anything fatal.
+      }
+    }, intervalMs);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
   }
 }

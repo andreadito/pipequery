@@ -534,6 +534,14 @@ sources:
     url: wss://stream.binance.com/ws/btcusdt@aggTrade
     type: websocket
     maxBuffer: 200
+  binance_ticker:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws
+    subscribe:
+      - { method: SUBSCRIBE, params: [btcusdt@ticker, ethusdt@ticker], id: 1 }
+    heartbeat:
+      payload: { method: PING }
+      interval: 30s
   local-data:
     file: ./data/items.json
 
@@ -562,7 +570,7 @@ dashboards:
 ### Data Sources
 
 - **REST API**: Polled at configurable intervals (`interval: 5s`)
-- **WebSocket**: Real-time streaming with buffer management (`maxBuffer: 200`)
+- **WebSocket**: Real-time streaming with buffer management (`maxBuffer: 200`). Supports `subscribe` (single object or array) sent immediately after connect — required by every exchange feed (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca, etc.). Re-sent automatically on every reconnect. Optional `heartbeat: { payload, interval }` (e.g. `{ method: PING }` every 30s) keeps idle connections alive on feeds that close them. Object messages append to the ring buffer; array messages replace the buffer wholesale.
 - **File**: Local CSV/JSON files with watch mode
 - **Inline (`static`)**: Static data defined directly in YAML
 - **Postgres**: Polled SELECT query. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of the yaml. TimescaleDB works through this adapter (it's Postgres-wire). SSL modes: `require` (default), `no-verify`, `false`. Safety cap `maxRows` (default 10000).

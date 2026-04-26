@@ -1867,6 +1867,37 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 
 # Mock users & posts (JSONPlaceholder)
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              WebSocket — feeds that need a subscribe handshake
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              Most exchange WS feeds (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca)
+              don't push anything until the client sends a subscribe frame. Declare it once in yaml
+              under <code>subscribe</code> — the adapter sends it after every connect, including
+              reconnects. Add an optional <code>heartbeat</code> for feeds that close idle sockets.
+            </Typography>
+            <CodeBlock>{`# pipequery.yaml
+sources:
+  binance_btc:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws
+    subscribe:
+      - { method: SUBSCRIBE, params: [btcusdt@ticker], id: 1 }
+    heartbeat:
+      payload: { method: PING }
+      interval: 30s
+
+  coinbase_btc:
+    type: websocket
+    url: wss://ws-feed.exchange.coinbase.com
+    subscribe:
+      - { type: subscribe, product_ids: [BTC-USD], channels: [ticker] }`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+              <code>subscribe</code> accepts a single object or an array. Each entry is JSON-stringified
+              and sent in order. Re-sent after every reconnect. Heartbeat fires on a{' '}
+              <code>setInterval</code> only while the socket is OPEN; cleared on close / stop.
+            </Typography>
           </SubSection>
 
           <SubSection title="Use with AI (MCP)">
