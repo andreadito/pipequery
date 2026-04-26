@@ -2022,7 +2022,7 @@ sources:
                     <td>Same row shape as Postgres. Driver: <code>mysql2</code>.</td>
                     <td>Same env-var URL interpolation. SSL same modes.</td>
                     <td>Same <code>maxRows</code> wrapper.</td>
-                    <td>Polled. Push-down: not yet (Postgres only today).</td>
+                    <td>Polled. Push-down covers the same operator + aggregate set as Postgres; backtick quoting and <code>?</code> placeholders applied automatically.</td>
                     <td>Yes.</td>
                   </tr>
                   <tr>
