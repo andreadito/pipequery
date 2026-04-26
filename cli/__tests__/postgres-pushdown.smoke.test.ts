@@ -7,15 +7,20 @@
  * purpose — push-down is a "does the round trip work end-to-end" thing,
  * not a unit-test concern.
  *
- * Skip the suite when the environment can't reach Postgres so this file
- * doesn't break CI on machines without a database.
+ * Skipped by default so CI (and contributors without a local Postgres)
+ * stay green. To run:
+ *
+ *     POSTGRES_PUSHDOWN_SMOKE=1 npm test
+ *
+ * Or point at a different instance / credentials via POSTGRES_PUSHDOWN_URL.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgresSourceAdapter } from '../src/server/sources/postgres.js';
 
-const URL = 'postgres://pq_user:pq_pw@127.0.0.1:5432/pq_pd';
+const URL = process.env.POSTGRES_PUSHDOWN_URL ?? 'postgres://pq_user:pq_pw@127.0.0.1:5432/pq_pd';
+const ENABLED = process.env.POSTGRES_PUSHDOWN_SMOKE === '1';
 
-describe('postgres pushdown — live', () => {
+describe.skipIf(!ENABLED)('postgres pushdown — live', () => {
   let adapter: PostgresSourceAdapter;
 
   beforeAll(async () => {
