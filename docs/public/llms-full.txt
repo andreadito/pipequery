@@ -579,6 +579,61 @@ dashboards:
 - **Kafka**: Streaming subscriber for a Kafka (or Redpanda / any Kafka-wire) topic. Ring-buffered (`maxBuffer`, default 1000). Each row carries `_kafka_topic`, `_kafka_partition`, `_kafka_offset`, `_kafka_timestamp`, `_kafka_key` metadata alongside the decoded message body. `valueFormat: json | string | raw`. Optional SASL. Per-process ephemeral consumer group by default; set `groupId` explicitly to load-balance across replicas.
 - All sources can be added/removed at runtime without restart
 
+### Source shapes — supported / not-supported matrix
+
+What each adapter actually accepts today, summarized so users don't have to read the source.
+
+| Adapter | Input | Shape on ingest | Auth | Pagination | Live updates | Errors visible? |
+|---|---|---|---|---|---|---|
+| `rest` | HTTP GET, polled at `interval` (default 30s) | JSON. Array → as-is. Object → wrapped as `[obj]` (single row). `dataPath` extracts a nested array; if the path resolves to anything but an array, source is silently empty. | Static `headers` / `params` only. No env-var interpolation in headers; no Bearer / Basic / HMAC helpers (issue #37). | Not built-in. | Polled — no push. Hot-reload across `pq source add/remove`. | Yes — non-2xx surfaces as `SourceStatus.error`. |
+| `websocket` | Long-lived WSS connection | JSON only. Object → appended to ring buffer (`maxBuffer`, default 1000). Array → replaces the buffer wholesale. Non-JSON messages silently dropped. | Subscribe payload(s) on open (`subscribe`); optional `heartbeat`. No header-level auth; tokens go in the URL or in subscribe payload per exchange spec. | N/A — streaming. | Push. Auto-reconnect every 5s with subscribe re-send. | Connection errors yes. Non-JSON message drops are silent. |
+| `file` | Local file | JSON or CSV (auto-detected from extension; `format` override). JSON file: array as-is, single object as `[obj]`. CSV: header row → field names. | None (filesystem perms). | N/A. | Optional `watch: true` reloads on file change (chokidar). | Yes — parse / read errors surface. |
+| `static` | Inline JSON in `pipequery.yaml` | Whatever you write. Most useful for fixtures and demos. | N/A. | N/A. | None — frozen at startup. | N/A. |
+| `postgres` | SELECT query, polled at `interval` (default 60s) | One row per result row. Numeric → string (preserves precision; `rollup(sum/avg)` coerces transparently). | Connection URL with `${ENV_VAR}` interpolation. SSL: `require` (default), `no-verify`, `false`. | `maxRows` hard cap (default 10000) — exceeding errors with a clear message. | Polled. `where`/`sort`/`first` push down to SQL. | Yes — driver errors and the maxRows-exceeded error. |
+| `mysql` | SELECT query, polled | Same row shape as Postgres. Driver: `mysql2`. | Same env-var URL interpolation. SSL same modes. | Same `maxRows` wrapper. | Polled. Push-down: not yet (Postgres only today). | Yes. |
+| `sqlite` | Local SQLite file (or `:memory:`) | One row per result row. | None. Read-only by default; pass `readonly: false` to open RW. | `maxRows` applied as a `LIMIT` wrapper. | Polled. | Yes. |
+| `kafka` | Subscribed Kafka topic | Each message decoded per `valueFormat` (`json` default, `string`, `raw`) and spread into a row. Carries `_kafka_topic` / `_kafka_partition` / `_kafka_offset` / `_kafka_timestamp` / `_kafka_key` alongside. | SASL (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512). Brokers + creds support `${ENV_VAR}`. | Ring-buffered (`maxBuffer`, default 1000). | Push. Auto-reconnect via kafkajs. | Yes — connection / SASL errors surface; routine reconnect chatter is suppressed. |
+
+#### Won't work natively today (and how to work around it)
+
+- **Signed REST APIs** (Coinbase Pro / Binance / Kraken / Bitfinex private endpoints) — these compute an HMAC of `timestamp + method + path + body` per request. No native helper yet (#37). *Workaround:* wrap with a 30-line Node proxy that signs and re-emits as an unsigned local URL.
+- **Paginated REST APIs** (anything that returns `{ next: '...' }` or pagination headers). The REST adapter fetches one URL per tick. *Workaround:* proxy that walks pagination and returns the concatenated array.
+- **Rate-limited APIs** with backoff requirements. The polling interval is fixed; no 429-aware retry. *Workaround:* set `interval` conservatively, or shim.
+- **SSE / NDJSON streams**. The REST adapter does `JSON.parse` on a single response body. *Workaround:* small SSE→WebSocket proxy.
+- **Non-JSON payloads** (XML, Protobuf, custom binary). Parse externally; re-emit as JSON over WS or write to a file source.
+- **OAuth2 token refresh**. Static headers don't refresh on 401. *Workaround:* proxy that holds the refresh-token loop.
+
+#### Shim cookbook
+
+For anything in the list above, the canonical workaround is a small Node process that handles the gnarly part (signing, pagination, SSE, etc.) and re-emits as either a plain JSON HTTP endpoint (consumed via `type: rest`) or a no-handshake WebSocket (consumed via `type: websocket`). Two screens of code per feed, runs alongside `pq serve`.
+
+```js
+// ticker-proxy.mjs — signs a Coinbase private GET, re-emits unsigned on :8787
+import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
+
+const KEY = process.env.CB_KEY, SECRET = process.env.CB_SECRET, PASS = process.env.CB_PASS;
+
+createServer(async (_req, res) => {
+  const ts = Date.now() / 1000;
+  const path = '/accounts';
+  const sig = createHmac('sha256', Buffer.from(SECRET, 'base64'))
+    .update(`${ts}GET${path}`).digest('base64');
+  const upstream = await fetch(`https://api.exchange.coinbase.com${path}`, {
+    headers: {
+      'CB-ACCESS-KEY': KEY,
+      'CB-ACCESS-TIMESTAMP': ts,
+      'CB-ACCESS-PASSPHRASE': PASS,
+      'CB-ACCESS-SIGN': sig,
+    },
+  });
+  res.setHeader('content-type', 'application/json');
+  res.end(await upstream.text());
+}).listen(8787);
+
+// pipequery.yaml: type: rest, url: http://localhost:8787, interval: 30s
+```
+
 ### MCP — Model Context Protocol (AI agents)
 
 The CLI exposes pipequery to any MCP-aware AI client (Claude Desktop, Claude Code, Cursor, Copilot, custom agents).

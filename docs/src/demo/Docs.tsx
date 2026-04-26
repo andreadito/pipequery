@@ -1900,6 +1900,169 @@ sources:
             </Typography>
           </SubSection>
 
+          <SubSection title="Source shapes — what each adapter accepts">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              The matrix below summarizes what each adapter handles natively today, so you don't
+              have to read the source. Anything in the "Won't work natively" list below needs a
+              shim — see the cookbook recipe at the bottom.
+            </Typography>
+
+            <Box sx={{ overflowX: 'auto', mb: 2 }}>
+              <Box
+                component="table"
+                sx={{
+                  width: '100%',
+                  fontSize: '0.78rem',
+                  borderCollapse: 'collapse',
+                  '& th, & td': {
+                    textAlign: 'left',
+                    padding: '6px 10px',
+                    borderBottom: '1px solid #1a2530',
+                    verticalAlign: 'top',
+                  },
+                  '& th': { color: '#c0d0e0', fontWeight: 600, whiteSpace: 'nowrap' },
+                  '& td': { color: '#8899aa' },
+                  '& code': { color: '#82aaff', fontSize: '0.75rem' },
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th>Adapter</th>
+                    <th>Input</th>
+                    <th>Shape on ingest</th>
+                    <th>Auth</th>
+                    <th>Pagination</th>
+                    <th>Live updates</th>
+                    <th>Errors visible?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>rest</code></td>
+                    <td>HTTP GET, polled at <code>interval</code> (default 30s)</td>
+                    <td>JSON. Array → as-is. Object → wrapped as <code>[obj]</code> (single row). <code>dataPath</code> extracts a nested array; if the path resolves to anything but an array, source is silently empty.</td>
+                    <td>Static <code>headers</code> / <code>params</code> only. No env-var interpolation in headers; no Bearer / Basic / HMAC helpers (see #37).</td>
+                    <td>Not built-in.</td>
+                    <td>Polled — no push. Hot-reload across <code>pq source add/remove</code>.</td>
+                    <td>Yes — non-2xx surfaces as <code>SourceStatus.error</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><code>websocket</code></td>
+                    <td>Long-lived WSS connection</td>
+                    <td>JSON only. Object → appended to ring buffer (<code>maxBuffer</code>, default 1000). Array → replaces the buffer wholesale. Non-JSON messages silently dropped.</td>
+                    <td>Subscribe payload(s) sent on open (<code>subscribe</code>); optional <code>heartbeat</code>. No header-level auth; tokens go in the URL or in subscribe payload per exchange spec.</td>
+                    <td>N/A — streaming.</td>
+                    <td>Push. Auto-reconnect every 5s with subscribe re-send.</td>
+                    <td>Connection errors yes. Non-JSON message drops are silent.</td>
+                  </tr>
+                  <tr>
+                    <td><code>file</code></td>
+                    <td>Local file</td>
+                    <td>JSON or CSV (auto-detected from extension; <code>format</code> override). JSON file: array as-is, single object as <code>[obj]</code>. CSV: header row → field names.</td>
+                    <td>None (filesystem perms).</td>
+                    <td>N/A.</td>
+                    <td>Optional <code>watch: true</code> reloads on file change (chokidar).</td>
+                    <td>Yes — parse / read errors surface in <code>SourceStatus.error</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><code>static</code></td>
+                    <td>Inline JSON in <code>pipequery.yaml</code></td>
+                    <td>Whatever you write. Most useful for fixtures and demos.</td>
+                    <td>N/A.</td>
+                    <td>N/A.</td>
+                    <td>None — frozen at startup.</td>
+                    <td>N/A.</td>
+                  </tr>
+                  <tr>
+                    <td><code>postgres</code></td>
+                    <td>SELECT query, polled at <code>interval</code> (default 60s)</td>
+                    <td>One row per result row. Numeric → string (preserves precision; <code>rollup(sum/avg)</code> coerces transparently).</td>
+                    <td>Connection URL with <code>${'$'}{`{ENV_VAR}`}</code> interpolation. SSL: <code>require</code> (default), <code>no-verify</code>, <code>false</code>.</td>
+                    <td><code>maxRows</code> hard cap (default 10000) — exceeding errors with a clear message; user adds <code>LIMIT</code> or raises the cap.</td>
+                    <td>Polled. <code>where</code>/<code>sort</code>/<code>first</code> push down to SQL.</td>
+                    <td>Yes — driver errors and the maxRows-exceeded error.</td>
+                  </tr>
+                  <tr>
+                    <td><code>mysql</code></td>
+                    <td>SELECT query, polled at <code>interval</code></td>
+                    <td>Same row shape as Postgres. Driver: <code>mysql2</code>.</td>
+                    <td>Same env-var URL interpolation. SSL same modes.</td>
+                    <td>Same <code>maxRows</code> wrapper.</td>
+                    <td>Polled. Push-down: not yet (Postgres only today).</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>sqlite</code></td>
+                    <td>Local SQLite file (or <code>:memory:</code>)</td>
+                    <td>One row per result row.</td>
+                    <td>None. Read-only by default; pass <code>readonly: false</code> to open RW.</td>
+                    <td><code>maxRows</code> applied as a <code>LIMIT</code> wrapper.</td>
+                    <td>Polled.</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>kafka</code></td>
+                    <td>Subscribed Kafka topic</td>
+                    <td>Each message decoded per <code>valueFormat</code> (<code>json</code> default, <code>string</code>, <code>raw</code>) and spread into a row. Carries <code>_kafka_topic</code> / <code>_kafka_partition</code> / <code>_kafka_offset</code> / <code>_kafka_timestamp</code> / <code>_kafka_key</code> alongside.</td>
+                    <td>SASL (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512). Brokers + creds support <code>${'$'}{`{ENV_VAR}`}</code>.</td>
+                    <td>Ring-buffered (<code>maxBuffer</code>, default 1000) — old messages evict.</td>
+                    <td>Push. Auto-reconnect via kafkajs.</td>
+                    <td>Yes — connection / SASL errors surface; routine reconnect chatter is suppressed.</td>
+                  </tr>
+                </tbody>
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Won't work natively today
+            </Typography>
+            <Box sx={{ fontSize: '0.78rem', color: '#8899aa', lineHeight: 1.6 }}>
+              <Box component="ul" sx={{ pl: 2.5, m: 0 }}>
+                <li><b>Signed REST APIs</b> (Coinbase Pro / Binance / Kraken / Bitfinex private endpoints) — these compute an HMAC of <code>timestamp + method + path + body</code> per request. No native helper yet (#37). <i>Workaround:</i> wrap with a 30-line Node proxy that signs and re-emits as an unsigned local URL.</li>
+                <li><b>Paginated REST APIs</b> (anything that returns <code>{`{ next: '...' }`}</code> or pagination headers). The REST adapter fetches one URL per tick. <i>Workaround:</i> proxy that walks pagination and returns the concatenated array.</li>
+                <li><b>Rate-limited APIs</b> with backoff requirements. The polling interval is fixed; no 429-aware retry. <i>Workaround:</i> set <code>interval</code> conservatively, or shim.</li>
+                <li><b>SSE / NDJSON streams</b>. The REST adapter does <code>JSON.parse</code> on a single response body. <i>Workaround:</i> small SSE→WebSocket proxy.</li>
+                <li><b>Non-JSON payloads</b> (XML, Protobuf, custom binary). Parse externally; re-emit as JSON over WS or write to a file source.</li>
+                <li><b>OAuth2 token refresh</b>. Static headers don't refresh on 401. <i>Workaround:</i> proxy that holds the refresh-token loop, or rotate the env var with a sidecar.</li>
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Shim cookbook — the "tiny Node proxy" pattern
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              For anything in the list above, the canonical workaround is a small Node process
+              that handles the gnarly part (signing, pagination, SSE, etc.) and re-emits as either
+              a plain JSON HTTP endpoint (consumed via <code>type: rest</code>) or a no-handshake
+              WebSocket (consumed via <code>type: websocket</code>). Two screens of code per feed,
+              runs alongside <code>pq serve</code>.
+            </Typography>
+            <CodeBlock>{`// ticker-proxy.mjs — signs a Coinbase private GET, re-emits unsigned on :8787
+import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
+
+const KEY = process.env.CB_KEY, SECRET = process.env.CB_SECRET, PASS = process.env.CB_PASS;
+
+createServer(async (_req, res) => {
+  const ts = Date.now() / 1000;
+  const path = '/accounts';
+  const sig = createHmac('sha256', Buffer.from(SECRET, 'base64'))
+    .update(\`\${ts}GET\${path}\`).digest('base64');
+  const upstream = await fetch(\`https://api.exchange.coinbase.com\${path}\`, {
+    headers: {
+      'CB-ACCESS-KEY': KEY,
+      'CB-ACCESS-TIMESTAMP': ts,
+      'CB-ACCESS-PASSPHRASE': PASS,
+      'CB-ACCESS-SIGN': sig,
+    },
+  });
+  res.setHeader('content-type', 'application/json');
+  res.end(await upstream.text());
+}).listen(8787);
+
+// pipequery.yaml: type: rest, url: http://localhost:8787, interval: 30s`}</CodeBlock>
+          </SubSection>
+
           <SubSection title="Use with AI (MCP)">
             <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
               <code>pq mcp serve</code> starts a Model Context Protocol server that plugs into any
