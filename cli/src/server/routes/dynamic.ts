@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import { query } from '../../engine.js';
 import type { EndpointConfig } from '../../config/schema.js';
 import type { SourceManager } from '../sources/manager.js';
 import { ResponseCache } from '../cache.js';
@@ -32,10 +31,9 @@ export function registerDynamicRoutes(
       }
     }
 
-    // Execute query
-    const context = sourceManager.getContext();
+    // Execute query (push-down preferred when the source supports it)
     try {
-      const result = query(context, config.query);
+      const result = await sourceManager.runQuery(config.query);
 
       if (config.cache) {
         cache.set(path, result, parseDuration(config.cache));

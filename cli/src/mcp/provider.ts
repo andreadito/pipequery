@@ -2,7 +2,6 @@ import type { DataContext } from '../engine.js';
 import type { EndpointConfig, PipeQueryConfig } from '../config/schema.js';
 import type { SourceStatus } from '../server/sources/types.js';
 import { SourceManager } from '../server/sources/manager.js';
-import { query } from '../engine.js';
 
 export interface ProviderSourceInfo {
   name: string;
@@ -80,14 +79,12 @@ export class LocalProvider implements Provider {
     if (!endpoint) {
       throw new Error(`Endpoint "${path}" not found`);
     }
-    const context = this.sourceManager.getContext();
-    return query(context, endpoint.query);
+    return this.sourceManager.runQuery(endpoint.query);
   }
 
   async runQuery(expression: string): Promise<unknown> {
     await this.ready;
-    const context = this.sourceManager.getContext();
-    return query(context, expression);
+    return this.sourceManager.runQuery(expression);
   }
 
   async dispose(): Promise<void> {
@@ -123,11 +120,11 @@ class AttachedLocalProvider implements Provider {
   async callEndpoint(path: string): Promise<unknown> {
     const endpoint = this.endpoints.get(path);
     if (!endpoint) throw new Error(`Endpoint "${path}" not found`);
-    return query(this.sourceManager.getContext(), endpoint.query);
+    return this.sourceManager.runQuery(endpoint.query);
   }
 
   async runQuery(expression: string): Promise<unknown> {
-    return query(this.sourceManager.getContext(), expression);
+    return this.sourceManager.runQuery(expression);
   }
 
   async dispose(): Promise<void> {

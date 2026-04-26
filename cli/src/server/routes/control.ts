@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import { query } from '../../engine.js';
 import type { SourceConfig, EndpointConfig } from '../../config/schema.js';
 import type { SourceManager } from '../sources/manager.js';
 
@@ -89,9 +88,8 @@ export function registerControlRoutes(
 
   app.post<{ Body: { query: string } }>('/api/_control/query', async (req) => {
     const { query: expr } = req.body;
-    const context = sourceManager.getContext();
     try {
-      const result = query(context, expr);
+      const result = await sourceManager.runQuery(expr);
       return { ok: true, result };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
