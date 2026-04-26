@@ -1,23 +1,11 @@
 import mysql from 'mysql2/promise';
 import type { MysqlSourceConfig } from '../../config/schema.js';
 import { parseDuration } from '../../utils/parseDuration.js';
+import { expandEnv } from '../../utils/expandEnv.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
 
 const DEFAULT_INTERVAL_MS = 30_000;
 const DEFAULT_MAX_ROWS = 10_000;
-
-function expandEnv(input: string): string {
-  return input.replace(/\$\{([A-Z0-9_]+)\}/gi, (_, name: string) => {
-    const value = process.env[name];
-    if (value === undefined) {
-      process.stderr.write(
-        `[pipequery] env var "${name}" referenced in mysql source URL is not set\n`,
-      );
-      return '';
-    }
-    return value;
-  });
-}
 
 function resolveSsl(ssl: MysqlSourceConfig['ssl']): mysql.PoolOptions['ssl'] {
   if (ssl === false) return undefined;
@@ -41,7 +29,7 @@ export class MysqlSourceAdapter implements SourceAdapter {
   }
 
   async start(): Promise<void> {
-    const uri = expandEnv(this.config.url);
+    const uri = expandEnv(this.config.url, 'mysql source URL');
     this.pool = mysql.createPool({
       uri,
       ssl: resolveSsl(this.config.ssl),

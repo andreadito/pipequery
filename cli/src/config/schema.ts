@@ -35,6 +35,15 @@ export interface RestSourceConfig {
   headers?: Record<string, string>;
   dataPath?: string;
   interval?: string;
+  /** Optional auth helper. Currently supports `bearer`; more kinds (basic,
+   *  apiKeyHeader, hmac-*) tracked in issue #37. The token is interpolated
+   *  through ${ENV_VAR} like every other string field. */
+  auth?: BearerAuth;
+}
+
+export interface BearerAuth {
+  kind: 'bearer';
+  token: string;
 }
 
 export interface WebSocketSourceConfig {

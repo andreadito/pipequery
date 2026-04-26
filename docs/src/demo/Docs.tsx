@@ -1869,6 +1869,40 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
 
             <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              REST — authenticated APIs and env-var interpolation
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              REST sources support <code>${'$'}{`{ENV_VAR}`}</code> interpolation in{' '}
+              <code>url</code>, <code>headers</code>, <code>params</code>, and{' '}
+              <code>auth.token</code> — credentials stay out of the yaml. The{' '}
+              <code>auth: {`{ kind: bearer, token }`}</code> helper is sugar for the
+              standard <code>Authorization: Bearer</code> header.
+            </Typography>
+            <CodeBlock>{`# pipequery.yaml
+sources:
+  github_issues:
+    type: rest
+    url: "https://api.github.com/repos/\${REPO}/issues"
+    interval: 5m
+    auth:
+      kind: bearer
+      token: "\${GITHUB_TOKEN}"
+
+  weather:
+    type: rest
+    url: https://api.openweathermap.org/data/2.5/weather
+    params:
+      q: "\${CITY}"
+      appid: "\${OWM_KEY}"
+      units: metric
+    interval: 10m`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+              Missing env vars expand to empty string with a stderr warning, so you'll see the
+              misconfiguration immediately rather than embedding a literal{' '}
+              <code>${'$'}{`{FOO}`}</code> into a request.
+            </Typography>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
               WebSocket — feeds that need a subscribe handshake
             </Typography>
             <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
@@ -1941,7 +1975,7 @@ sources:
                     <td><code>rest</code></td>
                     <td>HTTP GET, polled at <code>interval</code> (default 30s)</td>
                     <td>JSON. Array → as-is. Object → wrapped as <code>[obj]</code> (single row). <code>dataPath</code> extracts a nested array; if the path resolves to anything but an array, source is silently empty.</td>
-                    <td>Static <code>headers</code> / <code>params</code> only. No env-var interpolation in headers; no Bearer / Basic / HMAC helpers (see #37).</td>
+                    <td><code>auth: {`{ kind: bearer, token }`}</code> for Bearer headers; static <code>headers</code> / <code>params</code> for everything else. <code>${'$'}{`{ENV_VAR}`}</code> interpolation supported in <code>url</code>, <code>headers</code>, <code>params</code>, and <code>auth.token</code>. Basic / HMAC helpers tracked in #37.</td>
                     <td>Not built-in.</td>
                     <td>Polled — no push. Hot-reload across <code>pq source add/remove</code>.</td>
                     <td>Yes — non-2xx surfaces as <code>SourceStatus.error</code>.</td>
