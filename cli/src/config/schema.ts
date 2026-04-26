@@ -41,6 +41,19 @@ export interface WebSocketSourceConfig {
   type: 'websocket';
   url: string;
   maxBuffer?: number;
+  /** Payload(s) to send to the server immediately after the WebSocket
+   *  opens. Most exchange feeds (Binance, Coinbase, Kraken, OKX, Bybit, …)
+   *  require this — without it, no data is delivered. Each payload is
+   *  JSON-stringified and sent in order. Re-sent on every reconnect. */
+  subscribe?: unknown | unknown[];
+  /** Optional keepalive: sends `payload` to the server every `interval`
+   *  while the socket is open. Most exchanges close idle sockets within
+   *  a few minutes; a periodic ping keeps the stream alive. */
+  heartbeat?: {
+    payload: unknown;
+    /** Duration like "30s", "1m". */
+    interval: string;
+  };
 }
 
 export interface FileSourceConfig {
