@@ -1,26 +1,14 @@
 import { randomBytes } from 'node:crypto';
 import { Kafka, logLevel, type Consumer, type SASLOptions } from 'kafkajs';
 import type { KafkaSourceConfig } from '../../config/schema.js';
+import { expandEnv } from '../../utils/expandEnv.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
 
 const DEFAULT_MAX_BUFFER = 1000;
 
-function expandEnv(input: string): string {
-  return input.replace(/\$\{([A-Z0-9_]+)\}/gi, (_, name: string) => {
-    const value = process.env[name];
-    if (value === undefined) {
-      process.stderr.write(
-        `[pipequery] env var "${name}" referenced in kafka source is not set\n`,
-      );
-      return '';
-    }
-    return value;
-  });
-}
-
 function normalizeBrokers(brokers: string | string[]): string[] {
   const list = Array.isArray(brokers) ? brokers : brokers.split(',');
-  return list.map((b) => expandEnv(b.trim())).filter(Boolean);
+  return list.map((b) => expandEnv(b.trim(), 'kafka source brokers')).filter(Boolean);
 }
 
 export class KafkaSourceAdapter implements SourceAdapter {
@@ -55,8 +43,8 @@ export class KafkaSourceAdapter implements SourceAdapter {
       sasl: this.config.sasl
         ? ({
             mechanism: this.config.sasl.mechanism,
-            username: expandEnv(this.config.sasl.username),
-            password: expandEnv(this.config.sasl.password),
+            username: expandEnv(this.config.sasl.username, 'kafka source SASL username'),
+            password: expandEnv(this.config.sasl.password, 'kafka source SASL password'),
           } as SASLOptions)
         : undefined,
       // Silence kafkajs's own logger — we surface errors via SourceStatus.

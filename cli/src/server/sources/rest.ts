@@ -1,5 +1,6 @@
 import type { RestSourceConfig } from '../../config/schema.js';
 import { parseDuration } from '../../utils/parseDuration.js';
+import { expandEnv } from '../../utils/expandEnv.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
 
 function extractPath(obj: unknown, path: string): unknown[] {
@@ -57,15 +58,19 @@ export class RestSourceAdapter implements SourceAdapter {
 
   private async fetch(): Promise<void> {
     try {
-      let url = this.config.url;
+      let url = expandEnv(this.config.url, 'rest source URL');
       if (this.config.params) {
-        const params = new URLSearchParams(this.config.params);
+        const expanded: Record<string, string> = {};
+        for (const [k, v] of Object.entries(this.config.params)) {
+          expanded[k] = expandEnv(v, `rest source param "${k}"`);
+        }
+        const params = new URLSearchParams(expanded);
         url += (url.includes('?') ? '&' : '?') + params.toString();
       }
 
-      const res = await globalThis.fetch(url, {
-        headers: this.config.headers,
-      });
+      const headers = this.buildHeaders();
+
+      const res = await globalThis.fetch(url, { headers });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
@@ -81,5 +86,28 @@ export class RestSourceAdapter implements SourceAdapter {
 
   private notify(): void {
     for (const cb of this.listeners) cb(this.data);
+  }
+
+  /**
+   * Build the final HTTP headers for one fetch.
+   *
+   * Two sources contribute, in order: any user-declared `headers` (with
+   * env-var interpolation applied per value), then the `auth` helper
+   * (currently just `bearer`). Auth wins on collision — if a user sets
+   * both `headers.Authorization` and `auth.kind === 'bearer'`, the bearer
+   * helper is what they actually meant.
+   */
+  private buildHeaders(): Record<string, string> | undefined {
+    const headers: Record<string, string> = {};
+    if (this.config.headers) {
+      for (const [k, v] of Object.entries(this.config.headers)) {
+        headers[k] = expandEnv(v, `rest source header "${k}"`);
+      }
+    }
+    if (this.config.auth?.kind === 'bearer') {
+      const token = expandEnv(this.config.auth.token, 'rest source bearer token');
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return Object.keys(headers).length > 0 ? headers : undefined;
   }
 }
