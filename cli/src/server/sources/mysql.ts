@@ -2,6 +2,8 @@ import mysql from 'mysql2/promise';
 import type { MysqlSourceConfig } from '../../config/schema.js';
 import { parseDuration } from '../../utils/parseDuration.js';
 import { expandEnv } from '../../utils/expandEnv.js';
+import { parseQuery } from '../../engine.js';
+import { compileMysqlPushdown } from './pushdown/mysql.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
 
 const DEFAULT_INTERVAL_MS = 30_000;
@@ -78,6 +80,48 @@ export class MysqlSourceAdapter implements SourceAdapter {
 
   async refresh(): Promise<void> {
     await this.fetch();
+  }
+
+  /**
+   * Adapter-native push-down. Compiles the pipe expression to MySQL SQL
+   * (see ./pushdown/mysql.ts) and runs it directly. SourceManager.runQuery
+   * dispatches here automatically when the pipeline shape is eligible —
+   * unsupported shapes return `{ ok: false, reason }` and the caller falls
+   * back to the in-process engine.
+   *
+   * Mirrors PostgresSourceAdapter.runPushdown — same shape, same result
+   * type. Both adapters route through the dialect-parametric compiler in
+   * compile.ts.
+   */
+  async runPushdown(expression: string): Promise<
+    | { ok: true; rows: unknown[]; sql: string; params: unknown[] }
+    | { ok: false; reason: string }
+  > {
+    if (!this.pool) {
+      return { ok: false, reason: 'MySQL pool not initialized — call start() first' };
+    }
+    let pipeline;
+    try {
+      pipeline = parseQuery(expression);
+    } catch (err) {
+      return { ok: false, reason: `parse error: ${err instanceof Error ? err.message : String(err)}` };
+    }
+    const compiled = compileMysqlPushdown(pipeline, this.config.query);
+    if (!compiled.ok) {
+      return { ok: false, reason: compiled.reason };
+    }
+    try {
+      const [rows] = await this.pool.query(compiled.compiled.sql, compiled.compiled.params);
+      const asArray = Array.isArray(rows) ? (rows as unknown[]) : [];
+      return {
+        ok: true,
+        rows: asArray,
+        sql: compiled.compiled.sql,
+        params: compiled.compiled.params,
+      };
+    } catch (err) {
+      return { ok: false, reason: `mysql error: ${err instanceof Error ? err.message : String(err)}` };
+    }
   }
 
   private async fetch(): Promise<void> {
