@@ -265,8 +265,7 @@ function compileExpr(expr: Expression, ctx: CompilerCtx): string | null {
     case 'NumberLiteral':
     case 'StringLiteral':
     case 'BooleanLiteral':
-      ctx.params.push(expr.value);
-      return ctx.dialect.placeholder(ctx.params.length);
+      return ctx.dialect.bindLiteral(expr.value, ctx.params);
     case 'NullLiteral':
       return 'NULL';
     case 'FieldAccess': {

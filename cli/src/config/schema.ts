@@ -26,7 +26,10 @@ export type SourceConfig =
   | PostgresSourceConfig
   | MysqlSourceConfig
   | SqliteSourceConfig
-  | KafkaSourceConfig;
+  | KafkaSourceConfig
+  | SnowflakeSourceConfig
+  | ClickhouseSourceConfig
+  | MongoSourceConfig;
 
 export interface RestSourceConfig {
   type: 'rest';
@@ -244,4 +247,68 @@ export interface TelegramNotifyConfig {
    * full result rendered as a Markdown table.
    */
   message?: string;
+}
+
+// ─── Snowflake / ClickHouse / MongoDB ───────────────────────────────────────
+
+export interface SnowflakeSourceConfig {
+  type: 'snowflake';
+  /** Snowflake account locator, e.g. `myorg-myaccount`. Supports `${ENV_VAR}`. */
+  account: string;
+  /** Username. Supports `${ENV_VAR}`. */
+  username: string;
+  /** Password. Supports `${ENV_VAR}`. (Key-pair / OAuth out of scope for v1.) */
+  password: string;
+  /** Database to USE. Supports `${ENV_VAR}`. */
+  database?: string;
+  /** Schema to USE. Supports `${ENV_VAR}`. */
+  schema?: string;
+  /** Compute warehouse to USE. Supports `${ENV_VAR}`. */
+  warehouse?: string;
+  /** Optional role. Supports `${ENV_VAR}`. */
+  role?: string;
+  /** SELECT query polled on every interval. */
+  query: string;
+  /** Poll interval, e.g. "60s". Default: 60s. */
+  interval?: string;
+  /** Hard cap on rows per fetch (default 10000). */
+  maxRows?: number;
+}
+
+export interface ClickhouseSourceConfig {
+  type: 'clickhouse';
+  /** ClickHouse HTTP/HTTPS endpoint, e.g. `https://host:8443`. Supports `${ENV_VAR}`. */
+  url: string;
+  /** Username. Supports `${ENV_VAR}`. */
+  username?: string;
+  /** Password. Supports `${ENV_VAR}`. */
+  password?: string;
+  /** Database to query. Defaults to `default`. */
+  database?: string;
+  /** SELECT query polled on every interval. */
+  query: string;
+  /** Poll interval, e.g. "30s". Default: 30s. */
+  interval?: string;
+  /** Hard cap on rows per fetch (default 10000). */
+  maxRows?: number;
+}
+
+export interface MongoSourceConfig {
+  type: 'mongodb';
+  /** MongoDB connection URI. Supports `${ENV_VAR}`. */
+  url: string;
+  /** Database name. Supports `${ENV_VAR}`. */
+  database: string;
+  /** Collection to read from. */
+  collection: string;
+  /**
+   * Optional default filter applied on every poll (Mongo `$match` stage).
+   * Plain JSON object — `{ active: true }` etc. The filter is `AND`-merged
+   * with any push-down `where()` predicates the engine compiles in.
+   */
+  filter?: Record<string, unknown>;
+  /** Poll interval, e.g. "30s". Default: 30s. */
+  interval?: string;
+  /** Hard cap on documents per fetch (default 10000). */
+  maxRows?: number;
 }

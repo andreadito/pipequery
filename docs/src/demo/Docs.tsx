@@ -1839,6 +1839,9 @@ pq stop`}</CodeBlock>
                 { label: 'mysql', desc: 'Poll a SELECT query against MySQL or MariaDB' },
                 { label: 'sqlite', desc: 'Poll a query against a local SQLite file (read-only by default)' },
                 { label: 'kafka', desc: 'Stream messages from a Kafka topic into a ring buffer' },
+                { label: 'snowflake', desc: 'Poll a SELECT against Snowflake (push-down auto-routes the same operator set as Postgres)' },
+                { label: 'clickhouse', desc: 'Poll a SELECT against ClickHouse over HTTP/HTTPS' },
+                { label: 'mongodb', desc: 'Poll find() against a Mongo collection (push-down emits find() / aggregate())' },
               ].map((s) => (
                 <Box key={s.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
                   <code style={{ color: '#82aaff', fontSize: '0.78rem', fontWeight: 600 }}>{s.label}</code>
@@ -2042,6 +2045,33 @@ sources:
                     <td>Ring-buffered (<code>maxBuffer</code>, default 1000) — old messages evict.</td>
                     <td>Push. Auto-reconnect via kafkajs.</td>
                     <td>Yes — connection / SASL errors surface; routine reconnect chatter is suppressed.</td>
+                  </tr>
+                  <tr>
+                    <td><code>snowflake</code></td>
+                    <td>SELECT query, polled at <code>interval</code> (default 60s)</td>
+                    <td>One row per result row.</td>
+                    <td><code>account</code> / <code>username</code> / <code>password</code> / <code>database</code> / <code>schema</code> / <code>warehouse</code> / <code>role</code> all support <code>${'$'}{`{ENV_VAR}`}</code>.</td>
+                    <td><code>maxRows</code> cap (default 10000) wraps the user query.</td>
+                    <td>Polled. Push-down covers the same operator + aggregate set as Postgres; double-quoted identifiers, <code>?</code> placeholders.</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>clickhouse</code></td>
+                    <td>SELECT query, polled at <code>interval</code> (default 30s)</td>
+                    <td>JSONEachRow result decoded into one row per object.</td>
+                    <td>URL + creds support <code>${'$'}{`{ENV_VAR}`}</code>.</td>
+                    <td><code>maxRows</code> cap (default 10000).</td>
+                    <td>Polled. Push-down: same operator + aggregate set; backtick identifiers; literal values inlined (escaped) rather than bound, since the HTTP client's <code>{`{name:Type}`}</code> named binds require type tagging the dialect interface doesn't carry.</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>mongodb</code></td>
+                    <td>Polled <code>find()</code> against a collection</td>
+                    <td>Documents passed through as rows; default <code>_id</code> stripped. Optional yaml <code>filter</code> ANDed with push-down predicates.</td>
+                    <td>URL supports <code>${'$'}{`{ENV_VAR}`}</code>.</td>
+                    <td><code>maxRows</code> cap (default 10000).</td>
+                    <td>Polled. Push-down: <code>where</code> / <code>sort</code> / <code>first</code> / bare-field <code>select</code> → <code>find()</code> plan; grouping → <code>aggregate()</code> pipeline. Aggregate fns: <code>sum</code> / <code>avg</code> / <code>min</code> / <code>max</code> / <code>count</code> / <code>distinct_count</code>.</td>
+                    <td>Yes.</td>
                   </tr>
                 </tbody>
               </Box>

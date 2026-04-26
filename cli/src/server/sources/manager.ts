@@ -8,6 +8,9 @@ import { PostgresSourceAdapter } from './postgres.js';
 import { MysqlSourceAdapter } from './mysql.js';
 import { SqliteSourceAdapter } from './sqlite.js';
 import { KafkaSourceAdapter } from './kafka.js';
+import { SnowflakeSourceAdapter } from './snowflake.js';
+import { ClickhouseSourceAdapter } from './clickhouse.js';
+import { MongoSourceAdapter } from './mongodb.js';
 import { parseQuery, query } from '../../engine.js';
 
 export type DataContext = Record<string, unknown[]>;
@@ -186,6 +189,12 @@ export class SourceManager {
         return new SqliteSourceAdapter(config, this.cwd);
       case 'kafka':
         return new KafkaSourceAdapter(config);
+      case 'snowflake':
+        return new SnowflakeSourceAdapter(config);
+      case 'clickhouse':
+        return new ClickhouseSourceAdapter(config);
+      case 'mongodb':
+        return new MongoSourceAdapter(config);
       default:
         throw new Error(`Unknown source type: ${(config as { type: string }).type}`);
     }
