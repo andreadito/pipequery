@@ -1,14 +1,14 @@
 # pq — PipeQuery CLI
 
-A command-line tool for building data pipelines, REST APIs, and terminal dashboards using PipeQuery expressions.
+A command-line tool for building data pipelines, live API endpoints, terminal dashboards, MCP servers, and Telegram bots — all driven by PipeQuery expressions.
 
-Connect to any data source (REST APIs, WebSockets, files, Postgres, MySQL, SQLite, Kafka), run pipe-based queries to transform and aggregate data, then expose results as API endpoints or visualize them as rich terminal charts.
+Connect to any of 11 data sources (REST, WebSocket, file, static, Postgres, MySQL, SQLite, Kafka, Snowflake, ClickHouse, MongoDB), run pipe-based queries to transform and aggregate data, then expose results as API endpoints, surface them in a TUI, hand them to an AI agent over MCP, or chat with them on Telegram.
 
 **Create API endpoints on the fly** — run `pq endpoint add /api/prices -q "crypto | sort(price desc)"` and instantly get a live JSON endpoint, no config file needed.
 
-**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Your AI can now query your REST APIs, files, Postgres / MySQL / SQLite databases, Kafka streams, and WebSocket feeds directly.
+**Give your AI agent live data** — `pq mcp serve` exposes every configured source to any Model Context Protocol client (Claude Desktop, Claude Code, Cursor, Copilot). Pipe expressions targeting Postgres / MySQL / Snowflake / ClickHouse compile to native SQL automatically; targeting MongoDB compile to `find()` / `aggregate()` plans. No in-memory materialization for those engines; the AI gets native-engine performance.
 
-**Use it from Telegram** — `pq telegram serve` runs a Telegram bot that maps the same MCP commands to chat (`/query`, `/sources`, `/describe`, `/call`). Pair with `pq watch add` to push alerts to a Telegram channel when a query result transitions (`when_non_empty`, `when_empty`, or `on_change`).
+**Use it from Telegram** — `pq telegram serve` runs a Telegram bot that maps the same MCP commands to chat (`/query`, `/sources`, `/describe`, `/call`). Pass `--anthropic-key` to enable natural-language queries (Claude Haiku 4.5 translates plain English into pipequery). Pass `--log-file ./bot.jsonl` to record every event for `jq`/SIEM analysis. Pair with `pq watch add` to push alerts to a Telegram channel when a query result transitions (`when_non_empty`, `when_empty`, or `on_change`).
 
 ## Installation
 
@@ -114,15 +114,81 @@ pq source test coins
 pq source remove coins
 ```
 
-Source types:
-- **rest** — Polls a REST API at a configurable interval
-- **websocket** — Streams data from a WebSocket connection
-- **file** — Reads JSON or CSV files, optionally watches for changes
-- **static** — Inline JSON data defined in config
-- **postgres** — Polls a Postgres query. Supports `${ENV_VAR}` interpolation in the connection URL so credentials stay out of `pipequery.yaml`. Options: `-u` URL, `-q` query, `-i` interval, `--ssl <require\|no-verify\|false>`, `--max-rows <n>` (default 10000).
-- **mysql** — Polls a MySQL (or MariaDB) query. Same env-var interpolation and `--ssl` / `--max-rows` options as `postgres`.
-- **sqlite** — Polls a query against a local SQLite file (or `:memory:`). Opens read-only by default (pass `--no-readonly` to open read-write). Options: `-p` path, `-q` query, `-i` interval, `--max-rows <n>`, `--no-readonly`.
-- **kafka** — Streams messages from a Kafka (or Kafka-compatible, e.g. Redpanda) topic into a bounded ring buffer. Each message is decoded per `valueFormat` and spread into a row alongside `_kafka_topic`/`_kafka_partition`/`_kafka_offset`/`_kafka_timestamp`/`_kafka_key` metadata. Auto-generates a per-process consumer group so each pipequery instance sees the full firehose; set `groupId` explicitly to load-balance across replicas. Options: `--brokers` (comma list, supports `${ENV_VAR}`), `--topic`, `--group-id`, `--from-beginning`, `--value-format <json\|string\|raw>`, `--max-buffer <n>` (default 1000), `--ssl true`. SASL is config-only (not CLI-exposed yet).
+Snowflake / ClickHouse / MongoDB are configured directly in `pipequery.yaml` (richer config than the CLI flags expose):
+
+```yaml
+sources:
+  warehouse:
+    type: snowflake
+    account: "${SF_ACCOUNT}"          # myorg-myaccount
+    username: "${SF_USER}"
+    password: "${SF_PASS}"
+    database: ANALYTICS
+    schema: PUBLIC
+    warehouse: COMPUTE_WH
+    query: "SELECT * FROM events WHERE ts > DATEADD(day, -1, CURRENT_TIMESTAMP)"
+
+  metrics:
+    type: clickhouse
+    url: "https://${CH_HOST}:8443"
+    username: "${CH_USER}"
+    password: "${CH_PASS}"
+    database: default
+    query: "SELECT * FROM metrics WHERE ts > now() - INTERVAL 1 HOUR"
+
+  users:
+    type: mongodb
+    url: "mongodb://${DB_USER}:${DB_PASS}@cluster.example.com/?authSource=admin"
+    database: app
+    collection: users
+    filter: { active: true }          # default filter, AND-merged with push-down where()
+
+  binance_btc:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws
+    subscribe:                        # required by every exchange feed
+      - { method: SUBSCRIBE, params: [btcusdt@ticker], id: 1 }
+    heartbeat:
+      payload: { method: PING }
+      interval: 30s
+```
+
+REST sources support `${ENV_VAR}` interpolation in `url`, `headers`, `params`, and `auth.token`, plus an `auth: { kind: bearer, token }` helper:
+
+```yaml
+sources:
+  github_issues:
+    type: rest
+    url: "https://api.github.com/repos/${REPO}/issues"
+    auth:
+      kind: bearer
+      token: "${GITHUB_TOKEN}"
+    interval: 5m
+```
+
+### Source types
+
+- **rest** — Polls a REST API at a configurable interval. `${ENV_VAR}` interpolation in url/headers/params/auth.token. Optional `auth: { kind: bearer, token }` helper.
+- **websocket** — Streams data from a WebSocket connection. Optional `subscribe` payload (single object or array) sent immediately after connect — required by every exchange feed (Binance / Coinbase / Kraken / OKX / Bybit / Deribit / Polygon / Alpaca). Re-sent on every reconnect. Optional `heartbeat: { payload, interval }` keepalive.
+- **file** — Reads JSON or CSV files, optionally watches for changes via `chokidar`.
+- **static** — Inline JSON data defined in config.
+- **postgres** — Polls a Postgres query. `${ENV_VAR}` URL interpolation. SSL: `require` (default), `no-verify`, `false`. Safety `maxRows` cap (default 10000). **Push-down auto-routing**: where/sort/first/select/distinct/rollup/aggregates compile to native SQL.
+- **mysql** / MariaDB — Same pattern + push-down as Postgres, MySQL dialect (backticks + `?` placeholders).
+- **sqlite** — Polls a query against a local SQLite file (or `:memory:`). Opens read-only by default (pass `--no-readonly` to open read-write). No push-down today.
+- **kafka** / Redpanda — Streams messages into a bounded ring buffer. Each message is decoded per `valueFormat` (`json` / `string` / `raw`) and spread into a row alongside `_kafka_topic`/`_kafka_partition`/`_kafka_offset`/`_kafka_timestamp`/`_kafka_key` metadata. Auto-generates a per-process consumer group; set `groupId` explicitly to load-balance across replicas. Options: `--brokers` (comma list, supports `${ENV_VAR}`), `--topic`, `--group-id`, `--from-beginning`, `--value-format`, `--max-buffer`, `--ssl true`. SASL is config-only.
+- **snowflake** — Polls a SELECT against Snowflake. `account` / `username` / `password` / `database` / `schema` / `warehouse` / `role` all support `${ENV_VAR}`. **Push-down**: same operator + aggregate set as Postgres; double-quoted identifiers, `?` placeholders.
+- **clickhouse** — Polls a SELECT against ClickHouse over HTTP/HTTPS. URL + creds support `${ENV_VAR}`. **Push-down**: same operator + aggregate set; backtick identifiers; literal values inlined (escaped) rather than bound, since the HTTP client uses `{name:Type}` named binds that need per-param type tagging.
+- **mongodb** — Polls `find()` against a Mongo collection. Optional yaml `filter` is `$and`-merged with any push-down `where()` predicates. **Push-down**: `where`/`sort`/`first`/bare-field `select` → `find()` plan; grouping (`rollup` / pipeline-terminal aggregates) → `aggregate()` pipeline. Aggregate functions: `sum` / `avg` / `min` / `max` / `count` / `distinct_count`. `_id` stripped from result rows by default.
+
+### Push-down auto-routing
+
+Pipe expressions targeting a Postgres / MySQL / Snowflake / ClickHouse / MongoDB source are compiled to native SQL or Mongo plans and run on the database directly — no in-memory materialization. The dispatch is automatic and transparent: the same `query()` / `runQuery()` call surface is used everywhere, and unsupported pipeline shapes (e.g. `where` after `rollup`, exotic aggregates like `percentile`/`vwap`) silently fall back to the in-process engine.
+
+Operators pushed (SQL engines): `where`, `sort`, `first`, `select` (with arithmetic + aliases), `distinct()` (full-row), `rollup(keys, aggregates...)`, pipeline-terminal aggregates (`| sum(field)`, `| count()`, etc.). Aggregate functions translated to portable SQL: `sum`, `avg`, `min`, `max`, `count`, `distinct_count`.
+
+Operators pushed (Mongo): same operator set, with `find()` for non-grouping pipelines and `aggregate()` for grouping.
+
+What stays in-process: anything the compiler declines (multi-segment field paths, exotic aggregates, `where` after grouping, `groupBy` without `rollup`, `flatten`, `pivot`, `transpose`, `reduce`, `map`, `join` between sources from different engines, custom expression shapes). The AI agent doesn't need to know which path runs — both produce the same row shape.
 
 ### `pq endpoint`
 

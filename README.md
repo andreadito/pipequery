@@ -18,14 +18,23 @@
 
 ## Features
 
+### Engine (npm library)
 - **Pipe-based syntax** &mdash; chain operations with `|`, inspired by Unix pipes and SQL
-- **MCP server** &mdash; plug pipequery into Claude Desktop, Claude Code, Cursor, Copilot, or any MCP client with one command
 - **Minimal dependencies** &mdash; lightweight core engine
 - **TypeScript-first** &mdash; full type definitions included
 - **25+ aggregate functions** &mdash; basic, statistical, and financial aggregations
 - **LiveQuery** &mdash; streaming queries with delta/patch support
 - **Editor support** &mdash; CodeMirror 6, Monaco, and TextMate grammars
 - **React components** &mdash; visual pipeline builder out of the box
+
+### CLI (`pq`)
+- **MCP server** &mdash; plug pipequery into Claude Desktop, Claude Code, Cursor, Copilot, or any MCP client with one command
+- **11 data sources** &mdash; REST, WebSocket, file, static, Postgres, MySQL, SQLite, Kafka, Snowflake, ClickHouse, MongoDB
+- **Push-down to SQL + Mongo** &mdash; pipe expressions targeting Postgres / MySQL / Snowflake / ClickHouse compile to native SQL; targeting MongoDB compile to `find()` / `aggregate()`. No in-memory materialization for those engines.
+- **Telegram bot + natural language** &mdash; `pq telegram serve` exposes the same MCP verbs in chat; pass `--anthropic-key` and Claude translates plain English into pipequery
+- **Alert watches** &mdash; `pq watch add` polls a query and posts a Telegram notification on a state transition
+- **Live API endpoints** &mdash; `pq endpoint add /api/foo -q "..."` exposes a JSON endpoint immediately, no config edit
+- **Terminal dashboard** &mdash; resizable TUI with 7 visualization types and live SSE updates
 
 ## Install
 
@@ -35,7 +44,7 @@ npm install @vaultgradient/pipequery-lang
 
 ## CLI — `pq`
 
-PipeQuery also ships a CLI tool for building data pipelines, REST APIs, and rich terminal dashboards.
+PipeQuery also ships a CLI tool for building data pipelines, live API endpoints, terminal dashboards, MCP servers, and Telegram bots.
 
 ```bash
 npm install -g @vaultgradient/pipequery-cli
@@ -51,7 +60,25 @@ pq endpoint add /api/top-coins -q "crypto | sort(market_cap desc) | first(10)"
 # → http://localhost:3000/api/top-coins is instantly available
 ```
 
-Create API endpoints on the fly without editing config files — just `pq endpoint add` with a PipeQuery expression and your endpoint is live immediately.
+### Data sources
+
+11 source types out of the box, all addable at runtime via `pq source add`:
+
+| Type | What it polls / streams | Push-down |
+|------|--------------------------|-----------|
+| `rest` | HTTP GET, with `${ENV_VAR}` interpolation in url/headers/params and optional `auth: bearer` | — |
+| `websocket` | WSS stream with optional `subscribe` payload + `heartbeat` keepalive (Binance / Coinbase / Kraken / etc.) | — |
+| `file` | Local JSON / CSV with optional `watch:` mode | — |
+| `static` | Inline JSON in yaml | — |
+| `postgres` (incl. TimescaleDB) | SELECT query | ✅ where/sort/first/select/distinct/rollup/aggregates → SQL |
+| `mysql` / MariaDB | SELECT query | ✅ same operator set, MySQL dialect |
+| `sqlite` | Local SQLite file | — |
+| `kafka` (incl. Redpanda) | Topic subscriber, ring-buffered | — |
+| `snowflake` | SELECT query against Snowflake | ✅ same operator set, Snowflake dialect |
+| `clickhouse` | SELECT query over HTTP/HTTPS | ✅ same operator set, ClickHouse dialect |
+| `mongodb` | `find()` against a collection (with optional default filter) | ✅ where/sort/first/select → `find()`; rollup/aggregates → `aggregate()` |
+
+Push-down is auto-routed: when a pipe expression targets a source whose adapter supports it, the engine compiles to native SQL (or Mongo plan) and runs it on the database — no in-memory materialization. Unsupported pipeline shapes transparently fall back to in-process execution.
 
 ### Run with Docker
 
@@ -77,10 +104,33 @@ The dashboard features a resizable 2-column grid with live SSE updates and 7 vis
 ```bash
 pq mcp serve                      # stdio — plug into Claude Desktop / Cursor / Claude Code
 pq mcp serve --http --port 3001   # HTTP/SSE — for remote clients or hosted deployments
+pq mcp serve --http --auth-token "$PIPEQUERY_MCP_TOKEN"   # bearer-token auth on the HTTP transport
 pq mcp serve --attach http://localhost:3000  # attach to a running `pq serve`
 ```
 
-Your AI agent gets 5 tools: `query`, `list_sources`, `describe_source`, `list_endpoints`, `call_endpoint`. See [`cli/README.md`](./cli/README.md#use-with-ai-mcp) for client setup recipes.
+Your AI agent gets 5 tools: `query`, `list_sources`, `describe_source`, `list_endpoints`, `call_endpoint`. Push-down auto-routing applies here too — agents asking *"top 5 paid orders"* against a Postgres / MySQL / Snowflake / ClickHouse / Mongo source compile to native SQL or Mongo plans automatically. See [`cli/README.md`](./cli/README.md#use-with-ai-mcp) for client setup recipes.
+
+## Telegram bot + alerts
+
+```bash
+# Bot exposes the same MCP verbs as Telegram slash commands
+PIPEQUERY_TG_BOT_TOKEN=<token> pq telegram serve --allow-user @yourname
+
+# Add --anthropic-key to enable plain-English questions (Haiku 4.5 + prompt caching)
+ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
+
+# Add --log-file ./bot.jsonl to record every event as JSONL for jq / SIEM analysis
+pq telegram serve --allow-user @yourname --log-file ./bot.jsonl
+
+# Alert watches — query → notification on state transition
+pq watch add btc-dip \
+  --query "crypto | where(symbol == 'BTC' && price < 50000)" \
+  --interval 60s --fire-when when_non_empty \
+  --telegram-chat-id -1001234567890 \
+  --telegram-message "🚨 BTC dipped: \${{ .price }}"
+```
+
+Bot commands mirror MCP tools (`/sources`, `/describe`, `/endpoints`, `/call`, `/query`); plain text gets translated to pipequery via Anthropic's API when configured. Watches support `when_non_empty` (default), `when_empty`, and `on_change` fire conditions — idempotent across the chosen mode, no flapping. See [`cli/README.md`](./cli/README.md#use-from-telegram) for the full surface.
 
 ## Quick Start
 
