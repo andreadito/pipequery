@@ -3,6 +3,8 @@ import type { PostgresSourceConfig } from '../../config/schema.js';
 import { parseDuration } from '../../utils/parseDuration.js';
 import { expandEnv } from '../../utils/expandEnv.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
+import { parseQuery } from '../../engine.js';
+import { compilePostgresPushdown } from './pushdown/postgres.js';
 
 const DEFAULT_INTERVAL_MS = 30_000;
 const DEFAULT_MAX_ROWS = 10_000;
@@ -84,6 +86,54 @@ export class PostgresSourceAdapter implements SourceAdapter {
 
   async refresh(): Promise<void> {
     await this.fetch();
+  }
+
+  /**
+   * Push-down execution prototype. Compiles a pipequery expression rooted at
+   * this source into a single Postgres query (where / sort / first only in
+   * v1) and runs it directly against the database — no in-memory
+   * materialization of the user's source query, no polling, no ring buffer.
+   *
+   * Returns:
+   *   - `{ ok: true, rows, sql, params, fullyPushed: true }` on a clean push-down
+   *   - `{ ok: false, reason }` when the AST contains operators we don't yet
+   *     translate. Caller should fall back to the in-process engine on the
+   *     ring-buffered data instead.
+   *
+   * This is an opt-in API; the default getData() / fetch() polling loop is
+   * unchanged so existing users see no behaviour change.
+   */
+  async runPushdown(expression: string): Promise<
+    | { ok: true; rows: unknown[]; sql: string; params: unknown[]; fullyPushed: true }
+    | { ok: false; reason: string }
+  > {
+    if (!this.pool) {
+      return { ok: false, reason: 'Postgres pool not initialized — call start() first' };
+    }
+    let pipeline;
+    try {
+      pipeline = parseQuery(expression);
+    } catch (err) {
+      return { ok: false, reason: `parse error: ${err instanceof Error ? err.message : String(err)}` };
+    }
+
+    const compiled = compilePostgresPushdown(pipeline, this.config.query);
+    if (!compiled.ok) {
+      return { ok: false, reason: compiled.reason };
+    }
+
+    try {
+      const res = await this.pool.query(compiled.compiled.sql, compiled.compiled.params);
+      return {
+        ok: true,
+        rows: res.rows,
+        sql: compiled.compiled.sql,
+        params: compiled.compiled.params,
+        fullyPushed: true,
+      };
+    } catch (err) {
+      return { ok: false, reason: `postgres error: ${err instanceof Error ? err.message : String(err)}` };
+    }
   }
 
   private async fetch(): Promise<void> {
