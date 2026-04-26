@@ -127,6 +127,8 @@ pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
 
 Supports REST APIs, WebSockets, CSV/JSON files, inline static data, Postgres (+ TimescaleDB, which is Postgres-wire), MySQL / MariaDB, SQLite, and Kafka (including Redpanda or anything Kafka-wire compatible). Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support a `subscribe` payload (single object or array) sent immediately after connect — required by every exchange feed (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca, etc.); re-sent on every reconnect. Optional `heartbeat: { payload, interval }` keeps idle connections alive. DB sources support `${ENV_VAR}` interpolation in connection URLs so credentials can live in the environment; each query is guarded by a `maxRows` safety cap (default 10000). Kafka sources buffer the most recent N messages (default 1000) in a ring.
 
+For a per-adapter shape matrix (input / output shape / auth / pagination / live updates / error visibility) and the list of cases that need a shim (signed REST, paginated APIs, SSE/NDJSON, OAuth refresh, etc.) see the "Source shapes — supported / not-supported matrix" section in `llms-full.txt`.
+
 ### MCP — Model Context Protocol (AI agents)
 
 The CLI ships an MCP server so any MCP-aware AI client (Claude Desktop, Claude Code, Cursor, Copilot, custom agents) can query configured pipequery sources directly.
