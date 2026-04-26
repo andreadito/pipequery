@@ -89,4 +89,70 @@ describe.skipIf(!ENABLED)('postgres pushdown — live', () => {
     expect(sanity.ok).toBe(true);
     if (sanity.ok) expect(sanity.rows.length).toBe(1);
   });
+
+  it('pushes down rollup with GROUP BY + aggregates', async () => {
+    const r = await adapter.runPushdown(
+      "orders | rollup(status, sum(amount) as total, count() as n) | sort(total desc)",
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.sql).toContain('GROUP BY "status"');
+    expect(r.sql).toContain('SUM("amount") AS "total"');
+    expect(r.sql).toContain('COUNT(*) AS "n"');
+    expect(r.sql).toContain('ORDER BY "total" DESC');
+    // Each row carries the aggregate columns we asked for.
+    expect(r.rows.length).toBeGreaterThan(0);
+    expect(r.rows[0]).toHaveProperty('status');
+    expect(r.rows[0]).toHaveProperty('total');
+    expect(r.rows[0]).toHaveProperty('n');
+  });
+
+  it('pushes down a single-row aggregate (no GROUP BY)', async () => {
+    const r = await adapter.runPushdown('orders | rollup(sum(amount) as total)');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.sql).not.toContain('GROUP BY');
+    expect(r.rows).toHaveLength(1);
+    expect((r.rows[0] as { total: unknown }).total).not.toBeNull();
+  });
+
+  it('pushes down pipeline-terminal count() to COUNT(*)', async () => {
+    const r = await adapter.runPushdown('orders | count()');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.sql).toMatch(/^SELECT COUNT\(\*\) AS "count" FROM/);
+    expect(r.rows).toHaveLength(1);
+  });
+
+  it('pushes down select with alias', async () => {
+    const r = await adapter.runPushdown('orders | select(customer as name, amount) | first(3)');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.sql).toContain('"customer" AS "name"');
+    expect(r.rows.length).toBeLessThanOrEqual(3);
+    // Result rows have the alias, not the original column name.
+    if (r.rows.length > 0) {
+      expect(r.rows[0]).toHaveProperty('name');
+      expect(r.rows[0]).not.toHaveProperty('customer');
+    }
+  });
+
+  it('pushes down full-row distinct', async () => {
+    const r = await adapter.runPushdown('orders | select(status) | distinct()');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.sql).toMatch(/^SELECT DISTINCT "status" FROM/);
+  });
+
+  it('declines distinct(field) — DISTINCT ON not portable', async () => {
+    const r = await adapter.runPushdown('orders | distinct(status)');
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.reason).toMatch(/distinct/i);
+  });
+
+  it('still declines unsupported aggregates (e.g. percentile)', async () => {
+    const r = await adapter.runPushdown('orders | rollup(percentile(amount, 0.95) as p95)');
+    expect(r.ok).toBe(false);
+  });
 });

@@ -2013,7 +2013,7 @@ sources:
                     <td>One row per result row. Numeric → string (preserves precision; <code>rollup(sum/avg)</code> coerces transparently).</td>
                     <td>Connection URL with <code>${'$'}{`{ENV_VAR}`}</code> interpolation. SSL: <code>require</code> (default), <code>no-verify</code>, <code>false</code>.</td>
                     <td><code>maxRows</code> hard cap (default 10000) — exceeding errors with a clear message; user adds <code>LIMIT</code> or raises the cap.</td>
-                    <td>Polled. <code>where</code>/<code>sort</code>/<code>first</code> push down to SQL automatically; unsupported ops fall back to in-process transparently.</td>
+                    <td>Polled. Push-down covers <code>where</code> / <code>sort</code> / <code>first</code> / <code>select</code> / <code>distinct()</code> / <code>rollup(...)</code> / pipeline-terminal aggregates (<code>sum</code>, <code>avg</code>, <code>min</code>, <code>max</code>, <code>count</code>, <code>distinct_count</code>). Anything else falls back to in-process.</td>
                     <td>Yes — driver errors and the maxRows-exceeded error.</td>
                   </tr>
                   <tr>
