@@ -4,6 +4,7 @@ export interface PipeQueryConfig {
   sources: Record<string, SourceConfig>;
   endpoints: Record<string, EndpointConfig>;
   dashboards: Record<string, DashboardConfig>;
+  watches?: Record<string, WatchConfig>;
 }
 
 export interface ServerConfig {
@@ -34,12 +35,34 @@ export interface RestSourceConfig {
   headers?: Record<string, string>;
   dataPath?: string;
   interval?: string;
+  /** Optional auth helper. Currently supports `bearer`; more kinds (basic,
+   *  apiKeyHeader, hmac-*) tracked in issue #37. The token is interpolated
+   *  through ${ENV_VAR} like every other string field. */
+  auth?: BearerAuth;
+}
+
+export interface BearerAuth {
+  kind: 'bearer';
+  token: string;
 }
 
 export interface WebSocketSourceConfig {
   type: 'websocket';
   url: string;
   maxBuffer?: number;
+  /** Payload(s) to send to the server immediately after the WebSocket
+   *  opens. Most exchange feeds (Binance, Coinbase, Kraken, OKX, Bybit, …)
+   *  require this — without it, no data is delivered. Each payload is
+   *  JSON-stringified and sent in order. Re-sent on every reconnect. */
+  subscribe?: unknown | unknown[];
+  /** Optional keepalive: sends `payload` to the server every `interval`
+   *  while the socket is open. Most exchanges close idle sockets within
+   *  a few minutes; a periodic ping keeps the stream alive. */
+  heartbeat?: {
+    payload: unknown;
+    /** Duration like "30s", "1m". */
+    interval: string;
+  };
 }
 
 export interface FileSourceConfig {
@@ -177,4 +200,48 @@ export interface PanelConfig {
   query: string;
   viz: 'table' | 'bar' | 'sparkline' | 'stat' | 'orderbook' | 'heatmap' | 'candle' | 'auto';
   size?: 'full' | 'half' | 'stat';
+}
+
+// ─── Watches (alerts triggered by a query result) ────────────────────────────
+
+export interface WatchConfig {
+  /** PipeQuery expression to evaluate on each tick. */
+  query: string;
+  /** Poll interval, e.g. "30s", "5m". Defaults to "60s". */
+  interval?: string;
+  /**
+   * When to fire a notification:
+   *   - `when_non_empty` (default): fires on the transition from empty/null
+   *     to non-empty. Doesn't re-fire while still non-empty; re-fires after
+   *     going empty and then non-empty again. Standard alerting shape.
+   *   - `when_empty`: inverse — fires when transitioning to empty (e.g., a
+   *     liveness check that fails when no rows match).
+   *   - `on_change`: fires on any change in the result content. Useful for
+   *     "tell me when this number moves" but can be chatty.
+   */
+  fireWhen?: 'when_non_empty' | 'when_empty' | 'on_change';
+  /** Notification channels. At least one must be configured. */
+  notify: WatchNotify;
+}
+
+export interface WatchNotify {
+  telegram?: TelegramNotifyConfig;
+}
+
+export interface TelegramNotifyConfig {
+  /**
+   * Bot token; supports `${ENV_VAR}` interpolation. If omitted, defaults
+   * to the `PIPEQUERY_TG_BOT_TOKEN` environment variable.
+   */
+  botToken?: string;
+  /** Chat / channel / group ID to post to. */
+  chatId: string | number;
+  /**
+   * Optional message template. `{{ .field }}` expands to the named field
+   * of the FIRST row of the result (most alerts care about a single
+   * triggering row). `{{ .count }}` is special and yields the total row
+   * count. If omitted, the bot posts a default summary line plus the
+   * full result rendered as a Markdown table.
+   */
+  message?: string;
 }

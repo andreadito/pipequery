@@ -27,6 +27,7 @@ export async function loadConfig(cwd = process.cwd()): Promise<{ config: PipeQue
     sources: raw.sources ?? {},
     endpoints: raw.endpoints ?? {},
     dashboards: raw.dashboards ?? {},
+    watches: raw.watches ?? {},
   };
 
   return { config, path: configPath };

@@ -1867,6 +1867,234 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 
 # Mock users & posts (JSONPlaceholder)
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              REST — authenticated APIs and env-var interpolation
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              REST sources support <code>${'$'}{`{ENV_VAR}`}</code> interpolation in{' '}
+              <code>url</code>, <code>headers</code>, <code>params</code>, and{' '}
+              <code>auth.token</code> — credentials stay out of the yaml. The{' '}
+              <code>auth: {`{ kind: bearer, token }`}</code> helper is sugar for the
+              standard <code>Authorization: Bearer</code> header.
+            </Typography>
+            <CodeBlock>{`# pipequery.yaml
+sources:
+  github_issues:
+    type: rest
+    url: "https://api.github.com/repos/\${REPO}/issues"
+    interval: 5m
+    auth:
+      kind: bearer
+      token: "\${GITHUB_TOKEN}"
+
+  weather:
+    type: rest
+    url: https://api.openweathermap.org/data/2.5/weather
+    params:
+      q: "\${CITY}"
+      appid: "\${OWM_KEY}"
+      units: metric
+    interval: 10m`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+              Missing env vars expand to empty string with a stderr warning, so you'll see the
+              misconfiguration immediately rather than embedding a literal{' '}
+              <code>${'$'}{`{FOO}`}</code> into a request.
+            </Typography>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              WebSocket — feeds that need a subscribe handshake
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              Most exchange WS feeds (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca)
+              don't push anything until the client sends a subscribe frame. Declare it once in yaml
+              under <code>subscribe</code> — the adapter sends it after every connect, including
+              reconnects. Add an optional <code>heartbeat</code> for feeds that close idle sockets.
+            </Typography>
+            <CodeBlock>{`# pipequery.yaml
+sources:
+  binance_btc:
+    type: websocket
+    url: wss://stream.binance.com:9443/ws
+    subscribe:
+      - { method: SUBSCRIBE, params: [btcusdt@ticker], id: 1 }
+    heartbeat:
+      payload: { method: PING }
+      interval: 30s
+
+  coinbase_btc:
+    type: websocket
+    url: wss://ws-feed.exchange.coinbase.com
+    subscribe:
+      - { type: subscribe, product_ids: [BTC-USD], channels: [ticker] }`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+              <code>subscribe</code> accepts a single object or an array. Each entry is JSON-stringified
+              and sent in order. Re-sent after every reconnect. Heartbeat fires on a{' '}
+              <code>setInterval</code> only while the socket is OPEN; cleared on close / stop.
+            </Typography>
+          </SubSection>
+
+          <SubSection title="Source shapes — what each adapter accepts">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              The matrix below summarizes what each adapter handles natively today, so you don't
+              have to read the source. Anything in the "Won't work natively" list below needs a
+              shim — see the cookbook recipe at the bottom.
+            </Typography>
+
+            <Box sx={{ overflowX: 'auto', mb: 2 }}>
+              <Box
+                component="table"
+                sx={{
+                  width: '100%',
+                  fontSize: '0.78rem',
+                  borderCollapse: 'collapse',
+                  '& th, & td': {
+                    textAlign: 'left',
+                    padding: '6px 10px',
+                    borderBottom: '1px solid #1a2530',
+                    verticalAlign: 'top',
+                  },
+                  '& th': { color: '#c0d0e0', fontWeight: 600, whiteSpace: 'nowrap' },
+                  '& td': { color: '#8899aa' },
+                  '& code': { color: '#82aaff', fontSize: '0.75rem' },
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th>Adapter</th>
+                    <th>Input</th>
+                    <th>Shape on ingest</th>
+                    <th>Auth</th>
+                    <th>Pagination</th>
+                    <th>Live updates</th>
+                    <th>Errors visible?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>rest</code></td>
+                    <td>HTTP GET, polled at <code>interval</code> (default 30s)</td>
+                    <td>JSON. Array → as-is. Object → wrapped as <code>[obj]</code> (single row). <code>dataPath</code> extracts a nested array; if the path resolves to anything but an array, source is silently empty.</td>
+                    <td><code>auth: {`{ kind: bearer, token }`}</code> for Bearer headers; static <code>headers</code> / <code>params</code> for everything else. <code>${'$'}{`{ENV_VAR}`}</code> interpolation supported in <code>url</code>, <code>headers</code>, <code>params</code>, and <code>auth.token</code>. Basic / HMAC helpers tracked in #37.</td>
+                    <td>Not built-in.</td>
+                    <td>Polled — no push. Hot-reload across <code>pq source add/remove</code>.</td>
+                    <td>Yes — non-2xx surfaces as <code>SourceStatus.error</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><code>websocket</code></td>
+                    <td>Long-lived WSS connection</td>
+                    <td>JSON only. Object → appended to ring buffer (<code>maxBuffer</code>, default 1000). Array → replaces the buffer wholesale. Non-JSON messages silently dropped.</td>
+                    <td>Subscribe payload(s) sent on open (<code>subscribe</code>); optional <code>heartbeat</code>. No header-level auth; tokens go in the URL or in subscribe payload per exchange spec.</td>
+                    <td>N/A — streaming.</td>
+                    <td>Push. Auto-reconnect every 5s with subscribe re-send.</td>
+                    <td>Connection errors yes. Non-JSON message drops are silent.</td>
+                  </tr>
+                  <tr>
+                    <td><code>file</code></td>
+                    <td>Local file</td>
+                    <td>JSON or CSV (auto-detected from extension; <code>format</code> override). JSON file: array as-is, single object as <code>[obj]</code>. CSV: header row → field names.</td>
+                    <td>None (filesystem perms).</td>
+                    <td>N/A.</td>
+                    <td>Optional <code>watch: true</code> reloads on file change (chokidar).</td>
+                    <td>Yes — parse / read errors surface in <code>SourceStatus.error</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><code>static</code></td>
+                    <td>Inline JSON in <code>pipequery.yaml</code></td>
+                    <td>Whatever you write. Most useful for fixtures and demos.</td>
+                    <td>N/A.</td>
+                    <td>N/A.</td>
+                    <td>None — frozen at startup.</td>
+                    <td>N/A.</td>
+                  </tr>
+                  <tr>
+                    <td><code>postgres</code></td>
+                    <td>SELECT query, polled at <code>interval</code> (default 60s)</td>
+                    <td>One row per result row. Numeric → string (preserves precision; <code>rollup(sum/avg)</code> coerces transparently).</td>
+                    <td>Connection URL with <code>${'$'}{`{ENV_VAR}`}</code> interpolation. SSL: <code>require</code> (default), <code>no-verify</code>, <code>false</code>.</td>
+                    <td><code>maxRows</code> hard cap (default 10000) — exceeding errors with a clear message; user adds <code>LIMIT</code> or raises the cap.</td>
+                    <td>Polled. <code>where</code>/<code>sort</code>/<code>first</code> push down to SQL.</td>
+                    <td>Yes — driver errors and the maxRows-exceeded error.</td>
+                  </tr>
+                  <tr>
+                    <td><code>mysql</code></td>
+                    <td>SELECT query, polled at <code>interval</code></td>
+                    <td>Same row shape as Postgres. Driver: <code>mysql2</code>.</td>
+                    <td>Same env-var URL interpolation. SSL same modes.</td>
+                    <td>Same <code>maxRows</code> wrapper.</td>
+                    <td>Polled. Push-down: not yet (Postgres only today).</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>sqlite</code></td>
+                    <td>Local SQLite file (or <code>:memory:</code>)</td>
+                    <td>One row per result row.</td>
+                    <td>None. Read-only by default; pass <code>readonly: false</code> to open RW.</td>
+                    <td><code>maxRows</code> applied as a <code>LIMIT</code> wrapper.</td>
+                    <td>Polled.</td>
+                    <td>Yes.</td>
+                  </tr>
+                  <tr>
+                    <td><code>kafka</code></td>
+                    <td>Subscribed Kafka topic</td>
+                    <td>Each message decoded per <code>valueFormat</code> (<code>json</code> default, <code>string</code>, <code>raw</code>) and spread into a row. Carries <code>_kafka_topic</code> / <code>_kafka_partition</code> / <code>_kafka_offset</code> / <code>_kafka_timestamp</code> / <code>_kafka_key</code> alongside.</td>
+                    <td>SASL (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512). Brokers + creds support <code>${'$'}{`{ENV_VAR}`}</code>.</td>
+                    <td>Ring-buffered (<code>maxBuffer</code>, default 1000) — old messages evict.</td>
+                    <td>Push. Auto-reconnect via kafkajs.</td>
+                    <td>Yes — connection / SASL errors surface; routine reconnect chatter is suppressed.</td>
+                  </tr>
+                </tbody>
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Won't work natively today
+            </Typography>
+            <Box sx={{ fontSize: '0.78rem', color: '#8899aa', lineHeight: 1.6 }}>
+              <Box component="ul" sx={{ pl: 2.5, m: 0 }}>
+                <li><b>Signed REST APIs</b> (Coinbase Pro / Binance / Kraken / Bitfinex private endpoints) — these compute an HMAC of <code>timestamp + method + path + body</code> per request. No native helper yet (#37). <i>Workaround:</i> wrap with a 30-line Node proxy that signs and re-emits as an unsigned local URL.</li>
+                <li><b>Paginated REST APIs</b> (anything that returns <code>{`{ next: '...' }`}</code> or pagination headers). The REST adapter fetches one URL per tick. <i>Workaround:</i> proxy that walks pagination and returns the concatenated array.</li>
+                <li><b>Rate-limited APIs</b> with backoff requirements. The polling interval is fixed; no 429-aware retry. <i>Workaround:</i> set <code>interval</code> conservatively, or shim.</li>
+                <li><b>SSE / NDJSON streams</b>. The REST adapter does <code>JSON.parse</code> on a single response body. <i>Workaround:</i> small SSE→WebSocket proxy.</li>
+                <li><b>Non-JSON payloads</b> (XML, Protobuf, custom binary). Parse externally; re-emit as JSON over WS or write to a file source.</li>
+                <li><b>OAuth2 token refresh</b>. Static headers don't refresh on 401. <i>Workaround:</i> proxy that holds the refresh-token loop, or rotate the env var with a sidecar.</li>
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Shim cookbook — the "tiny Node proxy" pattern
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              For anything in the list above, the canonical workaround is a small Node process
+              that handles the gnarly part (signing, pagination, SSE, etc.) and re-emits as either
+              a plain JSON HTTP endpoint (consumed via <code>type: rest</code>) or a no-handshake
+              WebSocket (consumed via <code>type: websocket</code>). Two screens of code per feed,
+              runs alongside <code>pq serve</code>.
+            </Typography>
+            <CodeBlock>{`// ticker-proxy.mjs — signs a Coinbase private GET, re-emits unsigned on :8787
+import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
+
+const KEY = process.env.CB_KEY, SECRET = process.env.CB_SECRET, PASS = process.env.CB_PASS;
+
+createServer(async (_req, res) => {
+  const ts = Date.now() / 1000;
+  const path = '/accounts';
+  const sig = createHmac('sha256', Buffer.from(SECRET, 'base64'))
+    .update(\`\${ts}GET\${path}\`).digest('base64');
+  const upstream = await fetch(\`https://api.exchange.coinbase.com\${path}\`, {
+    headers: {
+      'CB-ACCESS-KEY': KEY,
+      'CB-ACCESS-TIMESTAMP': ts,
+      'CB-ACCESS-PASSPHRASE': PASS,
+      'CB-ACCESS-SIGN': sig,
+    },
+  });
+  res.setHeader('content-type', 'application/json');
+  res.end(await upstream.text());
+}).listen(8787);
+
+// pipequery.yaml: type: rest, url: http://localhost:8787, interval: 30s`}</CodeBlock>
           </SubSection>
 
           <SubSection title="Use with AI (MCP)">
@@ -1906,6 +2134,71 @@ pq mcp inspect`}</CodeBlock>
             <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1.5 }}>
               Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
               For Claude Code / Cursor, the stdio command is the same — check each tool's MCP config.
+            </Typography>
+          </SubSection>
+
+          <SubSection title="Use from Telegram">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              <code>pq telegram serve</code> exposes the same five verbs as MCP, mapped to slash
+              commands in a Telegram chat: <code>/sources</code>, <code>/describe</code>,{' '}
+              <code>/endpoints</code>, <code>/call</code>, <code>/query</code>. Same Provider
+              abstraction underneath as MCP — policy and governance work added to the provider
+              applies uniformly to both surfaces.
+            </Typography>
+            <CodeBlock>{`# Run the bot (loads pipequery.yaml from the current directory)
+PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
+
+# Or attach to a running pq serve instance
+pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+              Without <code>--allow-user</code> the bot replies to anyone who finds it (a stderr
+              warning prints on the first message). For anything reachable from the public
+              internet, set the allowlist.
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Natural-language queries
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              Pass <code>--anthropic-key</code> (or set <code>ANTHROPIC_API_KEY</code>) and the bot
+              accepts plain-English questions in addition to slash commands. Anything that doesn't
+              start with <code>/</code> is translated into a pipequery expression by{' '}
+              <code>claude-haiku-4-5</code> and executed against the configured sources. The
+              translator uses prompt caching for both the system prompt (always-stable DSL grammar)
+              and the per-tenant schema preamble (source list + inferred fields), so repeated
+              queries are cheap.
+            </Typography>
+            <CodeBlock>{`ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
+
+# Then in Telegram:
+#   "top 5 most expensive paid orders"
+# → bot replies with the translated expression and the result.`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Watches — alerts to Telegram">
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              <code>pq watch add</code> registers a query that runs on every interval; when its
+              result transitions, pipequery posts a notification to a Telegram chat / channel.
+              Three fire conditions: <code>when_non_empty</code> (default — fires on the empty →
+              non-empty transition), <code>when_empty</code> (the inverse), and{' '}
+              <code>on_change</code> (fires whenever the result hash differs from the previous
+              tick). Idempotent across the chosen mode — no flapping.
+            </Typography>
+            <CodeBlock>{`# BTC dipped below $50k → alert
+pq watch add btc-dip \\
+  --query "crypto | where(symbol == 'BTC' && price < 50000)" \\
+  --interval 60s \\
+  --fire-when when_non_empty \\
+  --telegram-chat-id -1001234567890 \\
+  --telegram-message "🚨 BTC dipped: \\\${{ .price }}"
+
+# List / remove
+pq watch list
+pq watch remove btc-dip`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+              Templates support <code>{`{{ .field }}`}</code> from the first row, plus{' '}
+              <code>{`{{ .count }}`}</code>, <code>{`{{ .watchName }}`}</code>, and{' '}
+              <code>{`{{ .reason }}`}</code>. Token defaults to{' '}
+              <code>$PIPEQUERY_TG_BOT_TOKEN</code> if not provided per-watch.
             </Typography>
           </SubSection>
 

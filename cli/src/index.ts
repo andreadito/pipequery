@@ -9,10 +9,15 @@ import { dashboardCommand } from './commands/dashboard.js';
 import { monitorCommand } from './commands/monitor.js';
 import { remoteDeployCommand, remoteConnectCommand, remoteStatusCommand } from './commands/remote.js';
 import { mcpServeCommand, mcpInspectCommand } from './commands/mcp.js';
+import { telegramServeCommand } from './commands/telegram.js';
+import { watchListCommand, watchAddCommand, watchRemoveCommand } from './commands/watch.js';
 import { completionCommand } from './commands/completion.js';
 import { stopCommand } from './commands/stop.js';
 import { startRepl } from './commands/repl.js';
 import { printBanner } from './utils/banner.js';
+
+// Commander helper: accumulate `--allow-user @a --allow-user @b` into an array.
+const collectRepeated = (value: string, acc: string[]): string[] => [...acc, value];
 
 const program = new Command();
 
@@ -168,6 +173,44 @@ mcp
   .description('Print the MCP tool schemas as JSON (useful for directory submission / debugging)')
   .option('--attach <url>', 'Attach to a running `pq serve` instance at the given URL instead of loading pipequery.yaml locally')
   .action(mcpInspectCommand);
+
+// ─── pq telegram ─────────────────────────────────────────────────────────────
+
+const telegram = program.command('telegram').description('Telegram bot transport for pipequery');
+
+telegram
+  .command('serve')
+  .description('Run a Telegram bot that exposes pipequery commands (/query, /sources, /describe, /endpoints, /call) plus natural-language queries when --anthropic-key is set')
+  .option('-t, --bot-token <token>', 'Telegram bot token (or set $PIPEQUERY_TG_BOT_TOKEN)')
+  .option('--attach <url>', 'Attach to a running `pq serve` instance instead of loading pipequery.yaml locally')
+  .option('--allow-user <handle>', 'Allowlist a user (numeric id or @username); repeatable. With no allowlist, anyone with the bot username can query.', collectRepeated, [])
+  .option('--anthropic-key <key>', 'Anthropic API key (or set $ANTHROPIC_API_KEY) — enables natural-language → pipequery translation on plain-text messages via claude-haiku-4-5.')
+  .action(telegramServeCommand);
+
+// ─── pq watch ────────────────────────────────────────────────────────────────
+
+const watch = program.command('watch').description('Manage alert watches (query → notification when condition fires)');
+
+watch
+  .command('list')
+  .description('List configured watches')
+  .action(watchListCommand);
+
+watch
+  .command('add <name>')
+  .description('Add a watch that fires a notification when its query result triggers the configured condition')
+  .requiredOption('-q, --query <expression>', 'PipeQuery expression to evaluate on each tick')
+  .option('-i, --interval <duration>', 'Poll interval (e.g., 30s, 5m). Default 60s.')
+  .option('-f, --fire-when <mode>', 'Fire condition: when_non_empty (default), when_empty, on_change')
+  .option('--telegram-chat-id <id>', 'Telegram chat / channel / group ID to notify')
+  .option('--telegram-bot-token <token>', 'Bot token override (defaults to $PIPEQUERY_TG_BOT_TOKEN)')
+  .option('--telegram-message <template>', 'Optional message template; supports {{ .field }} from the first row, plus {{ .count }}, {{ .watchName }}, {{ .reason }}')
+  .action(watchAddCommand);
+
+watch
+  .command('remove <name>')
+  .description('Remove a watch')
+  .action(watchRemoveCommand);
 
 // ─── pq stop ────────────────────────────────────────────────────────────────
 

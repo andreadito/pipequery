@@ -1,31 +1,13 @@
 import pg from 'pg';
 import type { PostgresSourceConfig } from '../../config/schema.js';
 import { parseDuration } from '../../utils/parseDuration.js';
+import { expandEnv } from '../../utils/expandEnv.js';
 import type { SourceAdapter, SourceStatus } from './types.js';
 import { parseQuery } from '../../engine.js';
 import { compilePostgresPushdown } from './pushdown/postgres.js';
 
 const DEFAULT_INTERVAL_MS = 30_000;
 const DEFAULT_MAX_ROWS = 10_000;
-
-/**
- * Resolve ${ENV_VAR} placeholders in a string from process.env.
- * Missing vars expand to empty string (with a stderr warning) so a
- * mis-typed env doesn't silently embed literal "${FOO}" into a
- * Postgres connection string.
- */
-function expandEnv(input: string): string {
-  return input.replace(/\$\{([A-Z0-9_]+)\}/gi, (_, name: string) => {
-    const value = process.env[name];
-    if (value === undefined) {
-      process.stderr.write(
-        `[pipequery] env var "${name}" referenced in postgres source URL is not set\n`,
-      );
-      return '';
-    }
-    return value;
-  });
-}
 
 function resolveSsl(ssl: PostgresSourceConfig['ssl']): pg.ClientConfig['ssl'] {
   if (ssl === false) return false;
@@ -50,7 +32,7 @@ export class PostgresSourceAdapter implements SourceAdapter {
   }
 
   async start(): Promise<void> {
-    const connectionString = expandEnv(this.config.url);
+    const connectionString = expandEnv(this.config.url, 'postgres source URL');
     this.pool = new pg.Pool({
       connectionString,
       ssl: resolveSsl(this.config.ssl),

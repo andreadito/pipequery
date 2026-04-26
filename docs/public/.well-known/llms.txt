@@ -125,7 +125,9 @@ pq endpoint add /api/summary -q "orders | groupBy(status) | count()" -c 30s
 
 ### Data Sources
 
-Supports REST APIs, WebSockets, CSV/JSON files, inline static data, Postgres (+ TimescaleDB, which is Postgres-wire), MySQL / MariaDB, SQLite, and Kafka (including Redpanda or anything Kafka-wire compatible). Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support Binance-style streams (`depth`, `aggTrade`, `kline`). DB sources support `${ENV_VAR}` interpolation in connection URLs so credentials can live in the environment; each query is guarded by a `maxRows` safety cap (default 10000). Kafka sources buffer the most recent N messages (default 1000) in a ring.
+Supports REST APIs, WebSockets, CSV/JSON files, inline static data, Postgres (+ TimescaleDB, which is Postgres-wire), MySQL / MariaDB, SQLite, and Kafka (including Redpanda or anything Kafka-wire compatible). Sources are defined in `pipequery.yaml` or added at runtime via `pq source add`. WebSocket sources support a `subscribe` payload (single object or array) sent immediately after connect — required by every exchange feed (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca, etc.); re-sent on every reconnect. Optional `heartbeat: { payload, interval }` keeps idle connections alive. DB sources support `${ENV_VAR}` interpolation in connection URLs so credentials can live in the environment; each query is guarded by a `maxRows` safety cap (default 10000). Kafka sources buffer the most recent N messages (default 1000) in a ring.
+
+For a per-adapter shape matrix (input / output shape / auth / pagination / live updates / error visibility) and the list of cases that need a shim (signed REST, paginated APIs, SSE/NDJSON, OAuth refresh, etc.) see the "Source shapes — supported / not-supported matrix" section in `llms-full.txt`.
 
 ### MCP — Model Context Protocol (AI agents)
 
@@ -148,6 +150,37 @@ Tools exposed to the AI:
 - `call_endpoint(path)` — execute a pre-configured endpoint by path
 
 HTTP authentication: when `--auth-token` or `PIPEQUERY_MCP_TOKEN` is set, clients must send `Authorization: Bearer <token>`; unauthenticated requests get 401. With no token set, the endpoint is open (localhost-only use case) and prints a loud startup warning. stdio mode needs no auth — there's no network surface.
+
+### Telegram bot — `pq telegram serve`
+
+Same five verbs as MCP, mapped to Telegram slash commands. Same Provider abstraction underneath, so policy/governance work added to the provider applies uniformly.
+
+```bash
+PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
+pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname
+```
+
+Commands: `/sources`, `/describe <name>`, `/endpoints`, `/call <path>`, `/query <expression>`, `/help`. Without `--allow-user`, the bot replies to anyone who finds it (warning printed on first message). Result formatting: object arrays render as fixed-width tables in `<pre>`, scalar arrays as JSON, all messages capped at Telegram's 4096-character limit with truncation footer.
+
+**Natural-language queries**: pass `--anthropic-key` (or set `ANTHROPIC_API_KEY`) and the bot accepts plain-English questions in addition to slash commands. Anything that doesn't start with `/` is translated into a pipequery expression by `claude-haiku-4-5` and executed. The translator uses prompt caching for both the system prompt (always-stable DSL grammar) and the per-tenant schema preamble (source list + inferred fields), so repeated queries are cheap.
+
+### Watches — `pq watch`
+
+Declarative alert watches: a query runs on every interval; when its result transitions, pipequery posts a notification to a Telegram chat / channel.
+
+```bash
+pq watch add btc-dip \
+  --query "crypto | where(symbol == 'BTC' && price < 50000)" \
+  --interval 60s \
+  --fire-when when_non_empty \
+  --telegram-chat-id -1001234567890 \
+  --telegram-message "🚨 BTC dipped: \${{ .price }}"
+
+pq watch list
+pq watch remove btc-dip
+```
+
+Three fire conditions: `when_non_empty` (default — fires on the empty → non-empty transition), `when_empty` (the inverse), `on_change` (fires whenever the result hash differs from the previous tick). Idempotent — no flapping. Templates support `{{ .field }}` from the first row plus `{{ .count }}`, `{{ .watchName }}`, `{{ .reason }}`. Bot token defaults to `$PIPEQUERY_TG_BOT_TOKEN`.
 
 ### Terminal Dashboard
 
