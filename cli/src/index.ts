@@ -71,7 +71,7 @@ source
 source
   .command('add <name>')
   .description('Add a data source')
-  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres, mysql, sqlite, kafka')
+  .requiredOption('-t, --type <type>', 'Source type: rest, websocket, file, postgres, mysql, sqlite, kafka, snowflake, clickhouse, mongodb')
   .option('-u, --url <url>', 'Connection URL for REST / WebSocket / Postgres / MySQL sources')
   .option('-i, --interval <interval>', 'Poll interval (e.g., 30s, 5m)', '30s')
   .option('-d, --data-path <path>', 'Dot-path to extract data from REST response')
