@@ -2202,6 +2202,38 @@ pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-use
 # Then in Telegram:
 #   "top 5 most expensive paid orders"
 # → bot replies with the translated expression and the result.`}</CodeBlock>
+
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+              Debug / monitor — structured event log
+            </Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+              The bot prints one human-readable line per event on stderr — every command, NL
+              query, and unauthorized attempt — so you can see who's hitting the bot, what
+              they're asking, and how it's being translated as it happens. Add{' '}
+              <code>--log-file ./bot.jsonl</code> to also append a machine-readable JSON object
+              per line for <code>jq</code>-style analysis or feeding into a SIEM.
+            </Typography>
+            <CodeBlock>{`pq telegram serve --allow-user @yourname --log-file ./bot.jsonl
+
+# stderr (live, colored):
+#   21:15:03 ✓ @andreadito  /sources                        8 rows  12ms
+#   21:15:24 ✓ @andreadito  "top 5 paid orders"             5 rows  847ms
+#                           → orders | where(status == 'paid') | sort(total desc) | first(5)
+#   21:15:47 🔒 @bob         unauthorized
+#   21:17:00 ⚠ @andreadito  "drop the orders table"         not answerable
+#                           → PipeQuery is read-only and cannot drop tables.
+#
+# bot.jsonl (one JSON per line):
+#   {"ts":"…","kind":"command","user":{"username":"andreadito"},"cmd":"/sources",...}
+#   {"ts":"…","kind":"nl","user":{...},"text":"top 5 paid orders","expression":"...",...}
+#   {"ts":"…","kind":"unauthorized","user":{"username":"bob"}}`}</CodeBlock>
+            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+              Each event includes outcome (<code>success</code> / <code>error</code> /{' '}
+              <code>not_answerable</code>), <code>rowCount</code> when applicable, and{' '}
+              <code>latencyMs</code>. The translated pipequery expression is surfaced for every
+              NL query so you can see exactly what was executed. JSONL writes are fire-and-forget
+              so a slow disk doesn't back-pressure incoming Telegram messages.
+            </Typography>
           </SubSection>
 
           <SubSection title="Watches — alerts to Telegram">

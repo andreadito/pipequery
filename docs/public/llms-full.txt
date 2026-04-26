@@ -735,6 +735,17 @@ ANTHROPIC_API_KEY=sk-ant-... pq telegram serve --allow-user @yourname
 #                 <pre>... table ...</pre>"
 ```
 
+**Debug / monitor — structured event log**: every command, NL query, and unauthorized attempt is printed as a colored, human-readable line on stderr — so operators can see live what's hitting the bot, what's being translated, and how long each call takes. Pass `--log-file <path>` to additionally append one JSON object per line (JSONL) for `jq`/`grep`/SIEM workflows. Each event includes `ts`, `kind` (`command` / `nl` / `unauthorized`), `user` (id and/or username), plus `cmd` / `args` / `outcome` / `rowCount` / `latencyMs` / `error` / `text` / `expression` / `explanation` as applicable. JSONL writes are fire-and-forget so a slow disk doesn't back-pressure incoming Telegram messages.
+
+```
+21:15:03 ✓ @andreadito  /sources                        8 rows  12ms
+21:15:24 ✓ @andreadito  "top 5 paid orders"             5 rows  847ms
+                        → orders | where(status == 'paid') | sort(total desc) | first(5)
+21:15:47 🔒 @bob         unauthorized
+21:17:00 ⚠ @andreadito  "drop the orders table"         not answerable
+                        → PipeQuery is read-only and cannot drop tables.
+```
+
 ### Watches — `pq watch`
 
 Declarative alert watches: register a query that runs on every interval; when its result transitions, pipequery posts a notification to a Telegram chat / channel. Idempotent across the chosen mode — no flapping, even with bursty data.

@@ -10,6 +10,7 @@ import { Bot, type Context, GrammyError, HttpError } from 'grammy';
 import type { Provider } from '../mcp/provider.js';
 import { formatError, formatResult, escapeHtml } from './format.js';
 import type { NLTranslator } from './nl.js';
+import type { EventLogger, UserRef } from './event-log.js';
 
 export interface BotOptions {
   /** Whitelist of Telegram user IDs (numeric) or @usernames allowed to query.
@@ -18,12 +19,16 @@ export interface BotOptions {
   /** Optional natural-language translator. If present, plain-text messages
    *  (no leading slash) are routed through it. */
   nl?: NLTranslator;
+  /** Optional structured event logger. When present, every command,
+   *  NL query, and unauthorized attempt is recorded. */
+  logger?: EventLogger;
 }
 
 export function buildBot(token: string, provider: Provider, opts: BotOptions = {}): Bot {
   const bot = new Bot(token);
   const allowList = normalizeAllowList(opts.allowUsers ?? []);
   const nl = opts.nl;
+  const logger = opts.logger;
 
   // Auth middleware — runs before any handler.
   bot.use(async (ctx, next) => {
@@ -36,6 +41,7 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
       return;
     }
     if (!isAllowed(ctx, allowList)) {
+      logger?.log({ kind: 'unauthorized', user: userOf(ctx) });
       await ctx.reply('🔒 You are not authorized to use this bot.');
       return;
     }
@@ -43,6 +49,7 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
   });
 
   bot.command('start', async (ctx) => {
+    const start = Date.now();
     await ctx.reply(
       [
         '👋 <b>pipequery bot</b>',
@@ -59,9 +66,11 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
       ].join('\n'),
       { parse_mode: 'HTML' },
     );
+    logger?.log({ kind: 'command', user: userOf(ctx), cmd: '/start', outcome: 'success', latencyMs: Date.now() - start });
   });
 
   bot.command('help', async (ctx) => {
+    const start = Date.now();
     const lines = [
       '<b>Examples</b>',
       '<code>/sources</code>',
@@ -86,37 +95,73 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
       '• Results &gt; 30 rows are truncated with a footer; tighten your query to see all of them.',
     );
     await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' });
+    logger?.log({ kind: 'command', user: userOf(ctx), cmd: '/help', outcome: 'success', latencyMs: Date.now() - start });
   });
 
   bot.command('sources', async (ctx) => {
+    const start = Date.now();
     try {
       const sources = await provider.listSources();
       if (sources.length === 0) {
         await ctx.reply('<i>No sources configured.</i>', { parse_mode: 'HTML' });
-        return;
+      } else {
+        const lines = sources.map((s) => {
+          const dot = s.status.healthy ? '🟢' : '🔴';
+          const rowCount = s.status.rowCount.toLocaleString();
+          const err = s.status.error ? ` <i>(${escapeHtml(s.status.error)})</i>` : '';
+          return `${dot} <b>${escapeHtml(s.name)}</b> — ${rowCount} rows${err}`;
+        });
+        await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' });
       }
-      const lines = sources.map((s) => {
-        const dot = s.status.healthy ? '🟢' : '🔴';
-        const rowCount = s.status.rowCount.toLocaleString();
-        const err = s.status.error ? ` <i>(${escapeHtml(s.status.error)})</i>` : '';
-        return `${dot} <b>${escapeHtml(s.name)}</b> — ${rowCount} rows${err}`;
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/sources',
+        outcome: 'success',
+        rowCount: sources.length,
+        latencyMs: Date.now() - start,
       });
-      await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/sources',
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
   bot.command('describe', async (ctx) => {
+    const start = Date.now();
     const name = ctx.match.trim();
     if (!name) {
       await ctx.reply('Usage: <code>/describe &lt;source-name&gt;</code>', { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/describe',
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: 'missing source name',
+      });
       return;
     }
     try {
       const desc = await provider.describeSource(name, 5);
       if (!desc) {
         await ctx.reply(`Source <code>${escapeHtml(name)}</code> not found.`, { parse_mode: 'HTML' });
+        logger?.log({
+          kind: 'command',
+          user: userOf(ctx),
+          cmd: '/describe',
+          args: name,
+          outcome: 'error',
+          latencyMs: Date.now() - start,
+          error: 'source not found',
+        });
         return;
       }
       const fields = desc.fields.length ? desc.fields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ') : '<i>(none inferred)</i>';
@@ -125,52 +170,141 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
         `<b>${escapeHtml(name)}</b> — ${desc.status.rowCount.toLocaleString()} rows\n<b>Fields:</b> ${fields}\n\n<b>Sample:</b>\n${sample}`,
         { parse_mode: 'HTML' },
       );
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/describe',
+        args: name,
+        outcome: 'success',
+        rowCount: desc.sample.length,
+        latencyMs: Date.now() - start,
+      });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/describe',
+        args: name,
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
   bot.command('endpoints', async (ctx) => {
+    const start = Date.now();
     try {
       const endpoints = await provider.listEndpoints();
       if (endpoints.length === 0) {
         await ctx.reply('<i>No endpoints configured.</i>', { parse_mode: 'HTML' });
-        return;
+      } else {
+        const lines = endpoints.map(
+          (e) => `<b>${escapeHtml(e.path)}</b>\n<code>${escapeHtml(e.config.query)}</code>`,
+        );
+        await ctx.reply(lines.join('\n\n'), { parse_mode: 'HTML' });
       }
-      const lines = endpoints.map(
-        (e) => `<b>${escapeHtml(e.path)}</b>\n<code>${escapeHtml(e.config.query)}</code>`,
-      );
-      await ctx.reply(lines.join('\n\n'), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/endpoints',
+        outcome: 'success',
+        rowCount: endpoints.length,
+        latencyMs: Date.now() - start,
+      });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/endpoints',
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
   bot.command('call', async (ctx) => {
+    const start = Date.now();
     const path = ctx.match.trim();
     if (!path) {
       await ctx.reply('Usage: <code>/call &lt;endpoint-path&gt;</code>', { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/call',
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: 'missing path',
+      });
       return;
     }
     try {
       const result = await provider.callEndpoint(path);
       await ctx.reply(formatResult(result), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/call',
+        args: path,
+        outcome: 'success',
+        rowCount: rowCountOf(result),
+        latencyMs: Date.now() - start,
+      });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/call',
+        args: path,
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
   bot.command('query', async (ctx) => {
+    const start = Date.now();
     const expr = ctx.match.trim();
     if (!expr) {
       await ctx.reply('Usage: <code>/query &lt;pipequery expression&gt;</code>', { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/query',
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: 'missing expression',
+      });
       return;
     }
     try {
       const result = await provider.runQuery(expr);
       await ctx.reply(formatResult(result), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/query',
+        args: expr,
+        outcome: 'success',
+        rowCount: rowCountOf(result),
+        latencyMs: Date.now() - start,
+      });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'command',
+        user: userOf(ctx),
+        cmd: '/query',
+        args: expr,
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
@@ -180,12 +314,21 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
   bot.on('message:text', async (ctx) => {
     const text = ctx.message.text.trim();
     if (!text || text.startsWith('/')) return;
+    const start = Date.now();
     if (!nl) {
       await ctx.reply(
         'I don\'t recognise that. Use <code>/help</code> to see the available commands. ' +
           'Natural-language queries are disabled — start the bot with <code>--anthropic-key</code> to enable them.',
         { parse_mode: 'HTML' },
       );
+      logger?.log({
+        kind: 'nl',
+        user: userOf(ctx),
+        text,
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: 'NL translation disabled',
+      });
       return;
     }
     try {
@@ -194,13 +337,39 @@ export function buildBot(token: string, provider: Provider, opts: BotOptions = {
       if (!expression) {
         const reason = explanation || 'I couldn\'t translate that into a pipequery expression.';
         await ctx.reply(`🤔 ${escapeHtml(reason)}`, { parse_mode: 'HTML' });
+        logger?.log({
+          kind: 'nl',
+          user: userOf(ctx),
+          text,
+          explanation,
+          outcome: 'not_answerable',
+          latencyMs: Date.now() - start,
+        });
         return;
       }
       const result = await provider.runQuery(expression);
       const header = `<i>${escapeHtml(explanation || 'Translated query')}</i>\n<code>${escapeHtml(expression)}</code>\n\n`;
       await ctx.reply(header + formatResult(result), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'nl',
+        user: userOf(ctx),
+        text,
+        expression,
+        explanation,
+        outcome: 'success',
+        rowCount: rowCountOf(result),
+        latencyMs: Date.now() - start,
+      });
     } catch (err) {
       await ctx.reply(formatError(err), { parse_mode: 'HTML' });
+      logger?.log({
+        kind: 'nl',
+        user: userOf(ctx),
+        text,
+        outcome: 'error',
+        latencyMs: Date.now() - start,
+        error: errMessage(err),
+      });
     }
   });
 
@@ -244,4 +413,21 @@ function trackUnauthSeen(id: number, username?: string): void {
     `[pipequery-telegram] WARNING: bot has no allowlist; user "${username ?? id}" can query freely. ` +
       `Restart with --allow-user @yourname to lock it down.\n`,
   );
+}
+
+// ─── Logging helpers ────────────────────────────────────────────────────────
+
+function userOf(ctx: Context): UserRef {
+  return {
+    id: ctx.from?.id,
+    username: ctx.from?.username,
+  };
+}
+
+function rowCountOf(value: unknown): number | undefined {
+  return Array.isArray(value) ? value.length : undefined;
+}
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }

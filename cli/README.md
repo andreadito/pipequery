@@ -305,6 +305,25 @@ Then in Telegram: `top 5 most expensive paid orders` → bot replies with the tr
 
 The translator uses prompt caching for both the system prompt (always-stable DSL grammar) and the per-tenant schema preamble (source list + inferred fields), so repeated queries are cheap. The schema preamble refreshes every minute.
 
+### Debug / monitor — structured event log
+
+Every command, NL query, and unauthorized attempt is printed as a colored human-readable line on stderr — so you can see who's hitting the bot, what they're asking, and how it's being translated as it happens. Pass `--log-file ./bot.jsonl` to also append one JSON object per line for `jq`-style analysis or feeding into a SIEM.
+
+```bash
+pq telegram serve --allow-user @yourname --log-file ./bot.jsonl
+```
+
+```
+21:15:03 ✓ @andreadito  /sources                        8 rows  12ms
+21:15:24 ✓ @andreadito  "top 5 paid orders"             5 rows  847ms
+                        → orders | where(status == 'paid') | sort(total desc) | first(5)
+21:15:47 🔒 @bob         unauthorized
+21:17:00 ⚠ @andreadito  "drop the orders table"         not answerable
+                        → PipeQuery is read-only and cannot drop tables.
+```
+
+JSONL fields per event: `ts`, `kind` (`command` / `nl` / `unauthorized`), `user`, plus `cmd` / `args` / `outcome` / `rowCount` / `latencyMs` / `error` / `text` / `expression` / `explanation` as applicable. Writes are fire-and-forget so a slow disk doesn't back-pressure incoming Telegram messages.
+
 ## Watch — alerts to Telegram
 
 `pq watch add` registers a query that runs on every interval; when its result transitions (becomes non-empty, becomes empty, or changes content), pipequery posts a notification to a Telegram chat / channel.
