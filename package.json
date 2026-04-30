@@ -48,6 +48,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "typecheck": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
