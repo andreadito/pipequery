@@ -50,8 +50,7 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build",
-    "sandcastle": "npx tsx .sandcastle/main.ts"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "query",
@@ -122,7 +121,6 @@
     }
   },
   "devDependencies": {
-    "@ai-hero/sandcastle": "^0.5.6",
     "@codemirror/language": "^6.12.2",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.40.0",
