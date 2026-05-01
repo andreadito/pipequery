@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            cli/package-lock.json
+            docs/package-lock.json
+            demo-app/package-lock.json
+
+      - name: Engine — install, typecheck, build, test
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+          npm test
+
+      - name: CLI — install, typecheck, build, test
+        working-directory: cli
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+          npm test
+
+      - name: Docs — install, build
+        working-directory: docs
+        run: |
+          npm ci
+          npm run build
+
+      - name: Demo app — install, build
+        working-directory: demo-app
+        run: |
+          npm ci
+          npm run build

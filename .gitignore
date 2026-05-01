@@ -3,3 +3,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .npmrc
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/pipequery.iml
+/.idea/vcs.xml
