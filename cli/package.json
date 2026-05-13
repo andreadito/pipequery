@@ -1,10 +1,21 @@
 {
   "name": "@andreadito/pq",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "CLI for PipeQuery — data sources, aggregations, APIs, and terminal dashboards",
   "type": "module",
   "bin": {
     "pq": "./dist/index.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./engine": {
+      "types": "./dist/engine.d.ts",
+      "default": "./dist/engine.js"
+    },
+    "./sources": {
+      "types": "./dist/sources/manager.d.ts",
+      "default": "./dist/sources/manager.js"
+    }
   },
   "scripts": {
     "build": "tsup",
