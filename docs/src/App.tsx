@@ -4,6 +4,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import Playground from './demo/Playground.tsx';
 import Docs from './demo/Docs.tsx';
 import HomePage from './demo/HomePage.tsx';
+import pkgJson from '../../package.json';
 
 type View = 'home' | 'playground' | 'docs';
 
@@ -62,7 +63,7 @@ export default function App() {
                 fontSize: '0.65rem', fontWeight: 600, color: C.blue,
                 fontFamily: '"JetBrains Mono", monospace',
               }}>
-                v1.0
+                v{pkgJson.version}
               </Typography>
             </Box>
           </Box>
