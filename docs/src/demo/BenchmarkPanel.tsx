@@ -8,9 +8,9 @@ import {
   ToggleButtonGroup,
   LinearProgress,
   Chip,
-  alpha,
   Paper,
 } from '@mui/material';
+import { C, alpha } from '../tokens';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SpeedIcon from '@mui/icons-material/Speed';
 import MemoryIcon from '@mui/icons-material/Memory';
@@ -32,13 +32,13 @@ interface BenchSuite {
 // ─── Result bar chart ───────────────────────────────────────────────────────
 
 const LIB_COLORS: Record<string, string> = {
-  'PipeQuery': '#5b9cf6',
-  'PQ (compiled)': '#82aaff',
-  'Native JS': '#c3e88d',
+  'PipeQuery': C.blue,
+  'PQ (compiled)': C.fn,
+  'Native JS': C.string,
 };
 
 function ResultRow({ r, maxMs }: { r: BenchResult; maxMs: number }) {
-  const color = LIB_COLORS[r.library] ?? '#ffa726';
+  const color = LIB_COLORS[r.library] ?? C.orange;
   const pct = maxMs > 0 ? (r.medianMs / maxMs) * 100 : 0;
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25 }}>
@@ -52,7 +52,7 @@ function ResultRow({ r, maxMs }: { r: BenchResult; maxMs: number }) {
       }}>
         {r.library}
       </Typography>
-      <Box sx={{ flex: 1, position: 'relative', height: 16, bgcolor: alpha('#fff', 0.03), borderRadius: 1, overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, position: 'relative', height: 16, bgcolor: alpha(C.text, 0.05), borderRadius: 1, overflow: 'hidden' }}>
         <Box sx={{
           position: 'absolute',
           top: 0, left: 0, bottom: 0,
@@ -66,7 +66,7 @@ function ResultRow({ r, maxMs }: { r: BenchResult; maxMs: number }) {
         width: 70, flexShrink: 0,
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.68rem',
-        color: '#99aabb',
+        color: C.textMuted,
         textAlign: 'right',
       }}>
         {r.medianMs < 0.01 ? '<0.01' : r.medianMs.toFixed(2)}ms
@@ -75,7 +75,7 @@ function ResultRow({ r, maxMs }: { r: BenchResult; maxMs: number }) {
         width: 60, flexShrink: 0,
         fontFamily: '"JetBrains Mono", monospace',
         fontSize: '0.62rem',
-        color: '#667788',
+        color: C.textDim,
         textAlign: 'right',
       }}>
         {r.ops.toLocaleString()}/s
@@ -91,7 +91,7 @@ function BenchGroup({ name, results }: { name: string; results: BenchResult[] })
       <Typography sx={{
         fontSize: '0.72rem',
         fontWeight: 700,
-        color: '#c8d4e0',
+        color: C.text,
         mb: 0.5,
         letterSpacing: '-0.01em',
       }}>
@@ -255,7 +255,7 @@ export default function BenchmarkPanel() {
             {Object.entries(LIB_COLORS).map(([lib, color]) => (
               <Stack key={lib} direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: 1, bgcolor: color }} />
-                <Typography sx={{ fontSize: '0.62rem', color: '#8899aa' }}>{lib}</Typography>
+                <Typography sx={{ fontSize: '0.62rem', color: C.textMuted }}>{lib}</Typography>
               </Stack>
             ))}
           </Stack>
@@ -269,7 +269,7 @@ export default function BenchmarkPanel() {
             variant="outlined"
             sx={{ mt: 3, p: 1.5, overflow: 'auto', bgcolor: 'background.default' }}
           >
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#667788', mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: C.textDim, mb: 0.75, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Raw Results
             </Typography>
             <Box
@@ -278,7 +278,7 @@ export default function BenchmarkPanel() {
                 m: 0,
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.62rem',
-                color: '#8899aa',
+                color: C.textMuted,
                 lineHeight: 1.5,
                 whiteSpace: 'pre',
                 overflow: 'auto',

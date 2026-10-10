@@ -7,7 +7,18 @@
     <meta name="description" content="A pipe-based query language for filtering, transforming, and aggregating data in JavaScript and TypeScript. Zero dependencies. Supports joins, live streaming queries, and 25+ aggregate functions." />
     <meta name="author" content="Andrea Dito" />
     <meta name="keywords" content="pipequery, query language, pipe syntax, javascript, typescript, data transformation, filtering, aggregation, livequery, streaming, react, codemirror" />
-    <meta name="theme-color" content="#0a0e14" />
+    <meta name="theme-color" content="#0b0d10" />
+    <script>
+      // Apply the saved / system colour mode before first paint (no flash).
+      (function () {
+        var m;
+        try { m = localStorage.getItem('pq-color-mode'); } catch (e) {}
+        if (m !== 'light' && m !== 'dark') {
+          m = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', m);
+      })();
+    </script>
     <link rel="canonical" href="https://andreadito.github.io/pipequery/" />
 
     <!-- OpenGraph -->
@@ -47,7 +58,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

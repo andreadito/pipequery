@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Box, Typography, alpha, Chip } from '@mui/material';
+import { Box, Typography, Chip } from '@mui/material';
+import { C, alpha, FONT_SANS } from '../tokens';
 
 // ─── Syntax-highlighted code block ──────────────────────────────────────────
 
-const KEYWORD_COLOR = '#c792ea';
-const STRING_COLOR = '#c3e88d';
-const NUMBER_COLOR = '#f78c6c';
-const OPERATOR_COLOR = '#89ddff';
-const FIELD_COLOR = '#82aaff';
-const FUNCTION_COLOR = '#ffcb6b';
-const COMMENT_COLOR = '#546e7a';
+const KEYWORD_COLOR = C.keyword;
+const STRING_COLOR = C.string;
+const NUMBER_COLOR = C.number;
+const OPERATOR_COLOR = C.operator;
+const FIELD_COLOR = C.field;
+const FUNCTION_COLOR = C.fn;
+const COMMENT_COLOR = C.comment;
 
 const KEYWORDS = new Set([
   'where', 'select', 'sort', 'groupBy', 'join', 'first', 'last',
@@ -118,8 +119,8 @@ function CodeBlock({ children, lang = 'pipe' }: { children: string; lang?: 'pipe
         my: 2.5,
         borderRadius: '6px',
         border: '1px solid',
-        borderColor: alpha('#ffffff', 0.06),
-        bgcolor: '#0d1117',
+        borderColor: alpha(C.text, 0.06),
+        bgcolor: C.bg,
         overflow: 'hidden',
         '&::before': {
           content: '""',
@@ -128,7 +129,7 @@ function CodeBlock({ children, lang = 'pipe' }: { children: string; lang?: 'pipe
           left: 0,
           width: '3px',
           height: '100%',
-          background: 'linear-gradient(180deg, #c792ea 0%, #82aaff 50%, #c3e88d 100%)',
+          background: C.blue,
           borderRadius: '6px 0 0 6px',
         },
       }}
@@ -143,9 +144,9 @@ function CodeBlock({ children, lang = 'pipe' }: { children: string; lang?: 'pipe
           fontSize: '0.82rem',
           lineHeight: 1.7,
           overflowX: 'auto',
-          color: '#a0b0c0',
+          color: C.textMuted,
           '&::-webkit-scrollbar': { height: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: alpha('#fff', 0.15), borderRadius: 2 },
+          '&::-webkit-scrollbar-thumb': { bgcolor: alpha(C.text, 0.15), borderRadius: 2 },
         }}
       >
         {lines.map((line, idx) => (
@@ -168,10 +169,10 @@ function Code({ children }: { children: string }) {
         px: 0.8,
         py: 0.2,
         borderRadius: '4px',
-        bgcolor: alpha('#82aaff', 0.1),
+        bgcolor: alpha(C.fn, 0.1),
         border: '1px solid',
-        borderColor: alpha('#82aaff', 0.15),
-        color: '#82aaff',
+        borderColor: alpha(C.fn, 0.15),
+        color: C.fn,
         fontFamily: '"JetBrains Mono", "Fira Code", monospace',
         fontSize: '0.82em',
         fontWeight: 500,
@@ -185,18 +186,18 @@ function Code({ children }: { children: string }) {
 // ─── Category chip for operations ───────────────────────────────────────────
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Filter: '#ef5350',
-  Transform: '#5b9cf6',
-  Sort: '#ab47bc',
-  Aggregate: '#ff9800',
-  Limit: '#26a69a',
-  Join: '#66bb6a',
-  Expression: '#ffcb6b',
-  Window: '#f06292',
+  Filter: C.down,
+  Transform: C.blue,
+  Sort: C.keyword,
+  Aggregate: C.orange,
+  Limit: C.up,
+  Join: C.up,
+  Expression: C.field,
+  Window: C.keyword,
 };
 
 function CategoryTag({ cat }: { cat: string }) {
-  const color = CATEGORY_COLORS[cat] ?? '#888';
+  const color = CATEGORY_COLORS[cat] ?? C.textMuted;
   return (
     <Chip
       label={cat}
@@ -233,14 +234,14 @@ function Section({ id, title, children }: { id: string; title: string; children:
       <Typography
         variant="h5"
         sx={{
-          fontFamily: '"Playfair Display", Georgia, serif',
-          fontWeight: 700,
-          fontSize: '1.6rem',
-          color: '#e8edf3',
+          fontFamily: FONT_SANS,
+          fontWeight: 600,
+          fontSize: '1.4rem',
+          color: C.text,
           mb: 3,
           pb: 1.5,
           borderBottom: '1px solid',
-          borderColor: alpha('#ffffff', 0.06),
+          borderColor: alpha(C.text, 0.06),
           letterSpacing: '-0.02em',
         }}
       >
@@ -261,7 +262,7 @@ function SubSection({ title, category, children }: { title: string; category?: s
             fontFamily: '"JetBrains Mono", monospace',
             fontWeight: 600,
             fontSize: '1.05rem',
-            color: '#c792ea',
+            color: C.keyword,
           }}
         >
           {title}
@@ -277,12 +278,12 @@ function P({ children }: { children: React.ReactNode }) {
   return (
     <Typography
       sx={{
-        color: '#99aabb',
+        color: C.textMuted,
         fontSize: '0.92rem',
         lineHeight: 1.75,
         mb: 1.5,
         maxWidth: 720,
-        '& strong': { color: '#c8d4e0', fontWeight: 600 },
+        '& strong': { color: C.text, fontWeight: 600 },
       }}
     >
       {children}
@@ -334,7 +335,7 @@ function SideNav({ active }: { active: string }) {
           fontWeight: 700,
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: alpha('#ffffff', 0.3),
+          color: alpha(C.text, 0.3),
           mb: 2,
           pl: 1.5,
         }}
@@ -352,14 +353,14 @@ function SideNav({ active }: { active: string }) {
             px: 1.5,
             fontSize: '0.8rem',
             fontWeight: active === s.id ? 600 : 400,
-            color: active === s.id ? '#c792ea' : '#667788',
+            color: active === s.id ? C.keyword : C.textDim,
             textDecoration: 'none',
             borderLeft: '2px solid',
-            borderColor: active === s.id ? '#c792ea' : 'transparent',
+            borderColor: active === s.id ? C.keyword : 'transparent',
             transition: 'all 0.15s ease',
             '&:hover': {
-              color: '#aabbcc',
-              borderColor: alpha('#c792ea', 0.3),
+              color: C.textMuted,
+              borderColor: alpha(C.keyword, 0.3),
             },
           }}
         >
@@ -403,12 +404,6 @@ export default function Docs() {
         pb: 10,
       }}
     >
-      {/* ── Fonts ── */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-
       <SideNav active={activeSection} />
 
       <Box ref={contentRef} sx={{ flex: 1, minWidth: 0 }}>
@@ -423,25 +418,25 @@ export default function Docs() {
               py: 0.5,
               mb: 2,
               borderRadius: '20px',
-              bgcolor: alpha('#c792ea', 0.08),
+              bgcolor: alpha(C.keyword, 0.08),
               border: '1px solid',
-              borderColor: alpha('#c792ea', 0.2),
+              borderColor: alpha(C.keyword, 0.2),
             }}
           >
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#c792ea' }} />
-            <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: '#c792ea', letterSpacing: '0.04em' }}>
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: C.keyword }} />
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 600, color: C.keyword, letterSpacing: '0.04em' }}>
               ENGINE DOCUMENTATION
             </Typography>
           </Box>
 
           <Typography
             sx={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontWeight: 800,
-              fontSize: { xs: '2.2rem', md: '3rem' },
+              fontFamily: FONT_SANS,
+              fontWeight: 600,
+              fontSize: { xs: '2rem', md: '2.6rem' },
               lineHeight: 1.1,
               letterSpacing: '-0.03em',
-              color: '#e8edf3',
+              color: C.text,
               mb: 2,
             }}
           >
@@ -450,7 +445,7 @@ export default function Docs() {
           <Typography
             sx={{
               fontSize: '1.1rem',
-              color: '#667788',
+              color: C.textDim,
               lineHeight: 1.6,
               maxWidth: 560,
             }}
@@ -581,12 +576,12 @@ sum(revenue) as totalRevenue`}</CodeBlock>
                   sx={{
                     p: 2,
                     borderRadius: '6px',
-                    bgcolor: alpha('#ffffff', 0.02),
+                    bgcolor: alpha(C.text, 0.02),
                     border: '1px solid',
-                    borderColor: alpha('#ffffff', 0.05),
+                    borderColor: alpha(C.text, 0.05),
                   }}
                 >
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#667788', letterSpacing: '0.06em', textTransform: 'uppercase', mb: 0.8 }}>
+                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: C.textDim, letterSpacing: '0.06em', textTransform: 'uppercase', mb: 0.8 }}>
                     {g.label}
                   </Typography>
                   <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.85rem', color: OPERATOR_COLOR }}>
@@ -703,8 +698,8 @@ items | percentile(price, 90)`}</CodeBlock>
 
           <SubSection title="Basic Aggregates" category="Aggregate">
             <P>Core aggregation functions that work on any numeric field.</P>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#ff9800', 0.06), border: '1px solid', borderColor: alpha('#ff9800', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#ffb74d', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.orange, 0.06), border: '1px solid', borderColor: alpha(C.orange, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.orange, lineHeight: 1.8 }}>
                 <Code>count()</Code> — row count &nbsp;
                 <Code>sum(field)</Code> — total &nbsp;
                 <Code>avg(field)</Code> — arithmetic mean &nbsp;
@@ -731,8 +726,8 @@ items | groupBy(category) | select(
   var(price) as variance,
   percentile(price, 95) as p95
 )`}</CodeBlock>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#5b9cf6', 0.06), border: '1px solid', borderColor: alpha('#5b9cf6', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#82aaff', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.blue, 0.06), border: '1px solid', borderColor: alpha(C.blue, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.fn, lineHeight: 1.8 }}>
                 <Code>median(field)</Code> — 50th percentile &nbsp;
                 <Code>stddev(field)</Code> — population standard deviation &nbsp;
                 <Code>var(field)</Code> — population variance &nbsp;
@@ -748,8 +743,8 @@ items | groupBy(category) | select(
   skew(return) as skewness,
   kurt(return) as kurtosis
 )`}</CodeBlock>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#5b9cf6', 0.06), border: '1px solid', borderColor: alpha('#5b9cf6', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#82aaff', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.blue, 0.06), border: '1px solid', borderColor: alpha(C.blue, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.fn, lineHeight: 1.8 }}>
                 <Code>skew(field)</Code> — skewness (asymmetry: 0 = symmetric) &nbsp;
                 <Code>kurt(field)</Code> — excess kurtosis (tail weight: 0 = normal)
               </Typography>
@@ -768,8 +763,8 @@ trades | groupBy(symbol) | select(
   wavg(price, volume) as wAvg,
   drawdown(price) as maxDD
 )`}</CodeBlock>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#c3e88d', 0.08), border: '1px solid', borderColor: alpha('#c3e88d', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#c3e88d', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.string, 0.08), border: '1px solid', borderColor: alpha(C.string, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.string, lineHeight: 1.8 }}>
                 <Code>vwap(price, volume)</Code> — volume-weighted average price &nbsp;
                 <Code>wavg(field, weight)</Code> — weighted average &nbsp;
                 <Code>drawdown(field)</Code> — max peak-to-trough decline (negative ratio)
@@ -795,8 +790,8 @@ sales | groupBy(region) | select(
   sum(revenue) as total,
   pct(revenue) as share
 )`}</CodeBlock>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#c3e88d', 0.08), border: '1px solid', borderColor: alpha('#c3e88d', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#c3e88d', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.string, 0.08), border: '1px solid', borderColor: alpha(C.string, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.string, lineHeight: 1.8 }}>
                 <Code>sharpe(returns)</Code> — mean / stddev &nbsp;
                 <Code>sortino(returns)</Code> — mean / downside deviation &nbsp;
                 <Code>calmar(returns)</Code> — mean / |max drawdown| &nbsp;
@@ -815,8 +810,8 @@ sales | groupBy(region) | select(
   first_value(date) as earliest,
   last_value(date) as latest
 )`}</CodeBlock>
-            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha('#ff9800', 0.06), border: '1px solid', borderColor: alpha('#ff9800', 0.15) }}>
-              <Typography sx={{ fontSize: '0.82rem', color: '#ffb74d', lineHeight: 1.8 }}>
+            <Box sx={{ my: 2, p: 2, borderRadius: '6px', bgcolor: alpha(C.orange, 0.06), border: '1px solid', borderColor: alpha(C.orange, 0.15) }}>
+              <Typography sx={{ fontSize: '0.82rem', color: C.orange, lineHeight: 1.8 }}>
                 <Code>distinct_count(field)</Code> — count unique values &nbsp;
                 <Code>sum_abs(field)</Code> — sum of |values| &nbsp;
                 <Code>abs_sum(field)</Code> — |sum of values| &nbsp;
@@ -901,16 +896,16 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
                   sx={{
                     p: 2,
                     borderRadius: '6px',
-                    bgcolor: alpha('#66bb6a', 0.05),
+                    bgcolor: alpha(C.up, 0.05),
                     border: '1px solid',
-                    borderColor: alpha('#66bb6a', 0.12),
+                    borderColor: alpha(C.up, 0.12),
                   }}
                 >
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.82rem', color: '#66bb6a', fontWeight: 600 }}>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.82rem', color: C.up, fontWeight: 600 }}>
                     {s.strategy}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#8899aa', mt: 0.5 }}>
-                    {s.when} — <strong style={{ color: '#aabb99' }}>{s.perf}</strong>
+                  <Typography sx={{ fontSize: '0.78rem', color: C.textMuted, mt: 0.5 }}>
+                    {s.when} — <strong style={{ color: C.string }}>{s.perf}</strong>
                   </Typography>
                 </Box>
               ))}
@@ -927,7 +922,7 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
                 my: 2.5,
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: alpha('#ffffff', 0.06),
+                borderColor: alpha(C.text, 0.06),
                 overflow: 'hidden',
               }}
             >
@@ -937,8 +932,8 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
                 { category: 'Conditional', fns: [{ sig: 'if(cond, then, else)', desc: 'Ternary conditional' }, { sig: 'coalesce(a, b, ...)', desc: 'First non-null value' }] },
               ].map((group, gi) => (
                 <Box key={group.category}>
-                  {gi > 0 && <Box sx={{ borderTop: '1px solid', borderColor: alpha('#ffffff', 0.04) }} />}
-                  <Box sx={{ px: 2.5, py: 0.8, bgcolor: alpha('#ffffff', 0.02) }}>
+                  {gi > 0 && <Box sx={{ borderTop: '1px solid', borderColor: alpha(C.text, 0.04) }} />}
+                  <Box sx={{ px: 2.5, py: 0.8, bgcolor: alpha(C.text, 0.02) }}>
                     <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: FUNCTION_COLOR }}>
                       {group.category}
                     </Typography>
@@ -952,8 +947,8 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
                         px: 2.5,
                         py: 1,
                         borderTop: '1px solid',
-                        borderColor: alpha('#ffffff', 0.03),
-                        '&:hover': { bgcolor: alpha('#ffffff', 0.015) },
+                        borderColor: alpha(C.text, 0.03),
+                        '&:hover': { bgcolor: alpha(C.text, 0.015) },
                       }}
                     >
                       <Typography
@@ -968,7 +963,7 @@ items | where(active == true) | reduce(0, _acc + 1)`}</CodeBlock>
                       >
                         {fn.sig}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.82rem', color: '#8899aa' }}>
+                      <Typography sx={{ fontSize: '0.82rem', color: C.textMuted }}>
                         {fn.desc}
                       </Typography>
                     </Box>
@@ -1004,7 +999,7 @@ config.settings.theme`}</CodeBlock>
               my: 2.5,
               borderRadius: '6px',
               border: '1px solid',
-              borderColor: alpha('#f06292', 0.15),
+              borderColor: alpha(C.keyword, 0.15),
               overflow: 'hidden',
             }}
           >
@@ -1026,15 +1021,15 @@ config.settings.theme`}</CodeBlock>
                   px: 2.5,
                   py: 1,
                   borderTop: idx ? '1px solid' : 'none',
-                  borderColor: alpha('#ffffff', 0.04),
-                  '&:hover': { bgcolor: alpha('#f06292', 0.04) },
+                  borderColor: alpha(C.text, 0.04),
+                  '&:hover': { bgcolor: alpha(C.keyword, 0.04) },
                 }}
               >
                 <Typography
                   sx={{
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.82rem',
-                    color: '#f06292',
+                    color: C.keyword,
                     fontWeight: 500,
                     width: 260,
                     flexShrink: 0,
@@ -1042,7 +1037,7 @@ config.settings.theme`}</CodeBlock>
                 >
                   {fn.sig}
                 </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: '#8899aa' }}>
+                <Typography sx={{ fontSize: '0.82rem', color: C.textMuted }}>
                   {fn.desc}
                 </Typography>
               </Box>
@@ -1144,7 +1139,7 @@ lq.dispose();`}</CodeBlock>
                 my: 2,
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: alpha('#ffffff', 0.06),
+                borderColor: alpha(C.text, 0.06),
                 overflow: 'hidden',
               }}
             >
@@ -1165,14 +1160,14 @@ lq.dispose();`}</CodeBlock>
                     px: 2.5,
                     py: 0.8,
                     borderTop: idx ? '1px solid' : 'none',
-                    borderColor: alpha('#ffffff', 0.04),
+                    borderColor: alpha(C.text, 0.04),
                   }}
                 >
                   <Typography
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.82rem',
-                      color: '#82aaff',
+                      color: C.fn,
                       fontWeight: 500,
                       width: 160,
                       flexShrink: 0,
@@ -1180,7 +1175,7 @@ lq.dispose();`}</CodeBlock>
                   >
                     {s.field}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.82rem', color: '#8899aa' }}>
+                  <Typography sx={{ fontSize: '0.82rem', color: C.textMuted }}>
                     {s.desc}
                   </Typography>
                 </Box>
@@ -1199,7 +1194,7 @@ lq.dispose();`}</CodeBlock>
                 my: 2,
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: alpha('#ffffff', 0.06),
+                borderColor: alpha(C.text, 0.06),
                 overflow: 'hidden',
               }}
             >
@@ -1216,7 +1211,7 @@ lq.dispose();`}</CodeBlock>
                     px: 2.5,
                     py: 1.2,
                     borderTop: idx ? '1px solid' : 'none',
-                    borderColor: alpha('#ffffff', 0.04),
+                    borderColor: alpha(C.text, 0.04),
                   }}
                 >
                   <Typography
@@ -1230,7 +1225,7 @@ lq.dispose();`}</CodeBlock>
                   >
                     {fn.sig}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.8rem', color: '#8899aa' }}>
+                  <Typography sx={{ fontSize: '0.8rem', color: C.textMuted }}>
                     {fn.desc}
                   </Typography>
                 </Box>
@@ -1306,7 +1301,7 @@ import type { PipelineStep, Orientation } from 'pipequery-lang/react';`}</CodeBl
                 my: 2.5,
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: alpha('#ffffff', 0.06),
+                borderColor: alpha(C.text, 0.06),
                 overflow: 'hidden',
               }}
             >
@@ -1332,15 +1327,15 @@ import type { PipelineStep, Orientation } from 'pipequery-lang/react';`}</CodeBl
                     px: 2.5,
                     py: 1.2,
                     borderTop: idx ? '1px solid' : 'none',
-                    borderColor: alpha('#ffffff', 0.04),
-                    '&:hover': { bgcolor: alpha('#ffffff', 0.015) },
+                    borderColor: alpha(C.text, 0.04),
+                    '&:hover': { bgcolor: alpha(C.text, 0.015) },
                   }}
                 >
                   <Typography
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.78rem',
-                      color: '#82aaff',
+                      color: C.fn,
                       fontWeight: 600,
                       width: 160,
                       flexShrink: 0,
@@ -1352,14 +1347,14 @@ import type { PipelineStep, Orientation } from 'pipequery-lang/react';`}</CodeBl
                     sx={{
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: '0.72rem',
-                      color: '#c792ea',
+                      color: C.keyword,
                       width: 200,
                       flexShrink: 0,
                     }}
                   >
                     {p.type}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#8899aa', lineHeight: 1.5 }}>
+                  <Typography sx={{ fontSize: '0.78rem', color: C.textMuted, lineHeight: 1.5 }}>
                     {p.desc}
                   </Typography>
                 </Box>
@@ -1404,18 +1399,18 @@ import type { PipelineStep, Orientation } from 'pipequery-lang/react';`}</CodeBl
                   sx={{
                     p: 1.5,
                     borderRadius: '6px',
-                    bgcolor: alpha('#ffffff', 0.02),
+                    bgcolor: alpha(C.text, 0.02),
                     border: '1px solid',
-                    borderColor: alpha('#ffffff', 0.05),
+                    borderColor: alpha(C.text, 0.05),
                   }}
                 >
-                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: '#667788', letterSpacing: '0.05em', textTransform: 'uppercase', mb: 0.5 }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: C.textDim, letterSpacing: '0.05em', textTransform: 'uppercase', mb: 0.5 }}>
                     {r.label}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#99aabb' }}>{r.normal}</Typography>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#546e7a' }}>→</Typography>
-                    <Typography sx={{ fontSize: '0.75rem', color: '#c3e88d', fontWeight: 600 }}>{r.compact}</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: C.textMuted }}>{r.normal}</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: C.comment }}>→</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: C.string, fontWeight: 600 }}>{r.compact}</Typography>
                   </Box>
                 </Box>
               ))}
@@ -1488,7 +1483,7 @@ clearCache();`}</CodeBlock>
                 my: 2.5,
                 borderRadius: '6px',
                 border: '1px solid',
-                borderColor: alpha('#ffffff', 0.06),
+                borderColor: alpha(C.text, 0.06),
                 overflow: 'hidden',
               }}
             >
@@ -1500,16 +1495,16 @@ clearCache();`}</CodeBlock>
                   gap: 0,
                   px: 2.5,
                   py: 1,
-                  bgcolor: alpha('#ffffff', 0.03),
+                  bgcolor: alpha(C.text, 0.03),
                   borderBottom: '1px solid',
-                  borderColor: alpha('#ffffff', 0.06),
+                  borderColor: alpha(C.text, 0.06),
                 }}
               >
-                <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#667788', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: C.textDim, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Operation
                 </Typography>
                 {['1K rows', '10K rows', '100K rows'].map(h => (
-                  <Typography key={h} sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#667788', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'right' }}>
+                  <Typography key={h} sx={{ fontSize: '0.65rem', fontWeight: 700, color: C.textDim, letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'right' }}>
                     {h}
                   </Typography>
                 ))}
@@ -1533,15 +1528,15 @@ clearCache();`}</CodeBlock>
                     px: 2.5,
                     py: 1,
                     borderTop: idx ? '1px solid' : 'none',
-                    borderColor: alpha('#ffffff', 0.04),
-                    '&:hover': { bgcolor: alpha('#ffffff', 0.015) },
+                    borderColor: alpha(C.text, 0.04),
+                    '&:hover': { bgcolor: alpha(C.text, 0.015) },
                   }}
                 >
-                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: '#c8d4e0', fontWeight: 500 }}>
+                  <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: C.text, fontWeight: 500 }}>
                     {r.op}
                   </Typography>
                   {r.pq.map((v, i) => (
-                    <Typography key={i} sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: '#5b9cf6', textAlign: 'right', fontWeight: 600 }}>
+                    <Typography key={i} sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: C.blue, textAlign: 'right', fontWeight: 600 }}>
                       {v}
                     </Typography>
                   ))}
@@ -1579,7 +1574,7 @@ worker.onmessage = (e) => {
           </SubSection>
 
           <SubSection title="Optimization Tips">
-            <Box component="ul" sx={{ pl: 2.5, '& li': { color: '#99aabb', fontSize: '0.88rem', lineHeight: 1.75, mb: 0.5, '& strong': { color: '#c8d4e0' } } }}>
+            <Box component="ul" sx={{ pl: 2.5, '& li': { color: C.textMuted, fontSize: '0.88rem', lineHeight: 1.75, mb: 0.5, '& strong': { color: C.text } } }}>
               <li><strong>Use <Code>compile()</Code></strong> for repeated queries — avoids re-parsing on every call</li>
               <li><strong>Use <Code>first(n)</Code></strong> early in the pipeline to limit row processing</li>
               <li><strong>Prefer <Code>select()</Code></strong> to reduce payload size before expensive operations</li>
@@ -1602,14 +1597,14 @@ worker.onmessage = (e) => {
               my: 2.5,
               borderRadius: '6px',
               border: '1px solid',
-              borderColor: alpha('#ffffff', 0.06),
+              borderColor: alpha(C.text, 0.06),
               overflow: 'hidden',
             }}
           >
             {[
-              { name: 'LexerError', desc: 'Tokenization failures — unterminated strings, unexpected characters', color: '#ef5350' },
-              { name: 'ParseError', desc: 'Syntax errors — missing parens, unexpected tokens, malformed operations', color: '#ff9800' },
-              { name: 'RuntimeError', desc: 'Execution failures — missing sources, missing key fields, disposed LiveQuery', color: '#f06292' },
+              { name: 'LexerError', desc: 'Tokenization failures — unterminated strings, unexpected characters', color: C.down },
+              { name: 'ParseError', desc: 'Syntax errors — missing parens, unexpected tokens, malformed operations', color: C.orange },
+              { name: 'RuntimeError', desc: 'Execution failures — missing sources, missing key fields, disposed LiveQuery', color: C.keyword },
             ].map((e, idx) => (
               <Box
                 key={e.name}
@@ -1620,7 +1615,7 @@ worker.onmessage = (e) => {
                   px: 2.5,
                   py: 1.5,
                   borderTop: idx ? '1px solid' : 'none',
-                  borderColor: alpha('#ffffff', 0.04),
+                  borderColor: alpha(C.text, 0.04),
                 }}
               >
                 <Typography
@@ -1636,7 +1631,7 @@ worker.onmessage = (e) => {
                 >
                   {e.name}
                 </Typography>
-                <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5 }}>
+                <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5 }}>
                   {e.desc}
                 </Typography>
               </Box>
@@ -1658,14 +1653,14 @@ try {
 
         {/* ── Editor Integration ─────────────────────────────────────── */}
         <Section id="editor-integration" title="Editor Integration">
-          <Typography sx={{ fontSize: '0.85rem', color: '#8899aa', lineHeight: 1.6, mb: 3 }}>
+          <Typography sx={{ fontSize: '0.85rem', color: C.textMuted, lineHeight: 1.6, mb: 3 }}>
             PipeQuery ships syntax highlighting definitions for three popular editors.
             Each module provides keyword, function, operator, string, and number highlighting
             with the same color palette used in this documentation.
           </Typography>
 
           <SubSection title="CodeMirror 6">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               Use the <code>pipeQuery()</code> function to add PipeQuery language support
               to any CodeMirror 6 editor. It provides both tokenization and the matching
               dark theme highlight style.
@@ -1678,14 +1673,14 @@ const editor = new EditorView({
   extensions: [basicSetup, pipeQuery()],
   parent: document.getElementById('editor')!,
 });`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: C.textDim, mt: 1 }}>
               Requires: <code>@codemirror/language</code>, <code>@codemirror/state</code>,{' '}
               <code>@codemirror/view</code>, <code>@lezer/highlight</code>
             </Typography>
           </SubSection>
 
           <SubSection title="Monaco Editor (VS Code)">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               Register the PipeQuery language with your Monaco instance. This sets up
               the Monarch tokenizer, language configuration (bracket matching, auto-closing),
               and a matching dark theme.
@@ -1703,7 +1698,7 @@ const editor = monaco.editor.create(container, {
           </SubSection>
 
           <SubSection title="IntelliJ / TextMate">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               A standard TextMate grammar is provided at{' '}
               <code>highlighting/textmate/pipequery.tmLanguage.json</code>.
               This works with IntelliJ (via TextMate bundles), VS Code (via extension),
@@ -1727,19 +1722,19 @@ const editor = monaco.editor.create(container, {
           <SubSection title="Token Categories">
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
               {[
-                { label: 'Keywords', color: '#c792ea', example: 'where, select, sort, as, desc' },
-                { label: 'Functions', color: '#ffcb6b', example: 'sum, avg, vwap, running_sum' },
-                { label: 'Fields', color: '#82aaff', example: 'price, user.name, _acc' },
-                { label: 'Strings', color: '#c3e88d', example: '"hello", \'world\'' },
-                { label: 'Numbers', color: '#f78c6c', example: '42, 3.14, 0' },
-                { label: 'Operators', color: '#89ddff', example: '|, >, ==, &&, +' },
+                { label: 'Keywords', color: C.keyword, example: 'where, select, sort, as, desc' },
+                { label: 'Functions', color: C.field, example: 'sum, avg, vwap, running_sum' },
+                { label: 'Fields', color: C.fn, example: 'price, user.name, _acc' },
+                { label: 'Strings', color: C.string, example: '"hello", \'world\'' },
+                { label: 'Numbers', color: C.number, example: '42, 3.14, 0' },
+                { label: 'Operators', color: C.operator, example: '|, >, ==, &&, +' },
               ].map((t) => (
                 <Box key={t.label} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: t.color, flexShrink: 0 }} />
                   <Typography sx={{ fontSize: '0.78rem', color: t.color, fontWeight: 600, minWidth: 70 }}>
                     {t.label}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{t.example}</Typography>
+                  <Typography sx={{ fontSize: '0.75rem', color: C.textDim }}>{t.example}</Typography>
                 </Box>
               ))}
             </Box>
@@ -1747,7 +1742,7 @@ const editor = monaco.editor.create(container, {
         </Section>
 
         <Section id="cli" title="CLI — pq">
-          <Typography sx={{ fontSize: '0.85rem', color: '#8899aa', lineHeight: 1.6, mb: 3 }}>
+          <Typography sx={{ fontSize: '0.85rem', color: C.textMuted, lineHeight: 1.6, mb: 3 }}>
             PipeQuery ships a CLI tool (<code>pq</code>) for building data pipelines, REST APIs,
             and rich terminal dashboards. Create live JSON API endpoints on the fly — just{' '}
             <code>pq endpoint add</code> with a PipeQuery expression and your endpoint is
@@ -1795,15 +1790,15 @@ pq stop`}</CodeBlock>
                 { cmd: 'pq remote', desc: 'Docker-based deployment' },
               ].map((item) => (
                 <Box key={item.cmd} sx={{ display: 'flex', gap: 1.5, alignItems: 'baseline' }}>
-                  <code style={{ color: '#ffcb6b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{item.cmd}</code>
-                  <Typography sx={{ fontSize: '0.78rem', color: '#667788' }}>{item.desc}</Typography>
+                  <code style={{ color: C.field, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{item.cmd}</code>
+                  <Typography sx={{ fontSize: '0.78rem', color: C.textDim }}>{item.desc}</Typography>
                 </Box>
               ))}
             </Box>
           </SubSection>
 
           <SubSection title="Dashboard Visualizations">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               The dashboard renders panels in a resizable 2-column grid with live SSE updates.
               Use <code>[</code> and <code>]</code> to resize the focused panel (25%–75%).
             </Typography>
@@ -1818,15 +1813,15 @@ pq stop`}</CodeBlock>
                 { label: 'candle', desc: 'ASCII candlestick chart for OHLC data' },
               ].map((v) => (
                 <Box key={v.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
-                  <code style={{ color: '#c792ea', fontSize: '0.78rem', fontWeight: 600 }}>{v.label}</code>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{v.desc}</Typography>
+                  <code style={{ color: C.keyword, fontSize: '0.78rem', fontWeight: 600 }}>{v.label}</code>
+                  <Typography sx={{ fontSize: '0.75rem', color: C.textDim }}>{v.desc}</Typography>
                 </Box>
               ))}
             </Box>
           </SubSection>
 
           <SubSection title="Data Sources">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               Configure sources in <code>pipequery.yaml</code> or manage them at runtime with <code>pq source</code>.
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
@@ -1844,13 +1839,13 @@ pq stop`}</CodeBlock>
                 { label: 'mongodb', desc: 'Poll find() against a Mongo collection (push-down emits find() / aggregate())' },
               ].map((s) => (
                 <Box key={s.label} sx={{ display: 'flex', gap: 1, alignItems: 'baseline', py: 0.3 }}>
-                  <code style={{ color: '#82aaff', fontSize: '0.78rem', fontWeight: 600 }}>{s.label}</code>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#667788' }}>{s.desc}</Typography>
+                  <code style={{ color: C.fn, fontSize: '0.78rem', fontWeight: 600 }}>{s.label}</code>
+                  <Typography sx={{ fontSize: '0.75rem', color: C.textDim }}>{s.desc}</Typography>
                 </Box>
               ))}
             </Box>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mb: 1 }}>
               Example sources — no API keys needed
             </Typography>
             <CodeBlock>{`# Crypto prices (CoinGecko — 20 coins)
@@ -1871,10 +1866,10 @@ pq source add forex -t rest -u "https://api.nbp.pl/api/exchangerates/tables/A/?f
 # Mock users & posts (JSONPlaceholder)
 pq source add users -t rest -u "https://jsonplaceholder.typicode.com/users" -i 1h`}</CodeBlock>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               REST — authenticated APIs and env-var interpolation
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               REST sources support <code>${'$'}{`{ENV_VAR}`}</code> interpolation in{' '}
               <code>url</code>, <code>headers</code>, <code>params</code>, and{' '}
               <code>auth.token</code> — credentials stay out of the yaml. The{' '}
@@ -1899,16 +1894,16 @@ sources:
       appid: "\${OWM_KEY}"
       units: metric
     interval: 10m`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: C.textDim, mt: 1 }}>
               Missing env vars expand to empty string with a stderr warning, so you'll see the
               misconfiguration immediately rather than embedding a literal{' '}
               <code>${'$'}{`{FOO}`}</code> into a request.
             </Typography>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               WebSocket — feeds that need a subscribe handshake
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               Most exchange WS feeds (Binance, Coinbase, Kraken, OKX, Bybit, Deribit, Polygon, Alpaca)
               don't push anything until the client sends a subscribe frame. Declare it once in yaml
               under <code>subscribe</code> — the adapter sends it after every connect, including
@@ -1930,7 +1925,7 @@ sources:
     url: wss://ws-feed.exchange.coinbase.com
     subscribe:
       - { type: subscribe, product_ids: [BTC-USD], channels: [ticker] }`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: C.textDim, mt: 1 }}>
               <code>subscribe</code> accepts a single object or an array. Each entry is JSON-stringified
               and sent in order. Re-sent after every reconnect. Heartbeat fires on a{' '}
               <code>setInterval</code> only while the socket is OPEN; cleared on close / stop.
@@ -1938,7 +1933,7 @@ sources:
           </SubSection>
 
           <SubSection title="Source shapes — what each adapter accepts">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               The matrix below summarizes what each adapter handles natively today, so you don't
               have to read the source. Anything in the "Won't work natively" list below needs a
               shim — see the cookbook recipe at the bottom.
@@ -1957,9 +1952,9 @@ sources:
                     borderBottom: '1px solid #1a2530',
                     verticalAlign: 'top',
                   },
-                  '& th': { color: '#c0d0e0', fontWeight: 600, whiteSpace: 'nowrap' },
-                  '& td': { color: '#8899aa' },
-                  '& code': { color: '#82aaff', fontSize: '0.75rem' },
+                  '& th': { color: C.text, fontWeight: 600, whiteSpace: 'nowrap' },
+                  '& td': { color: C.textMuted },
+                  '& code': { color: C.fn, fontSize: '0.75rem' },
                 }}
               >
                 <thead>
@@ -2077,10 +2072,10 @@ sources:
               </Box>
             </Box>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Won't work natively today
             </Typography>
-            <Box sx={{ fontSize: '0.78rem', color: '#8899aa', lineHeight: 1.6 }}>
+            <Box sx={{ fontSize: '0.78rem', color: C.textMuted, lineHeight: 1.6 }}>
               <Box component="ul" sx={{ pl: 2.5, m: 0 }}>
                 <li><b>Signed REST APIs</b> (Coinbase Pro / Binance / Kraken / Bitfinex private endpoints) — these compute an HMAC of <code>timestamp + method + path + body</code> per request. No native helper yet (#37). <i>Workaround:</i> wrap with a 30-line Node proxy that signs and re-emits as an unsigned local URL.</li>
                 <li><b>Paginated REST APIs</b> (anything that returns <code>{`{ next: '...' }`}</code> or pagination headers). The REST adapter fetches one URL per tick. <i>Workaround:</i> proxy that walks pagination and returns the concatenated array.</li>
@@ -2091,10 +2086,10 @@ sources:
               </Box>
             </Box>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Shim cookbook — the "tiny Node proxy" pattern
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               For anything in the list above, the canonical workaround is a small Node process
               that handles the gnarly part (signing, pagination, SSE, etc.) and re-emits as either
               a plain JSON HTTP endpoint (consumed via <code>type: rest</code>) or a no-handshake
@@ -2128,7 +2123,7 @@ createServer(async (_req, res) => {
           </SubSection>
 
           <SubSection title="Use with AI (MCP)">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               <code>pq mcp serve</code> starts a Model Context Protocol server that plugs into any
               MCP client — Claude Desktop, Claude Code, Cursor, Copilot, custom agents. The AI gets
               five tools against your live sources: <code>query</code>, <code>list_sources</code>,{' '}
@@ -2148,7 +2143,7 @@ pq mcp serve --attach http://localhost:3000
 
 # Dump tool schemas (for MCP-directory submissions / debugging)
 pq mcp inspect`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Claude Desktop setup
             </Typography>
             <CodeBlock>{`// ~/Library/Application Support/Claude/claude_desktop_config.json
@@ -2161,14 +2156,14 @@ pq mcp inspect`}</CodeBlock>
     }
   }
 }`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1.5 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: C.textDim, mt: 1.5 }}>
               Restart Claude Desktop; ask "what pipequery sources are configured?" to verify.
               For Claude Code / Cursor, the stdio command is the same — check each tool's MCP config.
             </Typography>
           </SubSection>
 
           <SubSection title="Use from Telegram">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               <code>pq telegram serve</code> exposes the same five verbs as MCP, mapped to slash
               commands in a Telegram chat: <code>/sources</code>, <code>/describe</code>,{' '}
               <code>/endpoints</code>, <code>/call</code>, <code>/query</code>. Same Provider
@@ -2180,15 +2175,15 @@ PIPEQUERY_TG_BOT_TOKEN=<your-bot-token> pq telegram serve --allow-user @yourname
 
 # Or attach to a running pq serve instance
 pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-user @yourname`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mt: 1.5 }}>
               Without <code>--allow-user</code> the bot replies to anyone who finds it (a stderr
               warning prints on the first message). For anything reachable from the public
               internet, set the allowlist.
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Natural-language queries
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               Pass <code>--anthropic-key</code> (or set <code>ANTHROPIC_API_KEY</code>) and the bot
               accepts plain-English questions in addition to slash commands. Anything that doesn't
               start with <code>/</code> is translated into a pipequery expression by{' '}
@@ -2203,10 +2198,10 @@ pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-use
 #   "top 5 most expensive paid orders"
 # → bot replies with the translated expression and the result.`}</CodeBlock>
 
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Debug / monitor — structured event log
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               The bot prints one human-readable line per event on stderr — every command, NL
               query, and unauthorized attempt — so you can see who's hitting the bot, what
               they're asking, and how it's being translated as it happens. Add{' '}
@@ -2227,7 +2222,7 @@ pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-use
 #   {"ts":"…","kind":"command","user":{"username":"andreadito"},"cmd":"/sources",...}
 #   {"ts":"…","kind":"nl","user":{...},"text":"top 5 paid orders","expression":"...",...}
 #   {"ts":"…","kind":"unauthorized","user":{"username":"bob"}}`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.78rem', color: '#667788', mt: 1 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: C.textDim, mt: 1 }}>
               Each event includes outcome (<code>success</code> / <code>error</code> /{' '}
               <code>not_answerable</code>), <code>rowCount</code> when applicable, and{' '}
               <code>latencyMs</code>. The translated pipequery expression is surfaced for every
@@ -2237,7 +2232,7 @@ pq telegram serve --bot-token <token> --attach http://localhost:3000 --allow-use
           </SubSection>
 
           <SubSection title="Watches — alerts to Telegram">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               <code>pq watch add</code> registers a query that runs on every interval; when its
               result transitions, pipequery posts a notification to a Telegram chat / channel.
               Three fire conditions: <code>when_non_empty</code> (default — fires on the empty →
@@ -2256,7 +2251,7 @@ pq watch add btc-dip \\
 # List / remove
 pq watch list
 pq watch remove btc-dip`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mt: 1.5 }}>
               Templates support <code>{`{{ .field }}`}</code> from the first row, plus{' '}
               <code>{`{{ .count }}`}</code>, <code>{`{{ .watchName }}`}</code>, and{' '}
               <code>{`{{ .reason }}`}</code>. Token defaults to{' '}
@@ -2265,11 +2260,11 @@ pq watch remove btc-dip`}</CodeBlock>
           </SubSection>
 
           <SubSection title="Docker & Remote Deployment">
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mb: 1.5 }}>
               The <code>pq</code> server and CLI are fully decoupled. Run the server in Docker
               (locally or on a remote machine) and control it from your local terminal.
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mb: 1 }}>
               Run locally with Docker Desktop
             </Typography>
             <CodeBlock>{`# Build and run the server
@@ -2283,7 +2278,7 @@ pq remote connect http://localhost:3000
 pq source add crypto -t rest -u "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=20" -i 30s
 pq endpoint add /api/top -q "crypto | sort(market_cap desc) | first(5)"
 curl http://localhost:3000/api/top`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#c0d0e0', mt: 2, mb: 1 }}>
+            <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: C.text, mt: 2, mb: 1 }}>
               Deploy to a remote server
             </Typography>
             <CodeBlock>{`# Generate Dockerfile and docker-compose.yaml
@@ -2300,7 +2295,7 @@ pq remote connect https://my-server.example.com:3000
 pq source add store -t rest -u "https://fakestoreapi.com/products" -i 5m
 pq endpoint add /api/products -q "store | sort(price desc)"
 pq dashboard -n main`}</CodeBlock>
-            <Typography sx={{ fontSize: '0.82rem', color: '#8899aa', lineHeight: 1.5, mt: 1.5 }}>
+            <Typography sx={{ fontSize: '0.82rem', color: C.textMuted, lineHeight: 1.5, mt: 1.5 }}>
               Running <code>pq remote connect {'<url>'}</code> saves the remote URL in your
               local <code>pipequery.yaml</code>. After that, all CLI commands talk to the remote
               server — no local server needed.

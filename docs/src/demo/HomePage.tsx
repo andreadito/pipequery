@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Box, Typography, alpha, keyframes } from "@mui/material";
+import { Box, Typography, keyframes } from "@mui/material";
+import { C, alpha, FONT_SANS, FONT_MONO } from "../tokens";
+import { ThemeToggle } from "../colorMode";
 import { PipeQueryBuilder } from "../../../src/react/index.ts";
 import { liveQuery } from "../../../src/engine/index.ts";
 import pkgJson from "../../../package.json";
@@ -29,29 +31,6 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import SendIcon from "@mui/icons-material/Send";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
-// ─── Palette ────────────────────────────────────────────────────────────────
-
-const C = {
-  bg: "#0a0e14",
-  surface: "#131920",
-  surfaceHover: "#1a2230",
-  border: "rgba(255,255,255,0.06)",
-  borderHover: "rgba(255,255,255,0.12)",
-  blue: "#5b9cf6",
-  blueGlow: "rgba(91,156,246,0.15)",
-  orange: "#ff9800",
-  orangeGlow: "rgba(255,152,0,0.12)",
-  text: "#e0e6ed",
-  textMuted: "#8899aa",
-  textDim: "#556677",
-  keyword: "#c792ea",
-  string: "#c3e88d",
-  number: "#f78c6c",
-  operator: "#89ddff",
-  field: "#82aaff",
-  fn: "#ffcb6b",
-};
-
 // ─── Keyframes ──────────────────────────────────────────────────────────────
 
 const fadeUp = keyframes`
@@ -80,7 +59,7 @@ const typeWriter = keyframes`
 `;
 
 const rowFlash = keyframes`
-  from { background-color: rgba(255,152,0,0.22); }
+  from { background-color: color-mix(in srgb, var(--pq-blue) 14%, transparent); }
   to   { background-color: transparent; }
 `;
 
@@ -191,7 +170,7 @@ function hl(code: string) {
     const [full, str, num, cmt, op, word] = m;
     if (cmt)
       parts.push(
-        <span key={i++} style={{ color: "#546e7a", fontStyle: "italic" }}>
+        <span key={i++} style={{ color: C.comment, fontStyle: "italic" }}>
           {full}
         </span>,
       );
@@ -250,7 +229,7 @@ function CodeBlock({
   return (
     <Box
       sx={{
-        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+        fontFamily: FONT_MONO,
         fontSize: { xs: "0.78rem", md: "0.85rem" },
         lineHeight: 1.7,
         color: C.text,
@@ -262,7 +241,7 @@ function CodeBlock({
           key={idx}
           sx={{
             display: "flex",
-            "&:hover": { bgcolor: "rgba(255,255,255,0.02)" },
+            "&:hover": { bgcolor: alpha(C.text, 0.02) },
           }}
         >
           {lineNumbers && (
@@ -305,14 +284,12 @@ function PipeChar({
     <Box
       component="span"
       sx={{
-        fontFamily: '"JetBrains Mono", monospace',
+        fontFamily: FONT_MONO,
         fontSize: size,
         fontWeight: 700,
         color,
         lineHeight: 1,
-        ...(glow && {
-          textShadow: `0 0 20px ${alpha(color, 0.5)}, 0 0 40px ${alpha(color, 0.2)}`,
-        }),
+        ...(glow && { fontWeight: 700 }),
       }}
     >
       |
@@ -339,13 +316,12 @@ function CopyButton({ text }: { text: string }) {
         border: "1px solid",
         borderColor: C.border,
         color: C.textMuted,
-        borderRadius: 1,
         px: 1,
         py: 0.5,
         cursor: "pointer",
         fontSize: "0.75rem",
-        transition: "all 0.2s",
-        fontFamily: '"JetBrains Mono", monospace',
+        transition: "color 0.15s, border-color 0.15s",
+        fontFamily: FONT_MONO,
         "&:hover": { borderColor: C.blue, color: C.blue },
       }}
     >
@@ -360,6 +336,14 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ─── Section wrapper ────────────────────────────────────────────────────────
+
+function SectionRule() {
+  return (
+    <Box sx={{ maxWidth: 1120, mx: "auto", px: { xs: 2.5, md: 4 } }}>
+      <Box sx={{ height: "1px", bgcolor: C.border }} />
+    </Box>
+  );
+}
 
 function Section({
   children,
@@ -393,16 +377,16 @@ function Section({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-      <PipeChar size={16} color={C.orange} />
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+      <Box sx={{ width: 6, height: 6, bgcolor: C.blue, flexShrink: 0 }} />
       <Typography
         sx={{
-          fontSize: "0.75rem",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
+          fontSize: "0.7rem",
+          fontWeight: 500,
+          letterSpacing: "0.1em",
           textTransform: "uppercase",
-          color: C.orange,
-          fontFamily: '"DM Sans", sans-serif',
+          color: C.textMuted,
+          fontFamily: FONT_MONO,
         }}
       >
         {children}
@@ -415,13 +399,13 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <Typography
       sx={{
-        fontSize: { xs: "1.75rem", md: "2.25rem" },
-        fontWeight: 700,
-        letterSpacing: "-0.03em",
+        fontSize: { xs: "1.5rem", md: "1.9rem" },
+        fontWeight: 600,
+        letterSpacing: "-0.025em",
         lineHeight: 1.2,
         color: C.text,
         mb: 1.5,
-        fontFamily: '"Instrument Serif", "Georgia", serif',
+        fontFamily: FONT_SANS,
       }}
     >
       {children}
@@ -436,55 +420,46 @@ const FEATURES = [
     icon: BoltIcon,
     title: "Zero Dependencies",
     desc: "Core engine ships with no runtime dependencies. Lightweight and fast.",
-    accent: "#4caf50",
   },
   {
     icon: CodeIcon,
     title: "TypeScript-First",
     desc: "Full type definitions included. IntelliSense for every API surface.",
-    accent: C.blue,
   },
   {
     icon: SpeedIcon,
     title: "25+ Aggregations",
     desc: "Basic, statistical, and financial aggregate functions built in.",
-    accent: C.orange,
   },
   {
     icon: StreamIcon,
     title: "LiveQuery",
     desc: "Streaming queries with delta and patch support for real-time data.",
-    accent: "#e040fb",
   },
   {
     icon: EditNoteIcon,
     title: "Editor Support",
     desc: "CodeMirror 6, Monaco, and TextMate grammars out of the box.",
-    accent: C.keyword,
   },
   {
     icon: WidgetsIcon,
     title: "React Components",
     desc: "Visual pipeline builder component with point-and-click.",
-    accent: "#00bcd4",
   },
   {
     icon: AutoAwesomeIcon,
     title: "MCP Server",
     desc: "Companion CLI ships an MCP server so Claude / Cursor / Copilot can query your live sources directly.",
-    accent: "#7c4dff",
   },
   {
     icon: SendIcon,
     title: "Telegram Bot",
     desc: "pq telegram serve maps the same query verbs to chat. Optional NL translation via Anthropic's API.",
-    accent: "#0ea5e9",
   },
   {
     icon: NotificationsActiveIcon,
     title: "Alert Watches",
     desc: "Declarative pq watch — query → notification on transition. Idempotent, no flapping.",
-    accent: "#f59e0b",
   },
 ];
 
@@ -492,7 +467,6 @@ function FeatureCard({
   icon: Icon,
   title,
   desc,
-  accent,
   delay,
 }: (typeof FEATURES)[0] & { delay: number }) {
   return (
@@ -502,48 +476,45 @@ function FeatureCard({
         bgcolor: C.surface,
         border: "1px solid",
         borderColor: C.border,
-        borderRadius: 2,
-        transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)",
+        transition: "border-color 0.15s, background-color 0.15s",
         position: "relative",
         overflow: "hidden",
         animationDelay: `${delay}ms`,
         "&::before": {
           content: '""',
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
+          top: -1,
+          left: -1,
+          width: 0,
           height: 2,
-          background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-          opacity: 0,
-          transition: "opacity 0.3s",
+          bgcolor: C.blue,
+          transition: "width 0.2s ease",
         },
         "&:hover": {
-          borderColor: alpha(accent, 0.3),
-          transform: "translateY(-2px)",
+          borderColor: C.borderHover,
           bgcolor: C.surfaceHover,
-          "&::before": { opacity: 1 },
+          "&::before": { width: "calc(100% + 2px)" },
         },
       }}
     >
-      <Icon sx={{ fontSize: 28, color: accent, mb: 1.5 }} />
+      <Icon sx={{ fontSize: 20, color: C.textMuted, mb: 1.5 }} />
       <Typography
         sx={{
-          fontSize: "1rem",
-          fontWeight: 700,
+          fontSize: "0.9rem",
+          fontWeight: 600,
           color: C.text,
-          mb: 0.75,
-          fontFamily: '"DM Sans", sans-serif',
+          mb: 0.5,
+          fontFamily: FONT_SANS,
         }}
       >
         {title}
       </Typography>
       <Typography
         sx={{
-          fontSize: "0.875rem",
+          fontSize: "0.82rem",
           color: C.textMuted,
-          lineHeight: 1.6,
-          fontFamily: '"DM Sans", sans-serif',
+          lineHeight: 1.55,
+          fontFamily: FONT_SANS,
         }}
       >
         {desc}
@@ -667,11 +638,11 @@ const OPS = [
 ];
 
 const catColors: Record<string, string> = {
-  Filter: "#4caf50",
+  Filter: C.up,
   Transform: C.blue,
   Aggregate: C.orange,
   "Sort & Limit": C.keyword,
-  Join: "#e040fb",
+  Join: C.fn,
 };
 
 // ─── Hero rotating examples ─────────────────────────────────────────────────
@@ -750,7 +721,7 @@ function TypingHero({ modeIndex }: { modeIndex: number }) {
   return (
     <Box
       sx={{
-        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+        fontFamily: FONT_MONO,
         fontSize: { xs: "0.8rem", sm: "0.9rem", md: "1rem" },
         lineHeight: 1.8,
         minHeight: { xs: 180, md: 200 },
@@ -803,7 +774,7 @@ const STREAM_SYMS = [
 ];
 
 function StreamingHeroDemo() {
-  const mono = '"JetBrains Mono", "Fira Code", monospace';
+  const mono = FONT_MONO;
   const [rows, setRows] = useState(() => [
     { sym: "AAPL", price: 189.42, qty: 150, side: "BUY" as const },
     { sym: "TSLA", price: 241.87, qty: 80, side: "SELL" as const },
@@ -938,7 +909,7 @@ function StreamingHeroDemo() {
         </Box>
         <Box>
           exec:{" "}
-          <Box component="span" sx={{ color: "#4caf50" }}>
+          <Box component="span" sx={{ color: C.up }}>
             {(0.02 + Math.random() * 0.06).toFixed(2)}ms
           </Box>
         </Box>
@@ -952,14 +923,14 @@ function StreamingHeroDemo() {
 
 const PIPELINE_STAGES = [
   { label: "trades", detail: "source", color: C.textMuted },
-  { label: "where", detail: "price > 100", color: "#42a5f5" },
-  { label: "sort", detail: "price desc", color: "#ffa726" },
-  { label: "groupBy", detail: "sector", color: "#ab47bc" },
-  { label: "rollup", detail: "sum(price) as total", color: "#4caf50" },
+  { label: "where", detail: "price > 100", color: C.blue },
+  { label: "sort", detail: "price desc", color: C.orange },
+  { label: "groupBy", detail: "sector", color: C.keyword },
+  { label: "rollup", detail: "sum(price) as total", color: C.up },
 ];
 
 function BuildHeroDemo() {
-  const mono = '"JetBrains Mono", "Fira Code", monospace';
+  const mono = FONT_MONO;
   const [visibleSteps, setVisibleSteps] = useState(0);
 
   useEffect(() => {
@@ -1073,8 +1044,8 @@ const LQ_INITIAL_TRADES = [
 type RowData = Record<string, unknown>;
 
 function LiveQueryShowcase() {
-  const mono = '"JetBrains Mono", "Fira Code", monospace';
-  const sans = '"DM Sans", sans-serif';
+  const mono = FONT_MONO;
+  const sans = FONT_SANS;
 
   const lqRef = useRef<LiveQueryType | null>(null);
   const streamingRef = useRef<{ start: () => void; stop: () => void } | null>(
@@ -1344,9 +1315,9 @@ function LiveQueryShowcase() {
           onClick={() => setIsStreaming((s) => !s)}
           sx={{
             border: "1px solid",
-            borderColor: isStreaming ? alpha("#4caf50", 0.3) : C.border,
-            bgcolor: isStreaming ? alpha("#4caf50", 0.08) : "transparent",
-            color: isStreaming ? "#4caf50" : C.textDim,
+            borderColor: isStreaming ? alpha(C.up, 0.3) : C.border,
+            bgcolor: isStreaming ? alpha(C.up, 0.08) : "transparent",
+            color: isStreaming ? C.up : C.textDim,
             borderRadius: 1,
             px: 1.2,
             py: 0.3,
@@ -1357,7 +1328,7 @@ function LiveQueryShowcase() {
             display: "flex",
             alignItems: "center",
             gap: 0.5,
-            "&:hover": { borderColor: isStreaming ? "#4caf50" : C.borderHover },
+            "&:hover": { borderColor: isStreaming ? C.up : C.borderHover },
           }}
         >
           <Box
@@ -1365,8 +1336,7 @@ function LiveQueryShowcase() {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              bgcolor: isStreaming ? "#4caf50" : C.textDim,
-              boxShadow: isStreaming ? "0 0 6px rgba(76,175,80,0.5)" : "none",
+              bgcolor: isStreaming ? C.up : C.textDim,
             }}
           />
           {isStreaming ? "LIVE" : "PAUSED"}
@@ -1407,8 +1377,7 @@ function LiveQueryShowcase() {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                bgcolor: isStreaming ? "#4caf50" : C.textDim,
-                boxShadow: isStreaming ? "0 0 6px rgba(76,175,80,0.5)" : "none",
+                bgcolor: isStreaming ? C.up : C.textDim,
                 animation: isStreaming
                   ? `${pulseGlow} 2s ease-in-out infinite`
                   : "none",
@@ -1473,7 +1442,7 @@ function LiveQueryShowcase() {
                       "& td": {
                         py: 0.5,
                         borderTop: "1px solid",
-                        borderColor: "rgba(255,255,255,0.03)",
+                        borderColor: alpha(C.text, 0.03),
                       },
                     }}
                   >
@@ -1541,13 +1510,13 @@ function LiveQueryShowcase() {
               {
                 label: "Added",
                 value: delta.added,
-                color: "#4caf50",
+                color: C.up,
                 icon: "+",
               },
               {
                 label: "Removed",
                 value: delta.removed,
-                color: C.number,
+                color: C.down,
                 icon: "−",
               },
               {
@@ -1614,7 +1583,7 @@ function LiveQueryShowcase() {
               </Box>
               <Box>
                 Apply:{" "}
-                <Box component="span" sx={{ color: "#4caf50" }}>
+                <Box component="span" sx={{ color: C.up }}>
                   {stats?.patchMs?.toFixed(2) ?? "0.00"}ms
                 </Box>
               </Box>
@@ -1626,7 +1595,7 @@ function LiveQueryShowcase() {
         <Box sx={panelSx}>
           <Box sx={panelHeaderSx}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-              <SpeedIcon sx={{ fontSize: 14, color: "#4caf50" }} />
+              <SpeedIcon sx={{ fontSize: 14, color: C.up }} />
               <Typography sx={panelLabelSx}>
                 Re-execution performance
               </Typography>
@@ -1676,7 +1645,7 @@ function LiveQueryShowcase() {
                       width: `${Math.min(100, (s.value / 1) * 100)}%`,
                       bgcolor:
                         s.value < 0.5
-                          ? "#4caf50"
+                          ? C.up
                           : s.value < 2
                             ? C.orange
                             : C.number,
@@ -1691,7 +1660,7 @@ function LiveQueryShowcase() {
                     textAlign: "right",
                     color:
                       s.value < 0.5
-                        ? "#4caf50"
+                        ? C.up
                         : s.value < 2
                           ? C.orange
                           : C.number,
@@ -1837,36 +1806,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         color: C.text,
         minHeight: "100vh",
         overflow: "hidden",
-        fontFamily: '"DM Sans", sans-serif',
+        fontFamily: FONT_SANS,
       }}
     >
-      {/* ── Dot grid background ── */}
-      <Box
-        sx={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-          backgroundImage: `radial-gradient(${alpha("#ffffff", 0.03)} 1px, transparent 1px)`,
-          backgroundSize: "24px 24px",
-        }}
-      />
-
-      {/* ── Ambient glow ── */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: -200,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 800,
-          height: 600,
-          borderRadius: "50%",
-          pointerEvents: "none",
-          zIndex: 0,
-          background: `radial-gradient(ellipse, ${alpha(C.blue, 0.08)} 0%, transparent 70%)`,
-        }}
-      />
 
       {/* ── Navbar ── */}
       <Box
@@ -1874,8 +1816,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           position: "sticky",
           top: 0,
           zIndex: 100,
-          backdropFilter: "blur(12px)",
-          bgcolor: alpha(C.bg, 0.8),
+          bgcolor: C.bg,
           borderBottom: "1px solid",
           borderColor: C.border,
         }}
@@ -1887,7 +1828,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             px: { xs: 2.5, md: 4 },
             display: "flex",
             alignItems: "center",
-            height: 56,
+            height: 48,
           }}
         >
           <Box
@@ -1899,13 +1840,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               cursor: "default",
             }}
           >
-            <PipeChar size={22} color={C.blue} glow />
+            <PipeChar size={20} color={C.blue} />
             <Typography
               sx={{
-                fontSize: "1.1rem",
-                fontWeight: 700,
+                fontSize: "0.85rem",
+                fontWeight: 500,
                 color: C.text,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: FONT_MONO,
                 letterSpacing: "-0.02em",
               }}
             >
@@ -1913,21 +1854,20 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </Typography>
             <Box
               sx={{
+                display: { xs: "none", sm: "block" },
                 ml: 1,
-                px: 0.8,
-                py: 0.15,
-                borderRadius: 0.8,
-                bgcolor: alpha(C.blue, 0.1),
+                px: 0.6,
+                py: 0.1,
                 border: "1px solid",
-                borderColor: alpha(C.blue, 0.2),
+                borderColor: C.border,
               }}
             >
               <Typography
                 sx={{
                   fontSize: "0.65rem",
-                  fontWeight: 600,
-                  color: C.blue,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontWeight: 500,
+                  color: C.textMuted,
+                  fontFamily: FONT_MONO,
                 }}
               >
                 v{pkgJson.version}
@@ -1935,20 +1875,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </Box>
             <Box
               sx={{
-                px: 0.7,
+                display: { xs: "none", sm: "block" },
+                px: 0.6,
                 py: 0.1,
-                borderRadius: 0.6,
-                bgcolor: alpha(C.orange, 0.1),
                 border: "1px solid",
-                borderColor: alpha(C.orange, 0.2),
+                borderColor: alpha(C.orange, 0.4),
               }}
             >
               <Typography
                 sx={{
                   fontSize: "0.58rem",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: C.orange,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                 }}
@@ -1962,24 +1901,26 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: { xs: 1.5, md: 3 },
+              gap: { xs: 1.5, md: 2.5 },
             }}
           >
             {[
               { label: "Docs", action: () => onNavigate("docs") },
               { label: "Playground", action: () => onNavigate("playground") },
-              { label: "Live Demo", action: () => window.open("https://andreadito.github.io/pipequery/demo/", '_blank') },
+              { label: "Live Demo", action: () => window.open("https://andreadito.github.io/pipequery/demo/", '_blank'), desktopOnly: true },
             ].map((item) => (
               <Typography
                 key={item.label}
                 onClick={item.action}
                 sx={{
-                  fontSize: "0.85rem",
+                  display: item.desktopOnly ? { xs: "none", sm: "block" } : "block",
+                  whiteSpace: "nowrap",
+                  fontSize: "0.8rem",
                   fontWeight: 500,
                   color: C.textMuted,
                   cursor: "pointer",
-                  transition: "color 0.2s",
-                  fontFamily: '"DM Sans", sans-serif',
+                  transition: "color 0.15s",
+                  fontFamily: FONT_SANS,
                   "&:hover": { color: C.text },
                 }}
               >
@@ -1999,8 +1940,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 "&:hover": { color: C.text },
               }}
             >
-              <GitHubIcon sx={{ fontSize: 20 }} />
+              <GitHubIcon sx={{ fontSize: 18 }} />
             </Box>
+            <ThemeToggle />
           </Box>
         </Box>
       </Box>
@@ -2037,22 +1979,21 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
               <Box
                 sx={{
-                  px: 1.5,
-                  py: 0.4,
-                  borderRadius: 1,
-                  background: `linear-gradient(135deg, ${alpha(C.blue, 0.15)}, ${alpha(C.orange, 0.1)})`,
+                  px: 1,
+                  py: 0.3,
                   border: "1px solid",
-                  borderColor: alpha(C.blue, 0.2),
+                  borderColor: C.border,
+                  bgcolor: C.surface,
                 }}
               >
                 <Typography
                   sx={{
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    fontFamily: '"JetBrains Mono", monospace',
-                    background: `linear-gradient(135deg, ${C.blue}, ${C.orange})`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    fontSize: "0.7rem",
+                    fontWeight: 500,
+                    fontFamily: FONT_MONO,
+                    color: C.text,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
                   }}
                 >
                   Open Source
@@ -2062,7 +2003,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 sx={{
                   fontSize: "0.75rem",
                   color: C.textDim,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                 }}
               >
                 MIT Licensed
@@ -2071,11 +2012,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
             <Typography
               sx={{
-                fontSize: { xs: "2.75rem", sm: "3.5rem", md: "4rem" },
-                fontWeight: 400,
-                lineHeight: 1.05,
-                letterSpacing: "-0.04em",
-                fontFamily: '"Instrument Serif", "Georgia", serif',
+                fontSize: { xs: "2.25rem", sm: "2.75rem", md: "3.25rem" },
+                fontWeight: 600,
+                lineHeight: 1.08,
+                letterSpacing: "-0.035em",
+                fontFamily: FONT_SANS,
                 mb: 2.5,
               }}
             >
@@ -2092,9 +2033,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <Box
                 component="span"
                 sx={{
-                  background: `linear-gradient(135deg, ${C.blue}, ${alpha(C.blue, 0.7)})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  color: C.blue,
                   transition: "opacity 0.4s",
                 }}
                 key={currentMode.accent}
@@ -2105,12 +2044,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
             <Typography
               sx={{
-                fontSize: { xs: "1.05rem", md: "1.15rem" },
+                fontSize: { xs: "0.95rem", md: "1.05rem" },
                 color: C.textMuted,
-                lineHeight: 1.7,
+                lineHeight: 1.65,
                 maxWidth: 460,
                 mb: 4,
-                fontFamily: '"DM Sans", sans-serif',
+                fontFamily: FONT_SANS,
               }}
             >
               A pipe-based query language for filtering, transforming, and
@@ -2125,27 +2064,25 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 1,
-                  px: 2.5,
-                  py: 1.2,
-                  borderRadius: 1.5,
+                  px: 2,
+                  height: 38,
                   bgcolor: C.blue,
                   color: "#fff",
-                  border: "none",
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
+                  border: "1px solid",
+                  borderColor: C.blue,
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
                   cursor: "pointer",
-                  fontFamily: '"DM Sans", sans-serif',
-                  transition: "all 0.2s",
-                  boxShadow: `0 0 0 0 ${alpha(C.blue, 0.4)}`,
+                  fontFamily: FONT_SANS,
+                  transition: "background-color 0.15s, border-color 0.15s",
                   "&:hover": {
-                    bgcolor: "#6da8ff",
-                    boxShadow: `0 0 24px 4px ${alpha(C.blue, 0.3)}`,
-                    transform: "translateY(-1px)",
+                    bgcolor: C.blueHover,
+                    borderColor: C.blueHover,
                   },
                 }}
               >
                 Try Playground
-                <ArrowForwardIcon sx={{ fontSize: 18 }} />
+                <ArrowForwardIcon sx={{ fontSize: 16 }} />
               </Box>
 
               <Box
@@ -2155,21 +2092,20 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 1,
-                  px: 2.5,
-                  py: 1.2,
-                  borderRadius: 1.5,
+                  px: 2,
+                  height: 38,
                   bgcolor: "transparent",
                   color: C.text,
                   border: "1px solid",
-                  borderColor: C.border,
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
+                  borderColor: C.borderHover,
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
                   cursor: "pointer",
-                  fontFamily: '"DM Sans", sans-serif',
-                  transition: "all 0.2s",
+                  fontFamily: FONT_SANS,
+                  transition: "background-color 0.15s, border-color 0.15s",
                   "&:hover": {
-                    borderColor: C.borderHover,
-                    bgcolor: alpha("#fff", 0.03),
+                    borderColor: C.textDim,
+                    bgcolor: C.surface,
                   },
                 }}
               >
@@ -2185,26 +2121,26 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 1,
-                  px: 2.5,
-                  py: 1.2,
-                  borderRadius: 1.5,
+                  px: 2,
+                  height: 38,
+                  boxSizing: "border-box",
                   bgcolor: "transparent",
-                  color: C.orange,
+                  color: C.textMuted,
                   border: "1px solid",
-                  borderColor: alpha(C.orange, 0.3),
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
+                  borderColor: "transparent",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
                   cursor: "pointer",
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: FONT_SANS,
                   textDecoration: "none",
-                  transition: "all 0.2s",
+                  transition: "color 0.15s, border-color 0.15s",
                   "&:hover": {
-                    borderColor: alpha(C.orange, 0.5),
-                    bgcolor: alpha(C.orange, 0.06),
+                    color: C.text,
+                    borderColor: C.border,
                   },
                 }}
               >
-                <DashboardIcon sx={{ fontSize: 18 }} />
+                <DashboardIcon sx={{ fontSize: 16 }} />
                 Live Demo
               </Box>
             </Box>
@@ -2221,24 +2157,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <Box
               sx={{
                 bgcolor: C.surface,
-                borderRadius: 2,
                 border: "1px solid",
                 borderColor: C.border,
                 overflow: "hidden",
                 position: "relative",
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  inset: -1,
-                  borderRadius: 2,
-                  padding: "1px",
-                  zIndex: 0,
-                  background: `linear-gradient(135deg, ${alpha(C.blue, 0.2)}, transparent 50%, ${alpha(C.orange, 0.1)})`,
-                  mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  maskComposite: "exclude",
-                  WebkitMaskComposite: "xor",
-                  pointerEvents: "none",
-                },
               }}
             >
               {/* Title bar */}
@@ -2248,41 +2170,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   alignItems: "center",
                   gap: 0.8,
                   px: 2,
-                  py: 1,
+                  height: 32,
+                  bgcolor: C.bg,
                   borderBottom: "1px solid",
                   borderColor: C.border,
                 }}
               >
-                <Box
-                  sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor: "#ff5f57",
-                  }}
-                />
-                <Box
-                  sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor: "#febc2e",
-                  }}
-                />
-                <Box
-                  sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor: "#28c840",
-                  }}
-                />
+                <Box sx={{ width: 6, height: 6, bgcolor: C.blue }} />
                 <Typography
                   sx={{
-                    ml: 1.5,
+                    ml: 0.5,
                     fontSize: "0.7rem",
-                    color: C.textDim,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: C.textMuted,
+                    fontFamily: FONT_MONO,
                     transition: "opacity 0.3s",
                   }}
                   key={currentMode.label}
@@ -2318,7 +2218,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               >
                 {HERO_MODES.map((m, i) => (
                   <Box
-                    key={m.verb}
+                    key={m.dot}
                     onClick={() => {
                       setHeroAutoRotate(false);
                       setHeroMode(i);
@@ -2344,17 +2244,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         borderRadius: "50%",
                         bgcolor: i === heroMode ? C.blue : C.textDim,
                         transition: "all 0.3s",
-                        boxShadow:
-                          i === heroMode
-                            ? `0 0 8px ${alpha(C.blue, 0.5)}`
-                            : "none",
                       }}
                     />
                     <Typography
                       sx={{
                         fontSize: "0.65rem",
                         color: i === heroMode ? C.blue : C.textDim,
-                        fontFamily: '"JetBrains Mono", monospace',
+                        fontFamily: FONT_MONO,
                         fontWeight: 600,
                         transition: "color 0.2s",
                       }}
@@ -2369,37 +2265,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Box>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.blue, 0.15),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.blue,
-              boxShadow: `0 0 12px ${alpha(C.blue, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           INSTALL
@@ -2429,7 +2295,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           >
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: FONT_MONO,
                 fontSize: { xs: "0.85rem", md: "0.95rem" },
                 color: C.textMuted,
               }}
@@ -2456,7 +2322,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             rel="noopener"
             sx={{
               fontSize: '0.68rem', color: C.textDim, mt: 1,
-              fontFamily: '"DM Sans", sans-serif',
+              fontFamily: FONT_SANS,
               textDecoration: 'none',
               transition: 'color 0.2s',
               '&:hover': { color: C.textMuted },
@@ -2467,18 +2333,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box sx={{ width: 1, height: 48, bgcolor: alpha(C.blue, 0.1) }} />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           FEATURES
@@ -2493,7 +2348,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 520,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           A complete toolkit for data manipulation &mdash; from simple filters
@@ -2517,37 +2372,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.orange, 0.12),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.orange,
-              boxShadow: `0 0 12px ${alpha(C.orange, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           LIVE EXAMPLE
@@ -2562,7 +2387,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 520,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           Chain operations with the pipe operator to build complex queries that
@@ -2602,7 +2427,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   fontSize: "0.72rem",
                   fontWeight: 600,
                   color: C.textDim,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -2621,7 +2446,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     fontSize: "0.65rem",
                     color: C.blue,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                   }}
                 >
                   .pipe
@@ -2669,7 +2494,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   fontSize: "0.72rem",
                   fontWeight: 600,
                   color: C.textDim,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -2681,14 +2506,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   px: 0.8,
                   py: 0.15,
                   borderRadius: 0.5,
-                  bgcolor: alpha("#4caf50", 0.1),
+                  bgcolor: alpha(C.up, 0.1),
                 }}
               >
                 <Typography
                   sx={{
                     fontSize: "0.65rem",
-                    color: "#4caf50",
-                    fontFamily: '"JetBrains Mono", monospace',
+                    color: C.up,
+                    fontFamily: FONT_MONO,
                   }}
                 >
                   3 rows &middot; 0.4ms
@@ -2701,7 +2526,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 sx={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   fontSize: "0.82rem",
                   "& th": {
                     textAlign: "left",
@@ -2720,7 +2545,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     pr: 2.5,
                     color: C.text,
                     borderBottom: "1px solid",
-                    borderColor: alpha("#fff", 0.03),
+                    borderColor: alpha(C.text, 0.03),
                   },
                 }}
               >
@@ -2783,37 +2608,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.blue, 0.12),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.blue,
-              boxShadow: `0 0 12px ${alpha(C.blue, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           JOIN EXAMPLE
@@ -2828,7 +2623,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 520,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           Combine related datasets with SQL-style joins &mdash; link orders to
@@ -2870,7 +2665,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   fontSize: "0.72rem",
                   fontWeight: 600,
                   color: C.textDim,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -2892,7 +2687,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     fontSize: "0.68rem",
                     color: C.blue,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     fontWeight: 600,
                     mb: 1,
                     textTransform: "uppercase",
@@ -2906,7 +2701,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     fontSize: "0.78rem",
                     "& th": {
                       textAlign: "left",
@@ -2924,7 +2719,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       py: 0.6,
                       pr: 2,
                       borderBottom: "1px solid",
-                      borderColor: alpha("#fff", 0.03),
+                      borderColor: alpha(C.text, 0.03),
                     },
                   }}
                 >
@@ -2968,7 +2763,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     fontSize: "0.68rem",
                     color: C.orange,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     fontWeight: 600,
                     mb: 1,
                     textTransform: "uppercase",
@@ -2982,7 +2777,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     fontSize: "0.78rem",
                     "& th": {
                       textAlign: "left",
@@ -3000,7 +2795,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       py: 0.6,
                       pr: 2,
                       borderBottom: "1px solid",
-                      borderColor: alpha("#fff", 0.03),
+                      borderColor: alpha(C.text, 0.03),
                     },
                   }}
                 >
@@ -3067,7 +2862,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontSize: "0.72rem",
                     fontWeight: 600,
                     color: C.textDim,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                   }}
@@ -3086,7 +2881,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     sx={{
                       fontSize: "0.65rem",
                       color: C.blue,
-                      fontFamily: '"JetBrains Mono", monospace',
+                      fontFamily: FONT_MONO,
                     }}
                   >
                     join
@@ -3129,7 +2924,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontSize: "0.72rem",
                     fontWeight: 600,
                     color: C.textDim,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                   }}
@@ -3141,14 +2936,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     px: 0.8,
                     py: 0.15,
                     borderRadius: 0.5,
-                    bgcolor: alpha("#4caf50", 0.1),
+                    bgcolor: alpha(C.up, 0.1),
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: "0.65rem",
-                      color: "#4caf50",
-                      fontFamily: '"JetBrains Mono", monospace',
+                      color: C.up,
+                      fontFamily: FONT_MONO,
                     }}
                   >
                     3 rows &middot; 0.2ms
@@ -3161,7 +2956,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     fontSize: "0.82rem",
                     "& th": {
                       textAlign: "left",
@@ -3179,7 +2974,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                       py: 1.2,
                       pr: 2.5,
                       borderBottom: "1px solid",
-                      borderColor: alpha("#fff", 0.03),
+                      borderColor: alpha(C.text, 0.03),
                     },
                   }}
                 >
@@ -3243,37 +3038,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.orange, 0.12),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.orange,
-              boxShadow: `0 0 12px ${alpha(C.orange, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           LIVEQUERY
@@ -3288,7 +3053,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 560,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           Subscribe to queries that update automatically when underlying data
@@ -3298,37 +3063,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         <LiveQueryShowcase />
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.keyword, 0.12),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.keyword,
-              boxShadow: `0 0 12px ${alpha(C.keyword, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           QUERY BUILDER
@@ -3343,7 +3078,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 560,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           A point-and-click React component for constructing pipelines visually.
@@ -3384,7 +3119,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   fontSize: "0.72rem",
                   fontWeight: 600,
                   color: C.textDim,
-                  fontFamily: '"JetBrains Mono", monospace',
+                  fontFamily: FONT_MONO,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -3403,7 +3138,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   sx={{
                     fontSize: "0.65rem",
                     color: C.keyword,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                   }}
                 >
                   Live component
@@ -3444,7 +3179,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     sx={{
                       fontSize: "0.65rem",
                       color: C.textDim,
-                      fontFamily: '"JetBrains Mono", monospace',
+                      fontFamily: FONT_MONO,
                       mb: 0.5,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
@@ -3455,7 +3190,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <Typography
                     sx={{
                       fontSize: "0.78rem",
-                      fontFamily: '"JetBrains Mono", monospace',
+                      fontFamily: FONT_MONO,
                       color: C.text,
                       wordBreak: "break-all",
                     }}
@@ -3491,7 +3226,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontSize: "0.72rem",
                     fontWeight: 600,
                     color: C.textDim,
-                    fontFamily: '"JetBrains Mono", monospace',
+                    fontFamily: FONT_MONO,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                   }}
@@ -3545,7 +3280,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontWeight: 600,
                     color: C.text,
                     mb: 0.3,
-                    fontFamily: '"DM Sans", sans-serif',
+                    fontFamily: FONT_SANS,
                   }}
                 >
                   {item.title}
@@ -3555,7 +3290,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontSize: "0.82rem",
                     color: C.textMuted,
                     lineHeight: 1.5,
-                    fontFamily: '"DM Sans", sans-serif',
+                    fontFamily: FONT_SANS,
                   }}
                 >
                   {item.desc}
@@ -3566,18 +3301,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box sx={{ width: 1, height: 48, bgcolor: alpha(C.blue, 0.1) }} />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           OPERATIONS
@@ -3592,7 +3316,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             maxWidth: 520,
             mb: 5,
             lineHeight: 1.7,
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: FONT_SANS,
           }}
         >
           Filter, transform, aggregate, sort, join &mdash; everything chains
@@ -3611,7 +3335,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     height: 8,
                     borderRadius: "50%",
                     bgcolor: catColors[group.cat],
-                    boxShadow: `0 0 8px ${alpha(catColors[group.cat], 0.4)}`,
                   }}
                 />
                 <Typography
@@ -3619,7 +3342,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     fontSize: "0.8rem",
                     fontWeight: 700,
                     color: catColors[group.cat],
-                    fontFamily: '"DM Sans", sans-serif',
+                    fontFamily: FONT_SANS,
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                   }}
@@ -3657,7 +3380,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
+                          fontFamily: FONT_MONO,
                           fontSize: "0.88rem",
                           fontWeight: 600,
                           color: catColors[group.cat],
@@ -3671,14 +3394,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                           fontSize: "0.8rem",
                           color: C.textMuted,
                           mb: 0.8,
-                          fontFamily: '"DM Sans", sans-serif',
+                          fontFamily: FONT_SANS,
                         }}
                       >
                         {op.desc}
                       </Typography>
                       <Box
                         sx={{
-                          fontFamily: '"JetBrains Mono", monospace',
+                          fontFamily: FONT_MONO,
                           fontSize: "0.75rem",
                           color: C.textDim,
                           whiteSpace: "nowrap",
@@ -3697,37 +3420,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box
-          sx={{
-            width: 1,
-            height: 64,
-            bgcolor: alpha(C.keyword, 0.12),
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              bgcolor: C.keyword,
-              boxShadow: `0 0 12px ${alpha(C.keyword, 0.5)}`,
-            },
-          }}
-        />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           AGGREGATIONS
@@ -3752,7 +3445,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             {
               cat: "Basic",
               fns: ["sum", "avg", "min", "max", "count"],
-              color: "#4caf50",
+              color: C.up,
             },
             {
               cat: "Statistical",
@@ -3802,7 +3495,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
                   mb: 1.5,
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: FONT_SANS,
                 }}
               >
                 {group.cat}
@@ -3812,7 +3505,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <Typography
                     key={fn}
                     sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
+                      fontFamily: FONT_MONO,
                       fontSize: "0.8rem",
                       color: C.fn,
                     }}
@@ -3826,18 +3519,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </Box>
       </Section>
 
-      {/* ── Divider pipe line ── */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          py: 2,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <Box sx={{ width: 1, height: 48, bgcolor: alpha(C.blue, 0.1) }} />
-      </Box>
+      <SectionRule />
 
       {/* ════════════════════════════════════════════════════════════════════
           QUICK START
@@ -3873,7 +3555,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 fontSize: "0.72rem",
                 fontWeight: 600,
                 color: C.textDim,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: FONT_MONO,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
               }}
@@ -3925,7 +3607,7 @@ console.log(expensive);`}
             mb: 4,
           }}
         >
-          The <code style={{ color: C.orange, fontFamily: '"JetBrains Mono", monospace', fontSize: "0.9em" }}>pq</code> CLI
+          The <code style={{ color: C.orange, fontFamily: FONT_MONO, fontSize: "0.9em" }}>pq</code> CLI
           connects to any data source and lets you create live JSON API endpoints on the fly.
           Deploy the server with Docker and control it from anywhere — or run everything locally.
         </Typography>
@@ -4025,7 +3707,7 @@ console.log(expensive);`}
                 fontSize: "0.72rem",
                 fontWeight: 600,
                 color: C.textDim,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: FONT_MONO,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
               }}
@@ -4134,28 +3816,22 @@ $ curl localhost:3000/api/top
             textAlign: "center",
             py: { xs: 5, md: 7 },
             px: { xs: 3, md: 6 },
-            borderRadius: 3,
             position: "relative",
             overflow: "hidden",
             bgcolor: C.surface,
             border: "1px solid",
             borderColor: C.border,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              background: `radial-gradient(ellipse at 50% 0%, ${alpha(C.blue, 0.08)} 0%, transparent 60%)`,
-              pointerEvents: "none",
-            },
+            borderTop: "2px solid",
+            borderTopColor: C.blue,
           }}
         >
           <Typography
             sx={{
-              fontSize: { xs: "2rem", md: "2.5rem" },
-              fontWeight: 400,
+              fontSize: { xs: "1.6rem", md: "2rem" },
+              fontWeight: 600,
               letterSpacing: "-0.03em",
               lineHeight: 1.2,
-              fontFamily: '"Instrument Serif", "Georgia", serif',
+              fontFamily: FONT_SANS,
               mb: 2,
               position: "relative",
             }}
@@ -4169,7 +3845,7 @@ $ curl localhost:3000/api/top
               mb: 4,
               maxWidth: 440,
               mx: "auto",
-              fontFamily: '"DM Sans", sans-serif',
+              fontFamily: FONT_SANS,
               lineHeight: 1.6,
             }}
           >
@@ -4183,20 +3859,20 @@ $ curl localhost:3000/api/top
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 1,
-                px: 3,
-                py: 1.3,
-                borderRadius: 1.5,
+                px: 2,
+                height: 38,
+                boxSizing: "border-box",
                 bgcolor: C.blue,
                 color: "#fff",
-                border: "none",
-                fontSize: "0.95rem",
-                fontWeight: 600,
+                border: "1px solid",
+                borderColor: C.blue,
+                fontSize: "0.85rem",
+                fontWeight: 500,
                 cursor: "pointer",
-                fontFamily: '"DM Sans", sans-serif',
+                fontFamily: FONT_SANS,
                 transition: "all 0.2s",
                 "&:hover": {
-                  bgcolor: "#6da8ff",
-                  boxShadow: `0 0 24px 4px ${alpha(C.blue, 0.3)}`,
+                  bgcolor: C.blueHover,
                 },
               }}
             >
@@ -4212,22 +3888,22 @@ $ curl localhost:3000/api/top
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 1,
-                px: 3,
-                py: 1.3,
-                borderRadius: 1.5,
+                px: 2,
+                height: 38,
+                boxSizing: "border-box",
                 bgcolor: "transparent",
                 color: C.text,
                 border: "1px solid",
                 borderColor: C.border,
-                fontSize: "0.95rem",
-                fontWeight: 600,
+                fontSize: "0.85rem",
+                fontWeight: 500,
                 cursor: "pointer",
-                fontFamily: '"DM Sans", sans-serif',
+                fontFamily: FONT_SANS,
                 textDecoration: "none",
                 transition: "all 0.2s",
                 "&:hover": {
                   borderColor: C.borderHover,
-                  bgcolor: alpha("#fff", 0.03),
+                  bgcolor: alpha(C.text, 0.03),
                 },
               }}
             >
@@ -4243,26 +3919,26 @@ $ curl localhost:3000/api/top
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 1,
-                px: 3,
-                py: 1.3,
-                borderRadius: 1.5,
+                px: 2,
+                height: 38,
+                boxSizing: "border-box",
                 bgcolor: "transparent",
-                color: C.orange,
+                color: C.textMuted,
                 border: "1px solid",
-                borderColor: alpha(C.orange, 0.3),
-                fontSize: "0.95rem",
-                fontWeight: 600,
+                borderColor: "transparent",
+                fontSize: "0.85rem",
+                fontWeight: 500,
                 cursor: "pointer",
-                fontFamily: '"DM Sans", sans-serif',
+                fontFamily: FONT_SANS,
                 textDecoration: "none",
-                transition: "all 0.2s",
+                transition: "color 0.15s, border-color 0.15s",
                 "&:hover": {
-                  borderColor: alpha(C.orange, 0.5),
-                  bgcolor: alpha(C.orange, 0.06),
+                  color: C.text,
+                  borderColor: C.border,
                 },
               }}
             >
-              <DashboardIcon sx={{ fontSize: 18 }} />
+              <DashboardIcon sx={{ fontSize: 16 }} />
               Live Demo
             </Box>
           </Box>
@@ -4285,7 +3961,6 @@ $ curl localhost:3000/api/top
             width: 72, height: 72, borderRadius: '50%', mb: 2.5,
             border: '2px solid', borderColor: alpha(C.blue, 0.3),
             overflow: 'hidden',
-            boxShadow: `0 0 24px ${alpha(C.blue, 0.15)}`,
           }}>
             <Box
               component="img"
@@ -4297,15 +3972,15 @@ $ curl localhost:3000/api/top
 
           <Typography sx={{
             fontSize: '0.68rem', fontWeight: 600, color: C.textDim,
-            fontFamily: '"JetBrains Mono", monospace',
+            fontFamily: FONT_MONO,
             textTransform: 'uppercase', letterSpacing: '0.1em', mb: 1.5,
           }}>
             Created by
           </Typography>
 
           <Typography sx={{
-            fontSize: { xs: '1.5rem', md: '1.8rem' }, fontWeight: 400,
-            fontFamily: '"Instrument Serif", Georgia, serif',
+            fontSize: { xs: '1.3rem', md: '1.5rem' }, fontWeight: 600, letterSpacing: '-0.02em',
+            fontFamily: FONT_SANS,
             color: C.text, mb: 1,
           }}>
             Andrea Dito
@@ -4313,7 +3988,7 @@ $ curl localhost:3000/api/top
 
           <Typography sx={{
             fontSize: '0.9rem', color: C.textMuted, lineHeight: 1.7, mb: 3,
-            fontFamily: '"DM Sans", sans-serif', maxWidth: 480,
+            fontFamily: FONT_SANS, maxWidth: 480,
           }}>
             Software engineer who loves building intuitive interfaces for complex data. Passionate about performance, real-time systems, and developer tooling.
           </Typography>
@@ -4330,7 +4005,7 @@ $ curl localhost:3000/api/top
                 bgcolor: alpha(C.blue, 0.08),
                 border: '1px solid', borderColor: alpha(C.blue, 0.2),
                 color: C.blue, textDecoration: 'none',
-                fontFamily: '"DM Sans", sans-serif', fontSize: '0.82rem', fontWeight: 600,
+                fontFamily: FONT_SANS, fontSize: '0.82rem', fontWeight: 600,
                 transition: 'all 0.2s',
                 '&:hover': { bgcolor: alpha(C.blue, 0.14), borderColor: alpha(C.blue, 0.35) },
               }}
@@ -4348,7 +4023,7 @@ $ curl localhost:3000/api/top
                 bgcolor: 'transparent',
                 border: '1px solid', borderColor: C.border,
                 color: C.textMuted, textDecoration: 'none',
-                fontFamily: '"DM Sans", sans-serif', fontSize: '0.82rem', fontWeight: 500,
+                fontFamily: FONT_SANS, fontSize: '0.82rem', fontWeight: 500,
                 transition: 'all 0.2s',
                 '&:hover': { borderColor: C.borderHover, color: C.text },
               }}
@@ -4361,7 +4036,7 @@ $ curl localhost:3000/api/top
           {/* GitHub repo star CTA */}
           <Box sx={{ mt: 5, pt: 4, borderTop: '1px solid', borderColor: C.border, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Typography sx={{
-              fontSize: '0.75rem', color: C.textDim, fontFamily: '"DM Sans", sans-serif', mb: 2,
+              fontSize: '0.75rem', color: C.textDim, fontFamily: FONT_SANS, mb: 2,
             }}>
               If PipeQuery is useful to you, consider giving it a star
             </Typography>
@@ -4373,10 +4048,10 @@ $ curl localhost:3000/api/top
               sx={{
                 display: 'flex', alignItems: 'center', gap: 1,
                 px: 3, py: 1, borderRadius: 1.5,
-                bgcolor: alpha('#fff', 0.05),
+                bgcolor: alpha(C.text, 0.05),
                 border: '1px solid', borderColor: C.border,
                 color: C.text, textDecoration: 'none',
-                fontFamily: '"JetBrains Mono", monospace', fontSize: '0.85rem', fontWeight: 600,
+                fontFamily: FONT_MONO, fontSize: '0.85rem', fontWeight: 600,
                 transition: 'all 0.2s',
                 '&:hover': { borderColor: alpha(C.orange, 0.4), bgcolor: alpha(C.orange, 0.06) },
               }}
@@ -4420,7 +4095,7 @@ $ curl localhost:3000/api/top
               sx={{
                 fontSize: "0.82rem",
                 color: C.textDim,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: FONT_MONO,
               }}
             >
               pipequery-lang
@@ -4455,7 +4130,7 @@ $ curl localhost:3000/api/top
                   fontSize: "0.8rem",
                   color: C.textMuted,
                   textDecoration: "none",
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: FONT_SANS,
                   transition: "color 0.2s",
                   "&:hover": { color: C.text },
                 }}
