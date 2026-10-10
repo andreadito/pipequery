@@ -6,6 +6,8 @@ import { runHttp } from '../mcp/http.js';
 import { createMcpServer } from '../mcp/server.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import pkg from '../../package.json' with { type: 'json' };
+const { version } = pkg;
 
 interface McpServeOptions {
   http?: boolean;
@@ -53,7 +55,7 @@ export async function mcpInspectCommand(opts: { attach?: string }): Promise<void
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await mcp.connect(serverTransport);
 
-  const client = new Client({ name: 'pq-mcp-inspect', version: '0.1.0' });
+  const client = new Client({ name: 'pq-mcp-inspect', version });
   await client.connect(clientTransport);
 
   try {

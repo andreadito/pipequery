@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Provider } from './provider.js';
+import pkg from '../../package.json' with { type: 'json' };
+const { version } = pkg;
 
 export interface McpServerInfo {
   name: string;
@@ -9,7 +11,7 @@ export interface McpServerInfo {
 
 const DEFAULT_INFO: McpServerInfo = {
   name: 'pipequery',
-  version: '0.1.0',
+  version,
 };
 
 /**

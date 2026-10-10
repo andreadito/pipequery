@@ -15,6 +15,8 @@ import { completionCommand } from './commands/completion.js';
 import { stopCommand } from './commands/stop.js';
 import { startRepl } from './commands/repl.js';
 import { printBanner } from './utils/banner.js';
+import pkg from '../package.json' with { type: 'json' };
+const { version } = pkg;
 
 // Commander helper: accumulate `--allow-user @a --allow-user @b` into an array.
 const collectRepeated = (value: string, acc: string[]): string[] => [...acc, value];
@@ -24,7 +26,7 @@ const program = new Command();
 program
   .name('pq')
   .description('PipeQuery CLI — data sources, aggregations, APIs, and terminal dashboards')
-  .version('0.1.0')
+  .version(version)
   .addHelpText('beforeAll', () => {
     printBanner();
     return '';
