@@ -1,4 +1,6 @@
 import chalk from 'chalk';
+import pkg from '../../package.json' with { type: 'json' };
+const { version } = pkg;
 
 const LOGO = [
   '  ██████╗  ██╗ ██████╗  ███████╗  ██████╗  ██╗   ██╗ ███████╗ ██████╗  ██╗   ██╗',
@@ -30,7 +32,7 @@ export function printBanner() {
     console.log(applyGradient(line, i));
   });
   console.log();
-  console.log(chalk.dim(`  v0.1.0 — data sources, aggregations, APIs, and terminal dashboards`));
+  console.log(chalk.dim(`  v${version} — data sources, aggregations, APIs, and terminal dashboards`));
   console.log();
 }
 
