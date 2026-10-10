@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import { pipeQuery } from '../../../src/highlighting/codemirror/index';
 import { Box } from '@mui/material';
+import { themedPipeQuery } from './themedPipeQuery';
+import { C, alpha, FONT_MONO } from '../tokens';
 
 const cmTheme = EditorView.theme(
   {
     '&': {
       backgroundColor: 'transparent',
-      color: '#e0e6ed',
-      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      color: C.text,
+      fontFamily: FONT_MONO,
       fontSize: '0.72rem',
       lineHeight: '1.5',
     },
@@ -17,12 +18,11 @@ const cmTheme = EditorView.theme(
     '.cm-line': { padding: '0 2px' },
     '&.cm-focused': { outline: 'none' },
     '.cm-cursor': { display: 'none' },
-    '.cm-selectionBackground': { backgroundColor: 'rgba(91,156,246,0.15) !important' },
+    '.cm-selectionBackground': { backgroundColor: `${alpha(C.blue, 0.15)} !important` },
     '.cm-gutters': { display: 'none' },
     '.cm-scroller': { overflow: 'hidden' },
     '.cm-activeLine': { backgroundColor: 'transparent' },
   },
-  { dark: true },
 );
 
 /** Format a single-line pipe query into multi-line (one step per line). */
@@ -50,7 +50,7 @@ export default function QueryDisplay({ value, onClick }: QueryDisplayProps) {
       doc: formatted,
       extensions: [
         cmTheme,
-        pipeQuery({ completion: false }),
+        themedPipeQuery({ completion: false }),
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
       ],
@@ -81,14 +81,15 @@ export default function QueryDisplay({ value, onClick }: QueryDisplayProps) {
       ref={containerRef}
       onClick={onClick}
       sx={{
-        bgcolor: 'rgba(0,0,0,0.25)',
-        borderRadius: 0.75,
-        border: '1px solid rgba(91,156,246,0.12)',
+        bgcolor: C.bg,
+        border: '1px solid',
+        borderColor: C.border,
         px: 1,
         py: 0.5,
         cursor: onClick ? 'pointer' : 'default',
+        transition: 'border-color 0.15s',
         '&:hover': onClick
-          ? { borderColor: 'rgba(91,156,246,0.3)', bgcolor: 'rgba(0,0,0,0.35)' }
+          ? { borderColor: C.borderHover }
           : {},
       }}
     />

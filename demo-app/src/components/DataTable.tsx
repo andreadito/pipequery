@@ -6,6 +6,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import { C, FONT_MONO } from '../tokens';
 
 interface DataTableProps {
   rows: Record<string, unknown>[];
@@ -25,14 +26,14 @@ export default function DataTable({ rows, columns, highlightColor }: DataTablePr
                 align={col.align ?? 'left'}
                 sx={{
                   bgcolor: 'background.paper',
-                  color: 'text.secondary',
-                  fontWeight: 600,
-                  fontSize: '0.75rem',
+                  color: C.textMuted,
+                  fontWeight: 500,
+                  fontSize: '0.68rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  letterSpacing: '0.06em',
                   borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  py: 1,
+                  borderColor: C.borderHover,
+                  py: 0.75,
                 }}
               >
                 {col.label}
@@ -44,7 +45,7 @@ export default function DataTable({ rows, columns, highlightColor }: DataTablePr
           {rows.map((row, i) => (
             <TableRow
               key={i}
-              sx={{ '&:last-child td': { border: 0 }, '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}
+              sx={{ '&:last-child td': { border: 0 }, '&:hover': { bgcolor: C.surfaceHover } }}
             >
               {columns.map((col) => {
                 const val = row[col.key];
@@ -54,16 +55,16 @@ export default function DataTable({ rows, columns, highlightColor }: DataTablePr
                     key={col.key}
                     align={col.align ?? 'left'}
                     sx={{
-                      fontSize: '0.82rem',
+                      fontSize: '0.78rem',
                       color: highlightColor
                         ? col.key === 'changePercent24Hr'
                           ? highlightColor
                           : 'text.primary'
                         : 'text.primary',
                       borderBottom: '1px solid',
-                      borderColor: 'divider',
-                      py: 0.8,
-                      fontFamily: col.align === 'right' ? '"JetBrains Mono", monospace' : undefined,
+                      borderColor: C.border,
+                      py: 0.6,
+                      fontFamily: col.align === 'right' ? FONT_MONO : undefined,
                     }}
                   >
                     {formatted}

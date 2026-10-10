@@ -13,6 +13,7 @@ import DataObjectIcon from '@mui/icons-material/DataObject';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import type { CustomSourceConfig } from '../hooks/useCustomSources';
+import { C, alpha, FONT_MONO } from '../tokens';
 
 // Built-in source names that cannot be overridden
 const BUILTIN_SOURCES = new Set(['crypto', 'fxRates', 'fxFlat', 'ecbRates', 'fedRates']);
@@ -211,17 +212,17 @@ export default function SettingsDrawer({
                 key={cfg.name}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 1,
-                  py: 0.75, px: 1, mb: 0.5, borderRadius: 1,
-                  bgcolor: isBeingEdited ? 'rgba(91,156,246,0.08)' : 'rgba(255,255,255,0.03)',
+                  py: 0.75, px: 1, mb: 0.5,
+                  bgcolor: isBeingEdited ? alpha(C.blue, 0.08) : C.bg,
                   border: '1px solid',
                   borderColor: isBeingEdited
-                    ? 'rgba(91,156,246,0.3)'
-                    : err ? 'rgba(239,83,80,0.3)' : 'rgba(255,255,255,0.06)',
+                    ? C.blue
+                    : err ? alpha(C.down, 0.5) : C.border,
                 }}
               >
                 <Tooltip title={err || (rows > 0 ? `${rows} rows` : 'Connecting...')}>
                   <FiberManualRecordIcon
-                    sx={{ fontSize: 8, color: err ? '#ef5350' : rows > 0 ? '#66bb6a' : '#ffa726' }}
+                    sx={{ fontSize: 8, color: err ? C.down : rows > 0 ? C.up : C.orange }}
                   />
                 </Tooltip>
                 <Chip
@@ -229,7 +230,7 @@ export default function SettingsDrawer({
                   sx={{ height: 18, fontSize: '0.6rem', fontWeight: 600 }}
                   variant="outlined"
                 />
-                <Typography sx={{ flex: 1, fontSize: '0.75rem', fontWeight: 500, fontFamily: 'monospace' }}>
+                <Typography sx={{ flex: 1, fontSize: '0.75rem', fontWeight: 500, fontFamily: FONT_MONO }}>
                   {cfg.name}
                 </Typography>
                 <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
@@ -271,9 +272,9 @@ export default function SettingsDrawer({
 
       {/* Add/Edit source form */}
       <Collapse in={formOpen}>
-        <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', mb: 2 }}>
+        <Box sx={{ p: 1.5, bgcolor: C.bg, border: '1px solid', borderColor: C.border, mb: 2 }}>
           {isEditing && (
-            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#8bbcff', fontSize: '0.7rem', fontWeight: 600 }}>
+            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: C.blue, fontSize: '0.7rem', fontWeight: 600 }}>
               Editing "{editingName}"
             </Typography>
           )}
@@ -345,7 +346,7 @@ export default function SettingsDrawer({
               placeholder={'[\n  { "name": "Alice", "age": 30 },\n  { "name": "Bob", "age": 25 }\n]'}
               multiline rows={5}
               value={srcJson} onChange={(e) => setSrcJson(e.target.value)}
-              sx={{ mb: 1, '& textarea': { fontFamily: 'monospace', fontSize: '0.72rem' } }}
+              sx={{ mb: 1, '& textarea': { fontFamily: FONT_MONO, fontSize: '0.72rem' } }}
             />
           )}
 

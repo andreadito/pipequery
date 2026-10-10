@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, IconButton, Tooltip, Chip } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { ThemeToggle } from '../colorMode';
+import { C, FONT_MONO } from '../tokens';
+
+const squareBtnSx = {
+  width: 28,
+  height: 28,
+  border: '1px solid',
+  borderColor: C.border,
+  color: C.textMuted,
+  transition: 'color 0.15s, border-color 0.15s',
+  '&:hover': { color: C.text, borderColor: C.borderHover, bgcolor: 'transparent' },
+};
 
 interface DashboardHeaderProps {
   lastUpdated: Date | null;
@@ -37,22 +49,24 @@ export default function DashboardHeader({ lastUpdated, loading, tick, onRefresh,
         gap: 1,
         mb: 2,
         pt: 1.5,
+        pb: 1.5,
+        borderBottom: '1px solid',
+        borderColor: C.border,
       }}
     >
       <Box>
         <Typography
           variant="h5"
           sx={{
-            background: 'linear-gradient(135deg, #5b9cf6 0%, #ff9800 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontWeight: 700,
-            fontSize: '1.4rem',
+            color: C.text,
+            fontWeight: 600,
+            fontSize: '1.15rem',
+            letterSpacing: '-0.01em',
           }}
         >
-          PipeQuery Demo
+          PipeQuery <Box component="span" sx={{ color: C.textMuted, fontWeight: 400 }}>Demo</Box>
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.78rem' }}>
+        <Typography variant="body2" sx={{ color: C.textMuted, fontSize: '0.75rem' }}>
           Fetch once. Query everywhere.
         </Typography>
       </Box>
@@ -64,8 +78,7 @@ export default function DashboardHeader({ lastUpdated, loading, tick, onRefresh,
                 sx={{
                   width: 6,
                   height: 6,
-                  borderRadius: '50%',
-                  bgcolor: loading ? '#ffa726' : '#4caf50',
+                  bgcolor: loading ? C.orange : C.up,
                   animation: loading ? 'none' : 'pulse 2s infinite',
                   '@keyframes pulse': {
                     '0%, 100%': { opacity: 1 },
@@ -77,19 +90,22 @@ export default function DashboardHeader({ lastUpdated, loading, tick, onRefresh,
             label={`${ago} · tick #${tick}`}
             size="small"
             variant="outlined"
-            sx={{ color: 'text.secondary', borderColor: 'divider', fontSize: '0.7rem', height: 24 }}
+            sx={{ color: C.textMuted, borderColor: C.border, fontFamily: FONT_MONO, fontSize: '0.68rem', height: 28, '& .MuiChip-icon': { ml: 1 } }}
           />
         )}
         <Tooltip title="Refresh now">
-          <IconButton size="small" onClick={onRefresh} disabled={loading}>
-            <RefreshIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+          <span>
+            <IconButton size="small" onClick={onRefresh} disabled={loading} sx={squareBtnSx}>
+              <RefreshIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title="Settings">
-          <IconButton size="small" onClick={onSettingsOpen}>
-            <SettingsIcon sx={{ fontSize: 18 }} />
+          <IconButton size="small" onClick={onSettingsOpen} sx={squareBtnSx}>
+            <SettingsIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Tooltip>
+        <ThemeToggle />
       </Box>
     </Box>
   );

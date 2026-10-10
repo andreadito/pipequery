@@ -1,27 +1,102 @@
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   Same flat, square, terminal-style palette as the docs site (docs/src/index.css).
+   Every component reads colours through these variables so light/dark switching
+   is a single attribute flip on <html>.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --pq-bg: #0b0d10;
+  --pq-surface: #111418;
+  --pq-surface-hover: #171b21;
+  --pq-border: #1f242b;
+  --pq-border-hover: #333a44;
+  --pq-blue: #3b82f6;
+  --pq-blue-hover: #2563eb;
+  --pq-orange: #e8a33d;
+  --pq-up: #22ab94;
+  --pq-down: #f23645;
+  --pq-text: #e6e8eb;
+  --pq-text-muted: #8b939e;
+  --pq-text-dim: #5b636d;
+  --pq-keyword: #c4a5f5;
+  --pq-string: #8ccf9e;
+  --pq-number: #79b8ff;
+  --pq-operator: #8b939e;
+  --pq-field: #e6c07b;
+  --pq-fn: #7cc4f8;
+  --pq-comment: #5b636d;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --pq-bg: #ffffff;
+  --pq-surface: #f7f8fa;
+  --pq-surface-hover: #eef0f3;
+  --pq-border: #e3e6ea;
+  --pq-border-hover: #c4c9d0;
+  --pq-blue: #1f6feb;
+  --pq-blue-hover: #1158c7;
+  --pq-orange: #b06a00;
+  --pq-up: #089981;
+  --pq-down: #d9273a;
+  --pq-text: #0f1419;
+  --pq-text-muted: #59616c;
+  --pq-text-dim: #8a929c;
+  --pq-keyword: #7c3aed;
+  --pq-string: #1a7f37;
+  --pq-number: #0550ae;
+  --pq-operator: #6e7781;
+  --pq-field: #953800;
+  --pq-fn: #0969da;
+  --pq-comment: #8a929c;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* No rounded corners anywhere — including MUI components and CodeMirror. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+html,
 body {
-  background: #0a0e14;
+  background: var(--pq-bg);
+  color: var(--pq-text);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+body {
+  min-width: 320px;
   min-height: 100vh;
+  font-feature-settings: "tnum" 1, "cv11" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar {
+::selection {
+  background: color-mix(in srgb, var(--pq-blue) 28%, transparent);
+}
+
+/* Thin, square scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pq-border-hover) transparent;
+}
+*::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+*::-webkit-scrollbar-thumb {
+  background: var(--pq-border-hover);
 }
