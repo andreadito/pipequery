@@ -27,7 +27,7 @@ permissions:
 jobs:
   # ─── Version Bump ───────────────────────────────────────────────────────────
   version-bump:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       engine-version: ${{ steps.bump.outputs.engine-version }}
       cli-version: ${{ steps.bump.outputs.cli-version }}
@@ -92,7 +92,7 @@ jobs:
   # ─── Test ───────────────────────────────────────────────────────────────────
   test:
     needs: version-bump
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -122,7 +122,7 @@ jobs:
   publish-engine:
     needs: test
     if: inputs.packages == 'all' || inputs.packages == 'engine'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -147,7 +147,7 @@ jobs:
   publish-engine-npm:
     needs: test
     if: inputs.packages == 'all' || inputs.packages == 'engine'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -182,7 +182,7 @@ jobs:
   publish-cli:
     needs: test
     if: inputs.packages == 'all' || inputs.packages == 'cli'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -209,7 +209,7 @@ jobs:
   publish-cli-npm:
     needs: test
     if: inputs.packages == 'all' || inputs.packages == 'cli'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -247,7 +247,7 @@ jobs:
   docker:
     needs: [version-bump, publish-cli]
     if: inputs.packages == 'all' || inputs.packages == 'cli'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
@@ -291,7 +291,7 @@ jobs:
   smoke-test-docker:
     needs: [version-bump, docker]
     if: inputs.packages == 'all' || inputs.packages == 'cli'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       IMAGE: ghcr.io/${{ github.repository }}:${{ needs.version-bump.outputs.cli-version }}
     steps:
@@ -335,7 +335,7 @@ jobs:
   smoke-test-cli:
     needs: publish-cli
     if: inputs.packages == 'all' || inputs.packages == 'cli'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Install CLI from GitHub Packages
         run: |
@@ -371,7 +371,7 @@ jobs:
   smoke-test-engine:
     needs: publish-engine
     if: inputs.packages == 'all' || inputs.packages == 'engine'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Install engine from GitHub Packages
         run: |
@@ -423,7 +423,7 @@ jobs:
   github-release:
     needs: [version-bump, test, publish-engine, publish-engine-npm, publish-cli, publish-cli-npm, docker, smoke-test-docker, smoke-test-cli, smoke-test-engine]
     if: always() && needs.test.result == 'success'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
