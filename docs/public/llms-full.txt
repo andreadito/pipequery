@@ -3,7 +3,9 @@
 > A pipe-based query language for filtering, transforming, and aggregating data in JavaScript and TypeScript. Zero dependencies.
 
 Package: `@vaultgradient/pipequery-lang`
-Version: 1.0.0 (beta)
+Version: 1.12.3
+CLI package: `@vaultgradient/pipequery-cli` (v0.13.3)
+Runtime: Browser + Node.js 24+
 License: MIT
 Repository: https://github.com/andreadito/pipequery
 Docs: https://andreadito.github.io/pipequery/
@@ -478,6 +480,8 @@ PipeQuery ships a CLI tool (`pq`) for building data pipelines, live REST APIs, a
 npm install -g @vaultgradient/pipequery-cli
 ```
 
+Requires Node.js 24+. Also published to GitHub Packages as `@andreadito/pq` (requires `@andreadito:registry=https://npm.pkg.github.com` in `.npmrc`), and as a Docker image at `ghcr.io/andreadito/pipequery` (see "Docker & Remote Deployment").
+
 ### Key Feature: Instant API Endpoints
 
 Create live JSON API endpoints on the fly without editing config files. Just run a command and the endpoint is immediately available:
@@ -512,7 +516,7 @@ curl http://localhost:3000/api/top-coins
 | `pq endpoint add <path> -q <expr> -c <ttl>` | Create with response caching (e.g. `-c 30s`) |
 | `pq endpoint list` | List all registered endpoints |
 | `pq endpoint remove <path>` | Remove an endpoint |
-| `pq source add <name> -t <type> ...` | Add a data source at runtime (rest, websocket, file, static, postgres, mysql, sqlite, kafka) |
+| `pq source add <name> -t <type> ...` | Add a data source at runtime (rest, websocket, file, static, postgres, mysql, sqlite, kafka, snowflake, clickhouse, mongodb) |
 | `pq source list` | List data sources and their health status |
 | `pq source remove <name>` | Remove a data source |
 | `pq dashboard` | Launch the default terminal dashboard |
@@ -811,7 +815,13 @@ watches:
 
 The `pq` server and CLI are fully decoupled. You can run the server in Docker (locally or on a remote machine) and control it from your local terminal.
 
-**Run locally with Docker Desktop:**
+**Prebuilt image (GHCR):** every CLI release publishes a multi-arch image (`linux/amd64` + `linux/arm64`, so it runs natively on Apple Silicon and ARM servers) tagged `latest` and with the CLI version (e.g. `0.13.3`):
+```bash
+docker run -d -p 3000:3000 ghcr.io/andreadito/pipequery:latest
+pq remote connect http://localhost:3000
+```
+
+**Build locally with Docker Desktop:**
 ```bash
 docker build -t pipequery .
 docker run -d -p 3000:3000 pipequery
@@ -863,6 +873,33 @@ pq remote connect https://my-server.example.com:3000
 | `/api/_control/refresh` | POST | Force refresh all sources |
 | `/api/_control/sse?queries=<json>` | GET | SSE stream for dashboard queries |
 | `/api/_control/activity` | GET | Recent server activity log |
+
+### Programmatic use (embedding the CLI internals)
+
+Besides the `pq` binary, the CLI package exposes two library entry points (ESM, with `.d.ts` types) for embedding scenarios such as a custom MCP gateway or your own server:
+
+| Import path | Exports |
+|-------------|---------|
+| `@andreadito/pq/engine` | `query`, `compile`, `parseQuery`, `clearCache`, `liveQuery`, `LiveQuery` (+ types `DataContext`, `CompiledQuery`, `LiveQueryOptions`, `LiveQueryStats`) |
+| `@andreadito/pq/sources` | `SourceManager` (+ type `DataContext`) |
+
+The same subpaths are available on the public npm mirror (`@vaultgradient/pipequery-cli/engine`, `@vaultgradient/pipequery-cli/sources`).
+
+```ts
+import { SourceManager } from '@andreadito/pq/sources';
+
+const sm = new SourceManager(process.cwd());
+await sm.addSource('orders', { type: 'postgres', url: process.env.DATABASE_URL!, query: 'SELECT * FROM orders' });
+
+// Push-down is tried first (SQL / Mongo); falls back to the in-process engine.
+const rows = await sm.runQuery("orders | where(status == 'paid') | sort(total desc) | first(5)");
+
+sm.getAllStatuses();          // per-source health
+sm.onSourceUpdate((name, data) => { /* live updates */ });
+await sm.dispose();
+```
+
+Other `SourceManager` methods: `removeSource(name)`, `getContext()`, `getSourceData(name)`, `getSourceStatus(name)`, `getSourceNames()`, `refreshAll()`, `tryPushdown(expression)`.
 
 ---
 
