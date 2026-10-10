@@ -10,6 +10,7 @@ import DashboardHeader from './DashboardHeader';
 import QueryPanel from './QueryPanel';
 import SettingsDrawer from './SettingsDrawer';
 import AddPanelDialog from './AddPanelDialog';
+import { C } from '../tokens';
 
 export default function Dashboard() {
   const [fredApiKey, setFredApiKey] = useLocalStorage('pq-demo-fred-key', '');
@@ -180,19 +181,21 @@ export default function Dashboard() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 1,
-                  border: '2px dashed rgba(91,156,246,0.2)',
-                  bgcolor: 'rgba(91,156,246,0.02)',
+                  border: '1px dashed',
+                  borderColor: C.borderHover,
+                  bgcolor: 'transparent',
+                  color: C.textMuted,
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'border-color 0.15s, color 0.15s, background-color 0.15s',
                   '&:hover': {
-                    borderColor: 'rgba(91,156,246,0.4)',
-                    bgcolor: 'rgba(91,156,246,0.06)',
+                    borderColor: C.blue,
+                    color: C.blue,
+                    bgcolor: C.surface,
                   },
                 }}
               >
-                <AddIcon sx={{ fontSize: 32, color: 'rgba(91,156,246,0.4)', mb: 1 }} />
-                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                <AddIcon sx={{ fontSize: 24, color: 'inherit', mb: 1 }} />
+                <Typography variant="body2" sx={{ color: 'inherit', fontSize: '0.78rem' }}>
                   Add Panel
                 </Typography>
               </Box>

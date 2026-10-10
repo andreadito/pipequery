@@ -16,6 +16,7 @@ import QueryEditor from './QueryEditor';
 import QueryDisplay from './QueryDisplay';
 import SmartRenderer from './SmartRenderer';
 import PipeQueryBuilder from '../../../src/react/PipeQueryBuilder';
+import { C, alpha, FONT_MONO } from '../tokens';
 
 interface QueryPanelProps {
   config: PanelConfig;
@@ -113,7 +114,7 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
     return (
       <Paper sx={{ p: 1.5, height: '100%', position: 'relative', overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
+          <Typography variant="caption" sx={{ color: C.textMuted, fontSize: '0.66rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {config.title}
           </Typography>
           <Box>
@@ -155,17 +156,17 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
               mt: 0.5,
               px: 0.75,
               py: 0.25,
-              borderRadius: 0.5,
-              bgcolor: 'rgba(91,156,246,0.06)',
-              border: '1px solid rgba(91,156,246,0.1)',
-              fontFamily: '"JetBrains Mono", monospace',
+              bgcolor: C.bg,
+              border: '1px solid',
+              borderColor: C.border,
+              fontFamily: FONT_MONO,
               fontSize: '0.6rem',
-              color: '#8bbcff',
+              color: C.textMuted,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               cursor: 'pointer',
-              '&:hover': { borderColor: 'rgba(91,156,246,0.3)', bgcolor: 'rgba(91,156,246,0.1)' },
+              '&:hover': { borderColor: C.borderHover, color: C.text },
             }}
           >
             {currentQuery}
@@ -184,7 +185,7 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
           <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
             {config.title}
           </Typography>
-          {isModified && <Chip label="modified" size="small" sx={{ height: 18, fontSize: '0.6rem' }} color="primary" variant="outlined" />}
+          {isModified && <Chip label="modified" size="small" sx={{ height: 18, fontSize: '0.6rem', borderColor: alpha(C.blue, 0.5) }} color="primary" variant="outlined" />}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
           {isModified && (
@@ -214,7 +215,7 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
           {onDelete && (
             <Tooltip title="Delete panel">
               <IconButton size="small" onClick={onDelete} sx={{ ml: 0.25 }}>
-                <DeleteOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', '&:hover': { color: '#ef5350' } }} />
+                <DeleteOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', '&:hover': { color: C.down } }} />
               </IconButton>
             </Tooltip>
           )}
@@ -244,16 +245,16 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
         slotProps={{
           paper: {
             sx: {
-              bgcolor: '#1a1f2e',
-              border: '1px solid rgba(91,156,246,0.2)',
-              borderRadius: 2,
+              bgcolor: C.surface,
+              border: '1px solid',
+              borderColor: C.borderHover,
               maxHeight: '80vh',
             },
           },
         }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5, px: 2, borderBottom: '1px solid rgba(91,156,246,0.1)' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#8bbcff' }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5, px: 2, borderBottom: '1px solid', borderColor: C.border }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: C.text }}>
             Visual Query Builder — {config.title}
           </Typography>
           <IconButton size="small" onClick={closeBuilder} sx={{ color: 'text.secondary' }}>
@@ -278,8 +279,8 @@ export default function QueryPanel({ config, context, savedQuery, onQuerySave, t
       {/* Result area */}
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {error ? (
-          <Box sx={{ p: 1, bgcolor: 'rgba(239,83,80,0.08)', borderRadius: 1, border: '1px solid rgba(239,83,80,0.2)' }}>
-            <Typography variant="caption" color="error" sx={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>
+          <Box sx={{ p: 1, bgcolor: alpha(C.down, 0.06), borderLeft: '2px solid', borderColor: C.down }}>
+            <Typography variant="caption" sx={{ color: C.down, fontFamily: FONT_MONO, fontSize: '0.72rem' }}>
               {error}
             </Typography>
           </Box>

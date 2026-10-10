@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import { pipeQuery } from '../../../src/highlighting/codemirror/index';
 import { Box } from '@mui/material';
 import { formatQuery } from './QueryDisplay';
+import { themedPipeQuery } from './themedPipeQuery';
+import { C, alpha, FONT_MONO } from '../tokens';
 
 /** Flatten a multi-line query back to a single-line pipe string. */
 function flattenQuery(q: string): string {
@@ -19,44 +20,43 @@ const cmTheme = EditorView.theme(
   {
     '&': {
       backgroundColor: 'transparent',
-      color: '#e0e6ed',
-      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      color: C.text,
+      fontFamily: FONT_MONO,
       fontSize: '0.78rem',
       lineHeight: '1.6',
     },
-    '.cm-content': { padding: '4px 0', caretColor: '#e0e6ed' },
+    '.cm-content': { padding: '4px 0', caretColor: C.text },
     '.cm-line': { padding: '0 2px' },
     '&.cm-focused': { outline: 'none' },
-    '.cm-cursor': { borderLeftColor: '#5b9cf6' },
-    '.cm-selectionBackground': { backgroundColor: 'rgba(91,156,246,0.2) !important' },
-    '&.cm-focused .cm-selectionBackground': { backgroundColor: 'rgba(91,156,246,0.3) !important' },
+    '.cm-cursor': { borderLeftColor: C.blue },
+    '.cm-selectionBackground': { backgroundColor: `${alpha(C.blue, 0.2)} !important` },
+    '&.cm-focused .cm-selectionBackground': { backgroundColor: `${alpha(C.blue, 0.3)} !important` },
     '.cm-gutters': { display: 'none' },
     '.cm-scroller': { overflow: 'auto' },
-    // Autocomplete dropdown dark theme
+    // Autocomplete dropdown
     '.cm-tooltip': {
-      backgroundColor: '#1a1f2e !important',
-      border: '1px solid rgba(91,156,246,0.25) !important',
-      borderRadius: '6px',
+      backgroundColor: `${C.surface} !important`,
+      color: C.text,
+      border: `1px solid ${C.borderHover} !important`,
     },
     '.cm-tooltip-autocomplete': {
       '& > ul': {
-        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+        fontFamily: FONT_MONO,
         fontSize: '0.75rem',
       },
       '& > ul > li': {
         padding: '3px 8px',
       },
       '& > ul > li[aria-selected]': {
-        backgroundColor: 'rgba(91,156,246,0.2) !important',
-        color: '#e0e6ed',
+        backgroundColor: `${alpha(C.blue, 0.16)} !important`,
+        color: C.text,
       },
     },
-    '.cm-completionLabel': { color: '#e0e6ed' },
-    '.cm-completionDetail': { color: '#546e7a', fontStyle: 'italic', marginLeft: '8px' },
-    '.cm-completionMatchedText': { color: '#ffcb6b', textDecoration: 'none', fontWeight: '600' },
+    '.cm-completionLabel': { color: C.text },
+    '.cm-completionDetail': { color: C.textDim, fontStyle: 'italic', marginLeft: '8px' },
+    '.cm-completionMatchedText': { color: C.blue, textDecoration: 'none', fontWeight: '600' },
     '.cm-completionIcon': { opacity: '0.7' },
   },
-  { dark: true },
 );
 
 interface QueryEditorProps {
@@ -88,7 +88,7 @@ export default function QueryEditor({ value, onChange, fields, sources }: QueryE
       doc: formatted,
       extensions: [
         cmTheme,
-        pipeQuery({
+        themedPipeQuery({
           completion: {
             fields: () => fieldsRef.current ?? [],
             sources: () => sourcesRef.current ?? [],
@@ -131,12 +131,13 @@ export default function QueryEditor({ value, onChange, fields, sources }: QueryE
     <Box
       ref={containerRef}
       sx={{
-        bgcolor: 'rgba(0,0,0,0.3)',
-        borderRadius: 1,
-        border: '1px solid rgba(91,156,246,0.2)',
+        bgcolor: C.bg,
+        border: '1px solid',
+        borderColor: C.border,
         p: 1,
         minHeight: 36,
-        '&:focus-within': { borderColor: 'rgba(91,156,246,0.5)' },
+        transition: 'border-color 0.15s',
+        '&:focus-within': { borderColor: C.blue },
       }}
     />
   );

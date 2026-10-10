@@ -7,6 +7,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import type { PanelConfig } from '../config/defaultPanels';
 import QueryEditor from './QueryEditor';
+import { C } from '../tokens';
 
 interface AddPanelDialogProps {
   open: boolean;
@@ -76,9 +77,9 @@ export default function AddPanelDialog({ open, onClose, onAdd, availableSources,
       slotProps={{
         paper: {
           sx: {
-            bgcolor: '#1a1f2e',
-            border: '1px solid rgba(91,156,246,0.2)',
-            borderRadius: 2,
+            bgcolor: C.surface,
+            border: '1px solid',
+            borderColor: C.borderHover,
           },
         },
       }}

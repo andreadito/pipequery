@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import DataTable from './DataTable';
 import ChartRenderer from './ChartRenderer';
+import { FONT_MONO } from '../tokens';
 
 function fmtCell(v: unknown): string {
   if (typeof v === 'number') {
@@ -35,7 +36,7 @@ export default function SmartRenderer({ result, vizHint }: SmartRendererProps) {
   if (typeof result === 'number' || typeof result === 'string') {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1.3rem' }}>
+        <Typography variant="h5" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '1.3rem', fontFamily: FONT_MONO, letterSpacing: '-0.02em' }}>
           {typeof result === 'number' ? fmtStat(result) : result}
         </Typography>
       </Box>
@@ -51,7 +52,7 @@ export default function SmartRenderer({ result, vizHint }: SmartRendererProps) {
       const vals = Object.values(rows[0]);
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', fontFamily: FONT_MONO, letterSpacing: '-0.02em' }}>
             {vals.map((v) => (typeof v === 'number' ? fmtStat(v) : String(v))).join(' · ')}
           </Typography>
         </Box>
@@ -97,7 +98,7 @@ export default function SmartRenderer({ result, vizHint }: SmartRendererProps) {
 
   // Fallback
   return (
-    <Box sx={{ p: 1, fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary', overflow: 'auto' }}>
+    <Box sx={{ p: 1, fontFamily: FONT_MONO, fontSize: '0.75rem', color: 'text.secondary', overflow: 'auto' }}>
       <pre>{JSON.stringify(result, null, 2)}</pre>
     </Box>
   );
