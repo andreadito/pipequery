@@ -1,20 +1,14 @@
 import { useState } from 'react';
-import { Box, Typography, alpha } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import Playground from './demo/Playground.tsx';
 import Docs from './demo/Docs.tsx';
 import HomePage from './demo/HomePage.tsx';
 import pkgJson from '../../package.json';
+import { C, FONT_MONO, FONT_SANS } from './tokens';
+import { ThemeToggle } from './colorMode';
 
 type View = 'home' | 'playground' | 'docs';
-
-const C = {
-  bg: '#0a0e14',
-  border: 'rgba(255,255,255,0.06)',
-  blue: '#5b9cf6',
-  text: '#e0e6ed',
-  textMuted: '#8899aa',
-};
 
 export default function App() {
   const [view, setView] = useState<View>('home');
@@ -28,13 +22,12 @@ export default function App() {
       {/* ── Navbar matching homepage ── */}
       <Box sx={{
         position: 'sticky', top: 0, zIndex: 100,
-        backdropFilter: 'blur(12px)',
-        bgcolor: alpha(C.bg, 0.8),
+        bgcolor: C.bg,
         borderBottom: '1px solid', borderColor: C.border,
       }}>
         <Box sx={{
           maxWidth: 1120, mx: 'auto', px: { xs: 2, md: 4 },
-          display: 'flex', alignItems: 'center', height: 56,
+          display: 'flex', alignItems: 'center', height: 48,
         }}>
           {/* Logo */}
           <Box
@@ -42,26 +35,25 @@ export default function App() {
             sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1, cursor: 'pointer' }}
           >
             <Box component="span" sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 22, fontWeight: 700, color: C.blue, lineHeight: 1,
-              textShadow: `0 0 20px ${alpha(C.blue, 0.5)}, 0 0 40px ${alpha(C.blue, 0.2)}`,
+              fontFamily: FONT_MONO,
+              fontSize: 20, fontWeight: 700, color: C.blue, lineHeight: 1,
             }}>
               |
             </Box>
             <Typography sx={{
-              fontSize: '1.1rem', fontWeight: 700, color: C.text,
-              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.95rem', fontWeight: 600, color: C.text,
+              fontFamily: FONT_MONO,
               letterSpacing: '-0.02em',
             }}>
               PipeQuery
             </Typography>
             <Box sx={{
-              ml: 0.5, px: 0.8, py: 0.15, borderRadius: 0.8,
-              bgcolor: alpha(C.blue, 0.1), border: '1px solid', borderColor: alpha(C.blue, 0.2),
+              ml: 0.5, px: 0.6, py: 0.1,
+              border: '1px solid', borderColor: C.border,
             }}>
               <Typography sx={{
-                fontSize: '0.65rem', fontWeight: 600, color: C.blue,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.65rem', fontWeight: 500, color: C.textMuted,
+                fontFamily: FONT_MONO,
               }}>
                 v{pkgJson.version}
               </Typography>
@@ -75,18 +67,17 @@ export default function App() {
                 key={v}
                 onClick={() => setView(v)}
                 sx={{
-                  fontSize: '0.85rem', fontWeight: 500,
+                  fontSize: '0.8rem', fontWeight: 500,
                   color: view === v ? C.text : C.textMuted,
                   cursor: 'pointer', transition: 'color 0.2s',
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: FONT_SANS,
                   position: 'relative',
                   '&:hover': { color: C.text },
                   ...(view === v && {
                     '&::after': {
                       content: '""', position: 'absolute',
-                      bottom: -18, left: 0, right: 0, height: 2,
+                      bottom: -15, left: 0, right: 0, height: 2,
                       bgcolor: C.blue,
-                      borderRadius: 1,
                     },
                   }),
                 }}
@@ -104,8 +95,9 @@ export default function App() {
                 transition: 'color 0.2s', '&:hover': { color: C.text },
               }}
             >
-              <GitHubIcon sx={{ fontSize: 20 }} />
+              <GitHubIcon sx={{ fontSize: 18 }} />
             </Box>
+            <ThemeToggle />
           </Box>
         </Box>
       </Box>

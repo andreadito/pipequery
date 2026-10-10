@@ -8,36 +8,22 @@ import {
   FormControl,
   ToggleButton,
   ToggleButtonGroup,
-  alpha,
 } from '@mui/material';
+import { C, alpha, FONT_MONO, FONT_SANS } from '../tokens';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
-import { pipeQuery } from '../../../src/highlighting/codemirror/index.ts';
+import { HighlightStyle, LanguageSupport, StreamLanguage, syntaxHighlighting, type StreamParser } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
+import { pipeQueryStreamParser } from '../../../src/highlighting/codemirror/language.ts';
+import { pipeQueryCompletion } from '../../../src/highlighting/codemirror/index.ts';
 import { query } from '../../../src/engine/index.ts';
 import { DATASETS, EXAMPLE_QUERIES } from './sample-data.ts';
 import { PipeQueryBuilder } from '../../../src/react/index.ts';
 import LivePanel from './LivePanel.tsx';
 import BenchmarkPanel from './BenchmarkPanel.tsx';
 
-// ─── Palette (matches homepage) ─────────────────────────────────────────────
-
-const C = {
-  bg: '#0a0e14',
-  surface: '#131920',
-  surfaceAlt: '#0f141b',
-  border: 'rgba(255,255,255,0.06)',
-  blue: '#5b9cf6',
-  orange: '#ff9800',
-  text: '#e0e6ed',
-  textMuted: '#8899aa',
-  textDim: '#556677',
-  number: '#f78c6c',
-  string: '#c3e88d',
-  bool: '#c792ea',
-};
-
-const mono = '"JetBrains Mono", "Fira Code", monospace';
-const sans = '"DM Sans", sans-serif';
+const mono = FONT_MONO;
+const sans = FONT_SANS;
 
 // ─── CodeMirror theme ───────────────────────────────────────────────────────
 
@@ -63,10 +49,10 @@ const cmTheme = EditorView.theme({
     borderLeftColor: C.text,
   },
   '.cm-selectionBackground': {
-    backgroundColor: 'rgba(91, 156, 246, 0.2) !important',
+    backgroundColor: `${alpha(C.blue, 0.2)} !important`,
   },
   '&.cm-focused .cm-selectionBackground': {
-    backgroundColor: 'rgba(91, 156, 246, 0.3) !important',
+    backgroundColor: `${alpha(C.blue, 0.3)} !important`,
   },
   '.cm-gutters': {
     display: 'none',
@@ -75,7 +61,30 @@ const cmTheme = EditorView.theme({
     overflow: 'auto',
     maxHeight: `${1.5 * 0.82 * 16 * 6}px`,
   },
-}, { dark: true });
+});
+
+// Same parser + autocomplete as `pipeQuery()`, but with a highlight style that
+// reads the site's CSS variables so it follows the light/dark theme.
+const themedHighlight = HighlightStyle.define([
+  { tag: tags.keyword, color: C.keyword, fontWeight: '600' },
+  { tag: tags.function(tags.variableName), color: C.fn },
+  { tag: tags.variableName, color: C.field },
+  { tag: tags.string, color: C.string },
+  { tag: tags.number, color: C.number },
+  { tag: tags.operator, color: C.operator },
+  { tag: tags.punctuation, color: C.operator },
+  { tag: tags.lineComment, color: C.comment, fontStyle: 'italic' },
+]);
+
+function themedPipeQuery() {
+  // The engine is typed against the root @codemirror/language copy; Vite dedupes
+  // it at runtime (see vite.config.ts), so only the declarations differ.
+  const parser = pipeQueryStreamParser as unknown as StreamParser<unknown>;
+  return new LanguageSupport(StreamLanguage.define(parser), [
+    syntaxHighlighting(themedHighlight),
+    pipeQueryCompletion(),
+  ]);
+}
 
 // ─── CodeMirror editor component ────────────────────────────────────────────
 
@@ -92,7 +101,7 @@ function CodeMirrorEditor({ value, onChange }: { value: string; onChange: (v: st
       doc: value,
       extensions: [
         cmTheme,
-        pipeQuery(),
+        themedPipeQuery(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChangeRef.current(update.state.doc.toString());
@@ -182,13 +191,13 @@ function DataTable({ data }: { data: Record<string, unknown>[] }) {
             py: 0.4,
             whiteSpace: 'nowrap',
             borderBottom: '1px solid',
-            borderColor: 'rgba(255,255,255,0.02)',
+            borderColor: alpha(C.text, 0.02),
             maxWidth: 280,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           },
           '& tr:hover td': {
-            bgcolor: 'rgba(255,255,255,0.02)',
+            bgcolor: alpha(C.text, 0.02),
           },
         }}
       >
