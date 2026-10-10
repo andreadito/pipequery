@@ -59,7 +59,8 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
-    "gcp-metadata": "^8.0.0"
+    "gcp-metadata": "^8.0.0",
+    "esbuild": "^0.28.1"
   },
   "repository": {
     "type": "git",

@@ -140,5 +140,9 @@
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "postcss": "^8.5.23"
   }
 }
