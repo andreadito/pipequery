@@ -1,6 +1,6 @@
 {
   "name": "@andreadito/pq",
-  "version": "0.13.3",
+  "version": "0.14.0",
   "description": "CLI for PipeQuery — data sources, aggregations, APIs, and terminal dashboards",
   "type": "module",
   "bin": {
