@@ -1,3 +1,6 @@
+import { parseQuery, printQuery, printExpression } from '../engine/index';
+import type { Operation, Pipeline } from '../engine/index';
+
 // ─── Operation Types ────────────────────────────────────────────────────────
 
 export type OperationType =
@@ -179,9 +182,27 @@ export function generateQuery(source: string, steps: PipelineStep[]): string {
   const parts = [source];
   for (const { step } of steps) {
     const dsl = stepToDsl(step);
-    if (dsl) parts.push(dsl);
+    if (dsl) parts.push(normalizeFragment(dsl));
   }
   return parts.join(' | ');
+}
+
+const FRAGMENT_PREFIX = '_data | ';
+
+/**
+ * Parse a single `op(...)` fragment with the engine parser and print it back in
+ * canonical form. Anything the parser rejects (incomplete input, unsupported
+ * syntax) is returned untouched so the builder never breaks while typing.
+ */
+function normalizeFragment(fragment: string): string {
+  try {
+    const ast = parseQuery(FRAGMENT_PREFIX + fragment);
+    if (ast.operations.length !== 1) return fragment;
+    const printed = printQuery(ast);
+    return printed.startsWith(FRAGMENT_PREFIX) ? printed.slice(FRAGMENT_PREFIX.length) : fragment;
+  } catch {
+    return fragment;
+  }
 }
 
 function stepToDsl(step: StepConfig): string | null {
@@ -438,7 +459,9 @@ function findTopLevelComma(input: string): number {
  * Parse a pipequery DSL string into a source and array of PipelineSteps.
  * This is the inverse of `generateQuery()`.
  *
- * Best-effort: unrecognised operations are silently skipped.
+ * The query is parsed with the engine parser and the AST is mapped to step configs.
+ * If the query does not parse or contains something a step cannot represent, the
+ * best-effort string splitter is used instead (unrecognised operations are skipped).
  *
  * @example
  * ```ts
@@ -450,6 +473,88 @@ function findTopLevelComma(input: string): number {
 export function parseQueryToSteps(query: string): { source: string; steps: PipelineStep[] } {
   if (!query || !query.trim()) return { source: '', steps: [] };
 
+  try {
+    const ast = parseQuery(query.trim());
+    const configs = astToStepConfigs(ast);
+    if (configs) {
+      return {
+        source: ast.source,
+        steps: configs.map((step, i) => ({ id: `pq_${i}`, step })),
+      };
+    }
+  } catch {
+    // fall through to the best-effort splitter
+  }
+  return legacyParseQueryToSteps(query);
+}
+
+function astToStepConfigs(ast: Pipeline): StepConfig[] | null {
+  const out: StepConfig[] = [];
+  for (const op of ast.operations) {
+    const step = astOpToStep(op);
+    if (!step) return null;
+    out.push(step);
+  }
+  return out;
+}
+
+function astOpToStep(op: Operation): StepConfig | null {
+  switch (op.kind) {
+    case 'WhereOp':
+      return { type: 'where', config: { condition: printExpression(op.condition) } };
+    case 'SelectOp': {
+      const fields: string[] = [];
+      const expressions: string[] = [];
+      for (const f of op.fields) {
+        (f.kind === 'FieldAccess' ? fields : expressions).push(printExpression(f));
+      }
+      return { type: 'select', config: { fields, expressions } };
+    }
+    case 'SortOp':
+      return {
+        type: 'sort',
+        config: {
+          criteria: op.criteria.map(c => ({ field: printExpression(c.expression), direction: c.direction })),
+        },
+      };
+    case 'GroupByOp':
+      return { type: 'groupBy', config: { fields: op.keys.map(printExpression) } };
+    case 'JoinOp':
+      return { type: 'join', config: { rightSource: op.right, condition: printExpression(op.condition) } };
+    case 'FirstOp':
+      return { type: 'first', config: { count: op.count } };
+    case 'LastOp':
+      return { type: 'last', config: { count: op.count } };
+    case 'DistinctOp':
+      return { type: 'distinct', config: { fields: (op.fields ?? []).map(printExpression) } };
+    case 'MapOp':
+      return { type: 'map', config: { expressions: op.fields.map(printExpression) } };
+    case 'ReduceOp':
+      return {
+        type: 'reduce',
+        config: { initial: printExpression(op.initial), accumulator: printExpression(op.accumulator) },
+      };
+    case 'RollupOp':
+      return {
+        type: 'rollup',
+        config: { keys: op.keys.map(printExpression), aggregates: op.aggregates.map(printExpression) },
+      };
+    case 'PivotOp':
+      return {
+        type: 'pivot',
+        config: { pivotField: printExpression(op.pivotField), aggregates: op.aggregates.map(printExpression) },
+      };
+    case 'FlattenOp':
+      return { type: 'flatten', config: { field: op.field ? printExpression(op.field) : '' } };
+    case 'TransposeOp':
+      return { type: 'transpose', config: { headerField: op.headerField ? printExpression(op.headerField) : '' } };
+    default:
+      // Terminal aggregates (e.g. `| sum(price)`) have no step representation.
+      return null;
+  }
+}
+
+function legacyParseQueryToSteps(query: string): { source: string; steps: PipelineStep[] } {
   const segments = splitTopLevel(query.trim(), '|');
   if (segments.length === 0) return { source: '', steps: [] };
 

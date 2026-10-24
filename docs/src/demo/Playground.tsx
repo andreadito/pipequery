@@ -21,6 +21,7 @@ import { DATASETS, EXAMPLE_QUERIES } from './sample-data.ts';
 import { PipeQueryBuilder } from '../../../src/react/index.ts';
 import LivePanel from './LivePanel.tsx';
 import BenchmarkPanel from './BenchmarkPanel.tsx';
+import TypeScriptPanel from './TypeScriptPanel.tsx';
 
 const mono = FONT_MONO;
 const sans = FONT_SANS;
@@ -263,7 +264,7 @@ export default function Playground() {
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
-  const [mode, setMode] = useState<'editor' | 'builder' | 'live' | 'bench'>('editor');
+  const [mode, setMode] = useState<'editor' | 'builder' | 'typescript' | 'live' | 'bench'>('editor');
   const [resultView, setResultView] = useState<'table' | 'json'>('table');
   const [showSource, setShowSource] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -276,7 +277,7 @@ export default function Playground() {
   }, []);
 
   const execute = useCallback(() => {
-    if (mode === 'live') return;
+    if (mode === 'live' || mode === 'typescript') return;
     setError(null);
     const dataset = DATASETS[selectedDataset];
     if (!dataset) return;
@@ -396,6 +397,7 @@ export default function Playground() {
         >
           <ToggleButton value="editor">Editor</ToggleButton>
           <ToggleButton value="builder">Builder</ToggleButton>
+          <ToggleButton value="typescript">TypeScript</ToggleButton>
           <ToggleButton value="live">Live</ToggleButton>
           <ToggleButton value="bench">Bench</ToggleButton>
         </ToggleButtonGroup>
@@ -594,6 +596,14 @@ export default function Playground() {
             rowCount={Array.isArray(dataContext[builderSource]) ? dataContext[builderSource].length : 0}
           />
         </Box>
+      ) : mode === 'typescript' ? (
+        <TypeScriptPanel
+          dataContext={dataContext}
+          selectedDataset={selectedDataset}
+          onDatasetChange={handleDatasetChange}
+          setQueryText={setQueryText}
+          onOpenInEditor={() => setMode('editor')}
+        />
       ) : mode === 'live' ? (
         <Box sx={{ flex: 1, overflow: 'auto', p: 1.5 }}>
           <LivePanel

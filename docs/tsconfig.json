@@ -6,6 +6,10 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "paths": {
+      "@andreadito/pipequery-lang": ["../src/engine/index.ts"],
+      "@andreadito/pipequery-lang/builder": ["../src/builder/index.ts"]
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -13,6 +17,6 @@
     "jsx": "react-jsx",
     "strict": true
   },
-  "include": ["src", "../src/engine"],
+  "include": ["src", "../src/engine", "../src/builder"],
   "exclude": ["../src/react", "../src/highlighting"]
 }

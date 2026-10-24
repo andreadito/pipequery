@@ -1,11 +1,13 @@
 import { tokenize } from './lexer';
 import { parse } from './parser';
-import { compile as compileAst } from './compiler';
+import { compile as compilePipeline } from './compiler';
+import { printQuery } from './print';
 import { QueryCache } from './cache';
 import type { CompiledQuery, Pipeline, DataContext, RowData } from './types';
 
 export { DataWeaveError, LexerError, ParseError, RuntimeError } from './types';
 export type { CompiledQuery, Pipeline, Expression, Operation, DataContext } from './types';
+export { printQuery, printExpression } from './print';
 export { LiveQuery, liveQuery } from './live';
 export type { LiveQueryOptions, LiveQueryStats, LiveQuerySubscriber } from './live';
 
@@ -34,7 +36,7 @@ export function compile(expression: string, useCache = true): CompiledQuery {
 
   const tokens = tokenize(expression);
   const ast = parse(tokens);
-  const fn = compileAst(ast, expression);
+  const fn = compilePipeline(ast, expression);
 
   if (useCache) {
     defaultCache.set(expression, fn);
@@ -51,6 +53,14 @@ export function query(context: DataContext | RowData[], expression: string): unk
   }
   const fn = compile(expression);
   return fn(context);
+}
+
+/**
+ * Compile an AST directly, skipping the print and re-parse round trip.
+ * `.source` of the result is the canonical printed form of the AST.
+ */
+export function compileAst(ast: Pipeline): CompiledQuery {
+  return compilePipeline(ast, printQuery(ast));
 }
 
 export function parseQuery(expression: string): Pipeline {

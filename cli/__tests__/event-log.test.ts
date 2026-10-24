@@ -213,8 +213,7 @@ describe('createEventLogger — JSONL file output', () => {
     ];
     for (const e of events) logger.log(e);
 
-    // Give appendFile a tick to flush.
-    await new Promise((r) => setTimeout(r, 50));
+    await logger.flush();
     const content = await readFile(file, 'utf8');
     const lines = content.trim().split('\n');
     expect(lines).toHaveLength(3);
@@ -258,7 +257,7 @@ describe('createEventLogger — JSONL file output', () => {
       now: () => FIXED_TS,
     });
     logger.log({ kind: 'command', user: { id: 1 }, cmd: '/help', outcome: 'success', latencyMs: 1 });
-    await new Promise((r) => setTimeout(r, 50));
+    await logger.flush();
     const obj = JSON.parse((await readFile(file, 'utf8')).trim()) as Record<string, unknown>;
     expect(obj.rowCount).toBeUndefined();
     expect(obj.error).toBeUndefined();

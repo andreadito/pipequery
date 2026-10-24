@@ -20,6 +20,16 @@
         "default": "./dist/engine/index.cjs"
       }
     },
+    "./builder": {
+      "import": {
+        "types": "./dist/builder/index.d.ts",
+        "default": "./dist/builder/index.js"
+      },
+      "require": {
+        "types": "./dist/builder/index.d.cts",
+        "default": "./dist/builder/index.cjs"
+      }
+    },
     "./highlighting": {
       "import": {
         "types": "./dist/highlighting/index.d.ts",
