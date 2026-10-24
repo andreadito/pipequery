@@ -657,9 +657,8 @@ const HERO_MODES = [
       "items",
       "  | where(price > 100)",
       "  | sort(price desc)",
-      "  | select(name, price, category)",
       "  | groupBy(category)",
-      "  | rollup(sum(price) as total, count() as n)",
+      "  | select(category, sum(price) as total, count() as n)",
     ],
   },
   {
@@ -1019,7 +1018,7 @@ function BuildHeroDemo() {
           </Box>{" "}
           <Box component="span" sx={{ color: C.text }}>
             {hl(
-              "trades | where(price > 100) | sort(price desc) | groupBy(sector) | rollup(sum(price) as total)",
+              "trades | where(price > 100) | sort(price desc) | groupBy(sector) | select(sector, sum(price) as total)",
             )}
           </Box>
         </Box>

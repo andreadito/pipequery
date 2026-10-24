@@ -94,7 +94,7 @@ function highlightTS(code: string): React.JSX.Element[] {
       parts.push(<span key={i++} style={{ color: OPERATOR_COLOR }}>{full}</span>);
     } else if (word && TS_KEYWORDS.has(word)) {
       parts.push(<span key={i++} style={{ color: KEYWORD_COLOR, fontWeight: 600 }}>{full}</span>);
-    } else if (word && (word === 'query' || word === 'compile' || word === 'liveQuery' || word === 'parseQuery' || word === 'clearCache' || word === 'subscribe' || word === 'patch' || word === 'reset' || word === 'setQuery' || word === 'beginBatch' || word === 'endBatch' || word === 'dispose' || word === 'console' || word === 'log' || word === 'performance' || word === 'now')) {
+    } else if (word && (word === 'query' || word === 'compile' || word === 'parseQuery' || word === 'printQuery' || word === 'printExpression' || word === 'compileAst' || word === 'from' || word === 'liveQuery' || word === 'clearCache' || word === 'subscribe' || word === 'patch' || word === 'reset' || word === 'setQuery' || word === 'beginBatch' || word === 'endBatch' || word === 'dispose' || word === 'console' || word === 'log' || word === 'performance' || word === 'now')) {
       parts.push(<span key={i++} style={{ color: FUNCTION_COLOR }}>{full}</span>);
     } else if (word) {
       parts.push(<span key={i++} style={{ color: FIELD_COLOR }}>{full}</span>);
@@ -306,6 +306,7 @@ const NAV_SECTIONS = [
   { id: 'expressions', label: 'Expressions' },
   { id: 'window-functions', label: 'Window Functions' },
   { id: 'live-queries', label: 'Live Queries' },
+  { id: 'typed-builder', label: 'Typed Builder' },
   { id: 'api-reference', label: 'API Reference' },
   { id: 'builder-component', label: 'Query Builder' },
   { id: 'performance', label: 'Performance' },
@@ -1184,6 +1185,95 @@ lq.dispose();`}</CodeBlock>
           </SubSection>
         </Section>
 
+        {/* ── Typed Builder ── */}
+        <Section id="typed-builder" title="Typed Query Builder">
+          <P>
+            The <Code>@andreadito/pipequery-lang/builder</Code> entry builds the same query AST as the parser,
+            but with fluent TypeScript methods and typed row callbacks. It is headless and does not import React or MUI.
+          </P>
+
+          <SubSection title="Install and start a query">
+            <CodeBlock lang="ts">{`npm install @andreadito/pipequery-lang
+
+import { from } from '@andreadito/pipequery-lang/builder';
+
+type Product = { name: string; price: number; active: boolean };
+
+const query = from<Product>('items')
+  .where((item) => item.price.gt(100).and(item.active.eq(true)))
+  .sort((item) => item.price.desc())
+  .select((item) => ({ name: item.name, price: item.price }));
+
+query.toString(); // items | where(price > 100 && active == true) | sort(price desc) | select(name, price)
+query.run({ items }); // execute against a DataContext`}</CodeBlock>
+            <P>
+              <Code>from&lt;Row&gt;('source')</Code> selects a named table; omit the source to build a query for the <Code>_data</Code> array.
+              Builders are immutable: each method returns a new <Code>Query</Code>, and <Code>toString()</Code> prints canonical pipequery text.
+            </P>
+          </SubSection>
+
+          <SubSection title="Expressions and helpers">
+            <P>
+              Callback fields are typed expressions with comparison, boolean, arithmetic, string, and sort methods.
+              Use <Code>col</Code> for an explicit field path, <Code>lit</Code> for a literal, <Code>agg</Code> for aggregates,
+              <Code>fn</Code> for scalar functions, and <Code>win</Code> for window functions.
+            </P>
+            <CodeBlock lang="ts">{`import { agg, col, fn, from, lit, win } from '@andreadito/pipequery-lang/builder';
+
+from<Product>('items')
+  .select((item) => ({
+    name: item.name,
+    tier: fn.if(item.price.gt(100), lit('premium'), lit('standard')),
+    amount: col<number>('price').times(2),
+    row: win.row_number(),
+  }));
+
+// OR is expressed with .or(); the pipequery lexer cannot read ||
+from<Product>('items').where((item) => item.active.eq(true).or(item.price.gt(500)));`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Grouping and rollup">
+            <P>
+              Put aggregate expressions in <Code>select</Code> after <Code>groupBy</Code>, or place keys before aggregates in <Code>rollup</Code>.
+              Do not chain <Code>groupBy(...).rollup(...)</Code>; that form does not calculate grouped totals.
+            </P>
+            <CodeBlock lang="ts">{`import { agg, from } from '@andreadito/pipequery-lang/builder';
+
+from<Product>('items')
+  .groupBy((item) => item.category)
+  .select((item) => ({ category: item.category, total: agg.sum(item.price) }));
+
+from<Product>('items').rollup(
+  'category',
+  agg.sum('price').as('total'),
+);`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Terminal aggregates and raw operations">
+            <P>
+              Terminal aggregates such as <Code>sum</Code>, <Code>avg</Code>, and <Code>count</Code> return a <Code>Scalar</Code> instead of a query;
+              call <Code>run()</Code> to get the single value. <Code>pipe()</Code> is an escape hatch for operations that are not yet represented by a fluent method.
+            </P>
+            <CodeBlock lang="ts">{`const average = from<Product>('items').avg((item) => item.price);
+average.run({ items });
+
+const topItems = from<Product>('items').pipe('where(price > 100) | sort(price desc) | first(5)');`}</CodeBlock>
+          </SubSection>
+
+          <SubSection title="Values, errors, and grammar limits">
+            <P>
+              Literal values are printed with string escaping, so use expressions such as <Code>item.name.eq(userInput)</Code> for dynamic values.
+              Invalid identifiers, non-finite numbers, invalid operation placement, and malformed raw <Code>pipe()</Code> input fail while building the query
+              with <Code>BuilderError</Code> or a parser error.
+            </P>
+            <P>
+              Field and source identifiers must match <Code>[A-Za-z_][A-Za-z0-9_]*</Code>; quoted identifiers are not supported. Use <Code>.or()</Code> rather than
+              <Code>||</Code>, and use <Code>win.*</Code> only as a top-level field in <Code>select()</Code>. Group keys belong in <Code>rollup(keys, aggregates)</Code>
+              or <Code>groupBy(...).select(...)</Code>.
+            </P>
+          </SubSection>
+        </Section>
+
         {/* ── API Reference ── */}
         <Section id="api-reference" title="API Reference">
           <P>All public exports from the engine module:</P>
@@ -1202,6 +1292,9 @@ lq.dispose();`}</CodeBlock>
                 { sig: 'query(context, expression)', desc: 'Compile and execute a query in one call. Accepts DataContext or RowData[].' },
                 { sig: 'compile(expression, useCache?)', desc: 'Compile a query string into a reusable CompiledQuery function. Cached by default.' },
                 { sig: 'parseQuery(expression)', desc: 'Parse a query string into an AST Pipeline without compiling or executing.' },
+                { sig: 'printQuery(ast)', desc: 'Print a Pipeline AST as canonical pipequery text, escaping values and validating identifiers.' },
+                { sig: 'printExpression(expression)', desc: 'Print one Expression AST as canonical pipequery text.' },
+                { sig: 'compileAst(ast)', desc: 'Compile a Pipeline AST directly, without printing and parsing it again.' },
                 { sig: 'clearCache()', desc: 'Clear the compiled query cache (128-entry LRU).' },
                 { sig: 'liveQuery(data, expression, opts)', desc: 'Create a LiveQuery instance for streaming delta updates.' },
               ].map((fn, idx) => (

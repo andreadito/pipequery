@@ -54,6 +54,27 @@ lq.dispose();
 ### parseQuery(expression) -> Pipeline
 Parse into AST without executing.
 
+### printQuery(ast), printExpression(expression), compileAst(ast)
+Print a canonical pipequery string from an AST or compile a Pipeline directly without printing and re-parsing it.
+
+## Typed Query Builder
+
+Build a typed fluent query with `@andreadito/pipequery-lang/builder`:
+
+```ts
+import { agg, from } from '@andreadito/pipequery-lang/builder';
+
+type Item = { category: string; price: number };
+const query = from<Item>('items')
+  .groupBy((item) => item.category)
+  .select((item) => ({ category: item.category, total: agg.sum(item.price) }));
+
+query.toString();
+query.run({ items });
+```
+
+Use `col`, `lit`, `fn`, and `win` for expressions; terminal aggregates return a `Scalar`. Use `.or()` instead of `||`. Group with `rollup(keys..., aggregates...)` or `groupBy(...).select(...)`, not `groupBy(...).rollup(...)`.
+
 ## Operations
 
 | Operation | Example |
@@ -238,6 +259,7 @@ Same subpaths on npm: `@vaultgradient/pipequery-cli/engine`, `@vaultgradient/pip
 
 ## Sub-packages
 
+- `@vaultgradient/pipequery-lang/builder` - typed fluent TypeScript query builder
 - `@vaultgradient/pipequery-lang/highlighting` - CodeMirror 6 + Monaco editor support
 - `@vaultgradient/pipequery-lang/react` - PipeQueryBuilder visual component
 

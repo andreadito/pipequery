@@ -17,6 +17,8 @@ export default defineConfig({
     alias: {
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      '@andreadito/pipequery-lang/builder': path.resolve(__dirname, '../src/builder/index.ts'),
+      '@andreadito/pipequery-lang': path.resolve(__dirname, '../src/engine/index.ts'),
     },
   },
 });

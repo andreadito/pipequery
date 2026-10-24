@@ -83,6 +83,8 @@ export function createEventLogger(opts: EventLoggerOptions = {}): EventLogger {
   const writeStderr = opts.writeStderr ?? ((line) => process.stderr.write(line));
   const now = opts.now ?? (() => new Date());
   const filePath = opts.filePath;
+  // Chain writes sequentially so they land on disk in log-order.
+  let chain: Promise<void> = Promise.resolve();
 
   return {
     log(event: BotEvent): void {
@@ -90,10 +92,13 @@ export function createEventLogger(opts: EventLoggerOptions = {}): EventLogger {
       writeStderr(formatPretty(event, ts) + '\n');
       if (filePath) {
         const json = JSON.stringify({ ts: ts.toISOString(), ...flattenForJson(event) });
-        // Fire-and-forget write; the bot doesn't await this so a slow disk
-        // doesn't back-pressure incoming Telegram messages. Errors surface
-        // on stderr so a misconfigured path is visible.
-        void appendFile(filePath, json + '\n').catch((err) => {
+        // Chain each append onto the previous one so ordering is preserved.
+        // The bot doesn't await the chain — a slow disk won't back-pressure
+        // incoming Telegram messages. Errors surface on stderr.
+        chain = chain.then(
+          () => appendFile(filePath, json + '\n'),
+          () => appendFile(filePath, json + '\n'),
+        ).catch((err) => {
           writeStderr(
             chalk.hex('#ef4444')('  ✗') +
               ' [pipequery-telegram] log-file write failed: ' +
@@ -104,7 +109,7 @@ export function createEventLogger(opts: EventLoggerOptions = {}): EventLogger {
       }
     },
     async flush(): Promise<void> {
-      // Reserved for future buffering. appendFile already awaits internally.
+      await chain;
     },
   };
 }

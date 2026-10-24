@@ -69,7 +69,7 @@ query(items, 'rollup(sum(price) as total, count() as n)');
 // Result: [{ total: 1377, n: 3 }]
 
 // Group and aggregate
-query(items, 'groupBy(category) | rollup(avg(price) as avgPrice)');
+query(items, 'groupBy(category) | select(category, avg(price) as avgPrice)');
 // Result: [{ category: 'Electronics', avgPrice: 514 }, { category: 'Furniture', avgPrice: 349 }]
 
 // Named DataContext for joins
@@ -123,6 +123,20 @@ interface Operation {
   type: string;        // 'where', 'select', 'sort', etc.
   expressions: Expression[];
 }
+```
+
+### printQuery(ast), printExpression(expression), compileAst(ast)
+
+`printQuery` prints a Pipeline AST as canonical pipequery text; `printExpression` prints one expression.
+`compileAst` compiles a Pipeline directly, avoiding a print-and-parse round trip.
+
+```ts
+import { compileAst, parseQuery, printQuery } from '@andreadito/pipequery-lang';
+
+const ast = parseQuery('items | where(price > 100)');
+const text = printQuery(ast);
+const run = compileAst(ast);
+run({ items });
 ```
 
 **Example:**
@@ -265,19 +279,19 @@ sort(category asc, price desc)
 ```
 
 ### groupBy(keys...)
-Group rows by one or more fields. Usually followed by `rollup()`.
+Group rows by one or more fields. Follow with `select()` for aggregates, or use `rollup(keys..., aggregates...)` directly.
 ```
 groupBy(category)
 groupBy(category, region)
-groupBy(category) | rollup(sum(price) as total)
+groupBy(category) | select(category, sum(price) as total)
 ```
 
-### rollup(aggregations...)
-Aggregate grouped or ungrouped data. Each aggregation uses `function(field) as alias`.
+### rollup(keys..., aggregations...)
+Group by optional keys and aggregate rows. Each aggregation uses `function(field) as alias`.
 ```
 rollup(sum(price) as total, count() as n)
 rollup(avg(price) as avgPrice, max(price) as maxPrice)
-groupBy(category) | rollup(sum(price) as total)
+rollup(category, sum(price) as total)
 ```
 
 ### join(source, condition)
@@ -905,6 +919,30 @@ Other `SourceManager` methods: `removeSource(name)`, `getContext()`, `getSourceD
 
 ## Sub-packages
 
+### Typed Query Builder (`@vaultgradient/pipequery-lang/builder`)
+
+The builder creates typed immutable `Query` pipelines in TypeScript. `toString()` returns canonical pipequery DSL and `run(context)` executes the query. It imports no React or MUI dependencies.
+
+```ts
+import { agg, from } from '@andreadito/pipequery-lang/builder';
+
+type Item = { category: string; name: string; price: number; active: boolean };
+const query = from<Item>('items')
+  .where((item) => item.active.eq(true).and(item.price.gt(100)))
+  .groupBy((item) => item.category)
+  .select((item) => ({
+    category: item.category,
+    total: agg.sum(item.price),
+  }));
+
+query.toString();
+query.run({ items });
+```
+
+Expression helpers include `col`, `lit`, `agg`, `fn`, and `win`. Use `.or()` for logical OR because the DSL lexer treats `||` as two pipe tokens. `groupBy(...).select(...)` is the grouped-aggregate form; alternatively, put group keys before aggregate expressions in `rollup(...)`. Do not chain `groupBy(...).rollup(...)`.
+
+Terminal aggregates such as `.sum()`, `.avg()`, and `.count()` return a `Scalar` whose `run()` gives the single value. `.pipe(rawOperations)` parses a raw pipequery string as an escape hatch. String values are escaped; invalid identifiers, non-finite numbers, malformed operations, and invalid contexts throw a `BuilderError` or parser error. Identifiers must match `[A-Za-z_][A-Za-z0-9_]*`; window helpers are only valid as top-level `select()` fields.
+
 ### Syntax Highlighting
 
 ```ts
@@ -962,7 +1000,7 @@ query(items, 'where(price > 100) | sort(price desc) | first(10)');
 
 ### Group + Aggregate
 ```ts
-query(items, 'groupBy(category) | rollup(sum(price) as total, count() as n) | sort(total desc)');
+query(items, 'groupBy(category) | select(category, sum(price) as total, count() as n) | sort(total desc)');
 ```
 
 ### Multi-table Join

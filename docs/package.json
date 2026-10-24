@@ -17,6 +17,7 @@
     "@lezer/highlight": "^1.2.3",
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
+    "sucrase": "^3.35.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },

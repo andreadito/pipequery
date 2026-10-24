@@ -151,9 +151,8 @@ query(data, 'where(price > 100) | sort(price desc)');
 query(data, 'rollup(sum(price) as total, count() as n)');
 // → [{ total: 1377, n: 3 }]
 
-// Group and aggregate
-query(data, 'groupBy(category) | rollup(avg(price) as avgPrice)');
-// → [{ category: 'Electronics', avgPrice: 514 }, { category: 'Furniture', avgPrice: 349 }]
+// Group and aggregate (one row per category)
+query(data, 'groupBy(category) | select(category, avg(price) as avgPrice)');
 ```
 
 ## Query Syntax
@@ -262,6 +261,18 @@ const ast = parseQuery('items | where(price > 100)');
 // Inspect tokens, operations, expressions
 ```
 
+### `printQuery(ast)`
+
+Print a pipeline AST back to canonical pipequery text. Parentheses are added only where precedence requires them, numbers and strings are escaped, and invalid nodes throw. Use it to inspect or rewrite a parsed query, for example to cap every result.
+
+```ts
+import { parseQuery, printQuery } from '@andreadito/pipequery-lang';
+
+const ast = parseQuery('orders | where(total > 100)');
+ast.operations.push({ kind: 'FirstOp', count: 1000 });
+printQuery(ast); // orders | where(total > 100) | first(1000)
+```
+
 ### `liveQuery(data, expression, options)`
 
 Streaming query evaluator that accepts data patches and re-executes efficiently.
@@ -326,6 +337,67 @@ import { registerPipeQuery } from '@vaultgradient/pipequery-lang/highlighting';
 A TextMate grammar is included at `dist/highlighting/textmate/pipequery.tmLanguage.json` for VS Code, IntelliJ, and Sublime Text.
 
 **Peer dependencies:** `@codemirror/language`, `@codemirror/state`, `@codemirror/view`, `@lezer/highlight` (CodeMirror only)
+
+### Typed query builder
+
+`@andreadito/pipequery-lang/builder` builds queries in code instead of strings. It is a headless utility, not an ORM: it builds the same AST the parser produces, and `toString()` prints it back with `printQuery`. The builder entry imports nothing from React or MUI.
+
+```ts
+import { from, agg, col } from '@andreadito/pipequery-lang/builder';
+import { query } from '@andreadito/pipequery-lang';
+
+type Order = { id: number; customerId: number; total: number; status: string; region: string };
+
+const paid = from<Order>('orders')
+  .where((o) => o.status.eq('paid'))
+  .join('customers', (o, c) => o.customerId.eq(c.id))
+  .select((o) => ({ id: o.id, name: o.name, total: o.total }));
+
+paid.toString();
+// orders | where(status == "paid") | join(customers, customerId == id) | select(id, name, total)
+
+paid.run({ orders, customers });                 // rows
+query({ orders, customers }, paid.toString());   // same rows
+```
+
+Terminal aggregates end the pipeline and return a `Scalar`, whose `run()` returns one value:
+
+```ts
+from<Order>('orders').where((o) => o.status.eq('paid')).sum((o) => o.total).run({ orders }); // 160
+```
+
+Grouping works with `rollup` (group keys go inside it) or with `groupBy` followed by `select`:
+
+```ts
+from<Order>('orders').rollup('region', agg.sum(col('total')).as('revenue'));
+// orders | rollup(region, sum(total) as revenue)
+
+from<Order>('orders')
+  .groupBy('region')
+  .select((o) => ({ region: o.region, revenue: agg.sum(o.total) }));
+// orders | groupBy(region) | select(region, sum(total) as revenue)
+```
+
+**Escape hatch.** `.pipe()` accepts raw pipequery operations. They are parsed with the real parser, so a malformed string throws a `ParseError`:
+
+```ts
+from<Order>('orders').pipe('where(total > 100) | first(10)');
+```
+
+**Values are escaped.** `o.status.eq(input)` prints `input` as a string literal, so quotes, backslashes and newlines in user input cannot change the query structure.
+
+**Invalid input throws at build time.** Bad identifiers, reserved words, `NaN`/`Infinity`, `first(-1)` and misplaced aliases throw a `BuilderError`.
+
+#### Grammar limits
+
+- **Identifiers** must match `[A-Za-z_][A-Za-z0-9_]*`. Field and source names with spaces, hyphens or other characters cannot be written, and there is no quoted-identifier syntax yet. `from('my-orders')` throws.
+- **Reserved words** `as asc desc true false null` cannot be names.
+- **Aliases** (`.as(name)`) work in `select`, `map`, `rollup`, `pivot` and `reduce`. They throw in `sort`, `groupBy`, `distinct`, `flatten`, `transpose` and standalone aggregates.
+- **`||` is not supported.** The lexer reads it as two pipes. Use `.or()`, which prints as `if(a, true, b)`.
+- **Window functions** (`win.*`) are allowed only as top-level fields of `select`.
+- **Group keys** go in `rollup(keys, aggs)` or `groupBy(...) | select(...)`. `groupBy(k) | rollup(agg)` returns `null` aggregates in the current engine.
+- **Offsets** for `lag` and `lead` must be integers >= 1.
+- **Numbers** such as `1e21` print as plain decimals. Negative literals print as unary minus (`-5`), which re-parses as `-(5)`.
 
 ### React Components
 
