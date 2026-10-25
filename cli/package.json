@@ -62,7 +62,7 @@
     "gcp-metadata": "^8.0.0",
     "esbuild": "^0.28.1",
     "axios": "^1.20.0",
-    "fast-uri": "^3.1.8",
+    "fast-uri": "^3.1.9",
     "proxy-addr": "^2.0.8",
     "source-map-js": "^1.2.2",
     "@azure/msal-node": "^5.6.0"
